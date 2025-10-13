@@ -5,6 +5,7 @@ export const user = pgTable("user", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  phone: text("phone").notNull().unique(),
   email_verified: timestamp("email_verified"),
   image: text("image"),
   created_at: timestamp("created_at").defaultNow(),
@@ -23,48 +24,34 @@ export const session = pgTable("session", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const account = pgTable("account", {
+export const rooms = pgTable("rooms", {
   id: uuid("id").primaryKey().defaultRandom(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
+  name: text("name"),
+  type: text("type").notNull().default("private"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const room_members = pgTable("room_members", {
+  roomId: uuid("room_id")
+    .notNull()
+    .references(() => rooms.id, { onDelete: "cascade" }),
   userId: uuid("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
-export const verification = pgTable("verification", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: uuid("sender_id").notNull(),
-  receiverId: uuid("receiver_id").notNull(),
+  roomId: uuid("room_id")
+    .notNull()
+    .references(() => rooms.id, { onDelete: "cascade" }),
+  senderId: uuid("sender_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  receiverId: uuid("receiver_id").references(() => user.id, {
+    onDelete: "cascade",
+  }),
   message: text("message").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const rooms = pgTable("rooms", {
-  id: uuid("id").primaryKey().defaultRandom(), // uuid
-  name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

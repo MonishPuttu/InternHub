@@ -1,0 +1,2 @@
+ALTER TABLE "messages" ADD COLUMN "receiver_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_receiver_id_user_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
