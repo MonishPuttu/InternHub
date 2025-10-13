@@ -56,7 +56,6 @@ export default function Sidebar({
     if (variant === "temporary" && typeof onClose === "function") onClose();
   };
 
-  // show permanent only on md+ (handled in layout via media query)
   const drawerDisplay =
     variant === "permanent"
       ? { xs: "none", md: "block" }
@@ -70,7 +69,7 @@ export default function Sidebar({
       ModalProps={{ keepMounted: true }}
       sx={{
         display: drawerDisplay,
-        // style paper so on md+ it participates in layout and does NOT overlay / scroll
+
         "& .MuiDrawer-paper": {
           width: drawerWidth,
           boxSizing: "border-box",
@@ -79,11 +78,11 @@ export default function Sidebar({
           // overlay on xs, in-flow on md+
           position: { xs: "fixed", md: "relative" },
           height: { xs: "100%", md: "100vh" },
-          overflow: "visible", // remove internal scrollbars
+          overflow: "visible",
         },
       }}
     >
-      {/* no overflow:auto here to avoid inner scrollbar */}
+      {" "}
       <Box sx={{ width: drawerWidth, pt: 2 }}>
         <Box sx={{ px: 2, mb: 1 }}>
           <Box
@@ -172,10 +171,7 @@ export default function Sidebar({
           })}
         </List>
 
-        {/* keep footer actions visible without internal scroll */}
-        <Box sx={{ px: 2, mt: 2 }}>
-          {/* placeholder for user/settings buttons */}
-        </Box>
+        <Box sx={{ px: 2, mt: 2 }}></Box>
       </Box>
     </Drawer>
   );
