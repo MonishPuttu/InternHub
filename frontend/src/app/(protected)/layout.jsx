@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "../../modules/sidebar/sidebar";
+import Sidebar from "../../modules/sidebar";
 
 const DRAWER_WIDTH = 240;
 

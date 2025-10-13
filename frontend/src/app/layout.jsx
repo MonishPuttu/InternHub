@@ -3,7 +3,7 @@ export const metadata = {
   description: "InternHub app",
 };
 
-import ThemeRegistry from "../components/themeRegistry";
+import ThemeRegistry from "../lib/themeRegistry";
 
 export default function RootLayout({ children }) {
   return (
