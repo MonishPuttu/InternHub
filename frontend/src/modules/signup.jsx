@@ -20,7 +20,10 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-// TODO: remove this part for prod
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+// TODO_MONISH: remove this part for prod
 function generateTempPhoneNumber() {
   const timestamp = Date.now();
   const phoneNumber = timestamp.toString().slice(-10);
@@ -56,18 +59,18 @@ export default function SignUp() {
 
     setLoading(true);
 
-    // TODO: remove this part for prod
+    // TODO:Monish remove this part for prod
     const tempPhone = generateTempPhoneNumber();
 
     try {
-      const response = await fetch("http://localhost:4000/api/auth/signup", {
+      const response = await fetch(`${BACKEND_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          phone: tempPhone, // TODO: remove this part for prod
+          phone: tempPhone, // TODO:Monish remove this part for prod
         }),
       });
 

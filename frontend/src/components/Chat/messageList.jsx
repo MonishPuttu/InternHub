@@ -75,7 +75,9 @@ export default function MessageList({
                     variant="body2"
                     sx={{
                       minHeight: "20px",
-                      color: isSender ? "white" : "black", // Force explicit colors
+                      color: isSender ? "white" : "black",
+
+                      color: isSender ? "white" : "black", 
                     }}
                   >
                     {msg.message || "[Empty message]"}
@@ -86,7 +88,9 @@ export default function MessageList({
                       display: "block",
                       mt: 0.5,
                       opacity: 0.7,
-                      color: isSender ? "white" : "black", // Force explicit colors
+                      color: isSender ? "white" : "black",
+
+                      color: isSender ? "white" : "black",
                     }}
                   >
                     {msg.timestamp
