@@ -20,12 +20,9 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-<<<<<<< HEAD
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
-=======
->>>>>>> 240f552f0455cf4374ced2c58daf63175894c7da
 export default function SignIn() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -39,11 +36,7 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
       const response = await fetch(`${BACKEND_URL}/api/auth/signin`, {
-=======
-      const response = await fetch("http://localhost:4000/api/auth/signin", {
->>>>>>> 240f552f0455cf4374ced2c58daf63175894c7da
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

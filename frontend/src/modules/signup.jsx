@@ -24,7 +24,6 @@ const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 // TODO_MONISH: remove this part for prod
-
 function generateTempPhoneNumber() {
   const timestamp = Date.now();
   const phoneNumber = timestamp.toString().slice(-10);
@@ -60,7 +59,7 @@ export default function SignUp() {
 
     setLoading(true);
 
-    // TODO: remove this part for prod
+    // TODO:Monish remove this part for prod
     const tempPhone = generateTempPhoneNumber();
 
     try {
@@ -71,7 +70,7 @@ export default function SignUp() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          phone: tempPhone, // TODO: remove this part for prod
+          phone: tempPhone, // TODO:Monish remove this part for prod
         }),
       });
 
