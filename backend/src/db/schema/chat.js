@@ -1,28 +1,5 @@
 import { pgTable, serial, text, timestamp, uuid } from "drizzle-orm/pg-core";
-
-export const user = pgTable("user", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  phone: text("phone").notNull().unique(),
-  email_verified: timestamp("email_verified"),
-  image: text("image"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
-export const session = pgTable("session", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  token: text("token").notNull().unique(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  expiresAt: timestamp("expires_at").notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+import { user } from "./user.js";
 
 export const rooms = pgTable("rooms", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -43,9 +20,7 @@ export const room_members = pgTable("room_members", {
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  roomId: uuid("room_id")
-    .notNull()
-    .references(() => rooms.id, { onDelete: "cascade" }),
+  roomId: uuid("room_id").references(() => rooms.id, { onDelete: "cascade" }), // REMOVED .notNull() - can be null for direct messages
   senderId: uuid("sender_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),

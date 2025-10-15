@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { session, user } from "../db/schema.js";
+import { session, user } from "../db/schema/index.js";
 import { eq } from "drizzle-orm";
 
 export async function requireAuth(req, res, next) {
