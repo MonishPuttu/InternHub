@@ -26,6 +26,7 @@ import {
   Feedback as FeedbackIcon,
   Settings as SettingsIcon,
   ArrowForward as ArrowForwardIcon,
+  CalendarToday as CalenderIcon
 } from "@mui/icons-material";
 
 const drawerWidth = 240;
@@ -34,6 +35,7 @@ const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard" },
   { text: "Opportunities", icon: <BusinessIcon />, path: "/opportunities" },
   { text: "My Applications", icon: <DescriptionIcon />, path: "/applications" },
+  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar" },
   { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile" },
   { text: "Schedule", icon: <ScheduleIcon />, path: "/schedule" },
   { text: "Analytics", icon: <BarChartIcon />, path: "/analytics" },
@@ -45,7 +47,7 @@ const navigationItems = [
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   const router = useRouter();
   const pathname = usePathname();
