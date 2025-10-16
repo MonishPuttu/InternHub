@@ -99,6 +99,13 @@
       "when": 1760549982920,
       "tag": "0013_magenta_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1760599769620,
+      "tag": "0014_lame_micromax",
+      "breakpoints": true
     }
   ]
 }
