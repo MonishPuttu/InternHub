@@ -1,6 +1,12 @@
 import express from "express";
 import { db } from "../db/index.js";
-import { user, session } from "../db/schema.js";
+import {
+  user,
+  session,
+  student_profile,
+  placement_profile,
+  recruiter_profile,
+} from "../db/schema/index.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
@@ -8,18 +14,56 @@ import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
+// Helper function to get user name from profile tables
+async function getUserName(userId, role) {
+  try {
+    if (role === "student") {
+      const profile = await db
+        .select({ full_name: student_profile.full_name })
+        .from(student_profile)
+        .where(eq(student_profile.user_id, userId))
+        .limit(1);
+      return profile[0]?.full_name || "Unknown";
+    } else if (role === "placement") {
+      const profile = await db
+        .select({ name: placement_profile.name })
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, userId))
+        .limit(1);
+      return profile[0]?.name || "Unknown";
+    } else if (role === "recruiter") {
+      const profile = await db
+        .select({ full_name: recruiter_profile.full_name })
+        .from(recruiter_profile)
+        .where(eq(recruiter_profile.user_id, userId))
+        .limit(1);
+      return profile[0]?.full_name || "Unknown";
+    }
+    return "Unknown";
+  } catch (error) {
+    console.error("Error fetching user name:", error);
+    return "Unknown";
+  }
+}
+
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, name, phone } = req.body;
+    const { email, password, role, profileData } = req.body;
 
-    if (!email || !password || !name) {
+    if (!email || !password || !role) {
       return res.status(400).json({
         ok: false,
-        error: "Email, password, and name are required",
+        error: "Email, password, and role are required",
       });
     }
 
-    // Check existing user
+    if (!["student", "placement", "recruiter"].includes(role)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid role. Must be student, placement, or recruiter",
+      });
+    }
+
     const existingUser = await db
       .select()
       .from(user)
@@ -33,7 +77,6 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUsers = await db
@@ -41,12 +84,72 @@ router.post("/signup", async (req, res) => {
       .values({
         email,
         password: hashedPassword,
-        name,
-        phone,
+        role,
       })
       .returning();
 
     const newUser = newUsers[0];
+
+    if (role === "student" && profileData) {
+      await db
+        .insert(student_profile)
+        .values({
+          user_id: newUser.id,
+          full_name: profileData.full_name || "Unknown",
+          roll_number: profileData.roll_number || null,
+          student_id: profileData.student_id || null,
+          date_of_birth: profileData.date_of_birth
+            ? new Date(profileData.date_of_birth)
+            : null,
+          gender: profileData.gender || null,
+          contact_number: profileData.contact_number || null,
+          college_name: profileData.college_name || null,
+          branch: profileData.branch || null,
+          current_semester: profileData.current_semester || null,
+          cgpa: profileData.cgpa || null,
+          tenth_score: profileData.tenth_score || null,
+          twelfth_score: profileData.twelfth_score || null,
+          linkedin: profileData.linkedin || null,
+          skills: profileData.skills || null,
+        })
+        .returning();
+    } else if (role === "placement" && profileData) {
+      await db
+        .insert(placement_profile)
+        .values({
+          user_id: newUser.id,
+          name: profileData.name || "Unknown",
+          employee_id: profileData.employee_id || null,
+          date_of_birth: profileData.date_of_birth
+            ? new Date(profileData.date_of_birth)
+            : null,
+          gender: profileData.gender || null,
+          contact_number: profileData.contact_number || null,
+          role_designation: profileData.role_designation || null,
+          department_branch: profileData.department_branch || null,
+          college_name: profileData.college_name || null,
+          linkedin: profileData.linkedin || null,
+        })
+        .returning();
+    } else if (role === "recruiter" && profileData) {
+      await db
+        .insert(recruiter_profile)
+        .values({
+          user_id: newUser.id,
+          full_name: profileData.full_name || "Unknown",
+          date_of_birth: profileData.date_of_birth
+            ? new Date(profileData.date_of_birth)
+            : null,
+          gender: profileData.gender || null,
+          company_name: profileData.company_name || null,
+          role_designation: profileData.role_designation || null,
+          industry_sector: profileData.industry_sector || null,
+          website: profileData.website || null,
+          linkedin: profileData.linkedin || null,
+          headquarters_location: profileData.headquarters_location || null,
+        })
+        .returning();
+    }
 
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -59,29 +162,36 @@ router.post("/signup", async (req, res) => {
       userAgent: req.get("user-agent") ?? null,
     });
 
+    // Get name for response
+    const name = await getUserName(newUser.id, newUser.role);
+
     res.status(201).json({
       ok: true,
-      user: { id: newUser.id, email: newUser.email, name: newUser.name },
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+        name, // Add name field for backward compatibility
+      },
       token,
     });
   } catch (e) {
-    console.error(e);
+    console.error("Signup error:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
 router.post("/signin", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return res.status(400).json({
         ok: false,
-        error: "Email and password are required",
+        error: "Email, password, and role are required",
       });
     }
 
-    // Find user
     const users = await db
       .select()
       .from(user)
@@ -97,7 +207,13 @@ router.post("/signin", async (req, res) => {
 
     const foundUser = users[0];
 
-    // Verify password
+    if (foundUser.role !== role) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid credentials or role mismatch",
+      });
+    }
+
     const isValidPassword = await bcrypt.compare(password, foundUser.password);
 
     if (!isValidPassword) {
@@ -107,7 +223,6 @@ router.post("/signin", async (req, res) => {
       });
     }
 
-    // Create session
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -120,13 +235,90 @@ router.post("/signin", async (req, res) => {
       userAgent: req.get("user-agent") ?? null,
     });
 
+    // Get name for response
+    const name = await getUserName(foundUser.id, foundUser.role);
+
     res.json({
       ok: true,
-      user: { id: foundUser.id, email: foundUser.email, name: foundUser.name },
+      user: {
+        id: foundUser.id,
+        email: foundUser.email,
+        role: foundUser.role,
+        name, // Add name field for backward compatibility
+      },
       token,
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    const token = req.get("authorization")?.replace("Bearer ", "");
+
+    if (!token)
+      return res.status(401).json({ ok: false, error: "missing token" });
+
+    const rows = await db
+      .select()
+      .from(session)
+      .where(eq(session.token, token))
+      .limit(1);
+
+    const s = rows[0];
+
+    if (!s) return res.status(401).json({ ok: false, error: "invalid token" });
+
+    const users = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, s.userId))
+      .limit(1);
+    const u = users[0];
+
+    if (!u) return res.status(404).json({ ok: false, error: "user not found" });
+
+    // Fetch role-specific profile and name
+    let profile = null;
+    let name = "Unknown";
+
+    if (u.role === "student") {
+      const profiles = await db
+        .select()
+        .from(student_profile)
+        .where(eq(student_profile.user_id, u.id))
+        .limit(1);
+      profile = profiles[0];
+      name = profile?.full_name || "Unknown";
+    } else if (u.role === "placement") {
+      const profiles = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, u.id))
+        .limit(1);
+      profile = profiles[0];
+      name = profile?.name || "Unknown";
+    } else if (u.role === "recruiter") {
+      const profiles = await db
+        .select()
+        .from(recruiter_profile)
+        .where(eq(recruiter_profile.user_id, u.id))
+        .limit(1);
+      profile = profiles[0];
+      name = profile?.full_name || "Unknown";
+    }
+
+    res.json({
+      ok: true,
+      user: {
+        ...u,
+        name, // Add name field for backward compatibility
+        profile,
+      },
+    });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: String(e) });
   }
 });
 
@@ -162,38 +354,6 @@ router.post("/sessions", async (req, res) => {
     });
 
     res.status(201).json({ ok: true });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
-  }
-});
-
-router.get("/me", requireAuth, async (req, res) => {
-  try {
-    const token = req.get("authorization")?.replace("Bearer ", "");
-
-    if (!token)
-      return res.status(401).json({ ok: false, error: "missing token" });
-
-    const rows = await db
-      .select()
-      .from(session)
-      .where(eq(session.token, token))
-      .limit(1);
-
-    const s = rows[0];
-
-    if (!s) return res.status(401).json({ ok: false, error: "invalid token" });
-
-    const users = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, s.userId))
-      .limit(1);
-    const u = users[0];
-
-    if (!u) return res.status(404).json({ ok: false, error: "user not found" });
-
-    res.json({ ok: true, user: u });
   } catch (e) {
     res.status(400).json({ ok: false, error: String(e) });
   }
