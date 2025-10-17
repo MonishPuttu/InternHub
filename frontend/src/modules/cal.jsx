@@ -38,6 +38,7 @@ export default function EventCalendar() {
     const [errorMsg, setErrorMsg] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    // const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: "",
         eventDate: "",
