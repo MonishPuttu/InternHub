@@ -261,92 +261,92 @@ export default function PostOpportunities() {
 
                   {/* Middle Section - Main Content */}
                   <Box sx={{ flex: 1, minWidth: 300 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "start",
-                      mb: 2,
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: "#e2e8f0",
-                          fontWeight: 700,
-                          mb: 0.5,
-                        }}
-                      >
-                        {app.position}
-                      </Typography>
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          color: "#94a3b8",
-                          fontWeight: 600,
-                          mb: 1,
-                        }}
-                      >
-                        {app.company_name}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleMenuOpen(e, app)}
-                      sx={{ color: "#94a3b8" }}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </Box>
-
-                  {app.notes && (
-                    <Typography
-                      variant="body2"
+                    <Box
                       sx={{
-                        color: "#64748b",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "start",
                         mb: 2,
-                        lineHeight: 1.6,
                       }}
                     >
-                      {app.notes.length > 150
-                        ? `${app.notes.substring(0, 150)}...`
-                        : app.notes}
-                    </Typography>
-                  )}
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 3,
-                      mb: 2,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {app.package_offered && (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <AttachMoneyIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                          ₹{app.package_offered}L
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: "#e2e8f0",
+                            fontWeight: 700,
+                            mb: 0.5,
+                          }}
+                        >
+                          {app.position}
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: "#94a3b8",
+                            fontWeight: 600,
+                            mb: 1,
+                          }}
+                        >
+                          {app.company_name}
                         </Typography>
                       </Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuOpen(e, app)}
+                        sx={{ color: "#94a3b8" }}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </Box>
+
+                    {app.notes && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "#64748b",
+                          mb: 2,
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {app.notes.length > 150
+                          ? `${app.notes.substring(0, 150)}...`
+                          : app.notes}
+                      </Typography>
                     )}
 
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <LocationOnIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                      <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                        {app.industry}
-                      </Typography>
-                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 3,
+                        mb: 2,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {app.package_offered && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <AttachMoneyIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                            ₹{app.package_offered}L
+                          </Typography>
+                        </Box>
+                      )}
 
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                      <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                        Posted {new Date(app.application_date).toLocaleDateString()}
-                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <LocationOnIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                          {app.industry}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                          Posted {new Date(app.application_date).toLocaleDateString()}
+                        </Typography>
+                      </Box>
                     </Box>
                   </Box>
-                </Box>
 
                   {/* Right Section - Date & Actions */}
                   <Box
@@ -412,7 +412,7 @@ export default function PostOpportunities() {
         </MenuItem>
       </Menu>
 
-      {/* Details Dialog */}
+      {/* Details Dialog - FIXED */}
       <Dialog
         open={detailsOpen}
         onClose={handleCloseDetails}
@@ -426,10 +426,18 @@ export default function PostOpportunities() {
           },
         }}
       >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Opportunity Details
-          </Typography>
+        <DialogTitle 
+          component="div"
+          sx={{ 
+            display: "flex", 
+            justifyContent: "space-between", 
+            alignItems: "center",
+            fontSize: "1.25rem",
+            fontWeight: 700,
+            color: "#e2e8f0",
+          }}
+        >
+          Opportunity Details
           <IconButton onClick={handleCloseDetails} sx={{ color: "#94a3b8" }}>
             <CloseIcon />
           </IconButton>
