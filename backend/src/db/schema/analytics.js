@@ -56,3 +56,4 @@ export const interview_feedback = pgTable("interview_feedback", {
   conducted_date: timestamp("conducted_date").notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
+

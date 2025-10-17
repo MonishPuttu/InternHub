@@ -206,7 +206,7 @@ router.get("/applications", requireAuth, async (req, res) => {
   }
 });
 
-//adeded media
+// Create new application
 router.post("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -218,7 +218,6 @@ router.post("/applications", requireAuth, async (req, res) => {
       status,
       package_offered,
       notes,
-      media, // ← NOW RECEIVING MEDIA
     } = req.body;
 
     if (!company_name || !position || !industry) {
@@ -241,7 +240,6 @@ router.post("/applications", requireAuth, async (req, res) => {
         status: status || "applied",
         package_offered: package_offered || null,
         notes: notes || null,
-        media: media || null, // ← NOW SAVING MEDIA TO DATABASE
       })
       .returning();
 
