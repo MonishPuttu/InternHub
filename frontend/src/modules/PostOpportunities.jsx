@@ -12,6 +12,10 @@ import {
   Snackbar,
   Alert,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -19,8 +23,8 @@ import {
   AttachMoney as AttachMoneyIcon,
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
-  People as PeopleIcon,
   Star as StarIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { CreateApplicationModal } from "../components/CreateApplicationModal";
@@ -51,6 +55,8 @@ export default function PostOpportunities() {
   const [selectedApp, setSelectedApp] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [viewingApp, setViewingApp] = useState(null);
 
   useEffect(() => {
     fetchApplications();
@@ -104,6 +110,16 @@ export default function PostOpportunities() {
     fetchApplications();
   };
 
+  const handleViewDetails = (app) => {
+    setViewingApp(app);
+    setDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false);
+    setViewingApp(null);
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
@@ -141,7 +157,7 @@ export default function PostOpportunities() {
         </Button>
       </Box>
 
-      {/* Applications List - New Horizontal Layout */}
+      {/* Applications List */}
       {applications.length === 0 ? (
         <Box
           sx={{
@@ -190,46 +206,61 @@ export default function PostOpportunities() {
                 },
               }}
             >
-              <Box sx={{ display: "flex", gap: 3, alignItems: "start", flexWrap: "wrap" }}>
-                {/* Left Section - Status Badge */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    minWidth: 80,
-                  }}
-                >
-                  <Chip
-                    label={statusLabels[app.status]}
-                    size="small"
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Top Section - Image Banner (if exists) */}
+                {app.media && (
+                  <Box
+                    component="img"
+                    src={app.media}
+                    alt={app.company_name}
                     sx={{
-                      bgcolor: `${statusColors[app.status]}30`,
-                      color: statusColors[app.status],
-                      fontWeight: 600,
-                      fontSize: "0.7rem",
-                      px: 1,
-                      mb: 1,
+                      width: "100%",
+                      height: 280,
+                      borderRadius: 2,
+                      objectFit: "cover",
+                      border: "2px solid #334155",
                     }}
                   />
-                  {/* Match Score - You can calculate this based on skills */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1 }}>
-                    <StarIcon sx={{ color: "#fbbf24", fontSize: 18 }} />
-                    <Typography
-                      sx={{
-                        color: "#10b981",
-                        fontWeight: 700,
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      95%
-                    </Typography>
-                  </Box>
-                </Box>
+                )}
 
-                {/* Middle Section - Main Content */}
-                <Box sx={{ flex: 1, minWidth: 300 }}>
-                  {/* Company & Position */}
+                {/* Bottom Section - Content */}
+                <Box sx={{ display: "flex", gap: 3, alignItems: "start", flexWrap: "wrap" }}>
+                  {/* Left Section - Status Badge */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      minWidth: 100,
+                    }}
+                  >
+                    <Chip
+                      label={statusLabels[app.status]}
+                      size="small"
+                      sx={{
+                        bgcolor: `${statusColors[app.status]}30`,
+                        color: statusColors[app.status],
+                        fontWeight: 600,
+                        fontSize: "0.7rem",
+                        px: 1,
+                        mb: 1,
+                      }}
+                    />
+                    <Chip
+                      label="Pending Approval"
+                      size="small"
+                      sx={{
+                        bgcolor: "rgba(251, 191, 36, 0.1)",
+                        color: "#fbbf24",
+                        fontSize: "0.7rem",
+                        height: 24,
+                        border: "1px solid rgba(251, 191, 36, 0.3)",
+                      }}
+                    />
+                  </Box>
+
+                  {/* Middle Section - Main Content */}
+                  <Box sx={{ flex: 1, minWidth: 300 }}>
                   <Box
                     sx={{
                       display: "flex",
@@ -269,7 +300,6 @@ export default function PostOpportunities() {
                     </IconButton>
                   </Box>
 
-                  {/* Description */}
                   {app.notes && (
                     <Typography
                       variant="body2"
@@ -285,7 +315,6 @@ export default function PostOpportunities() {
                     </Typography>
                   )}
 
-                  {/* Info Row */}
                   <Box
                     sx={{
                       display: "flex",
@@ -313,78 +342,55 @@ export default function PostOpportunities() {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
                       <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                        6 months
+                        Posted {new Date(app.application_date).toLocaleDateString()}
                       </Typography>
                     </Box>
-
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <PeopleIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                      <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                        234 applicants
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Tags - If you have skills or tags stored */}
-                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {["React", "Node.js", "TypeScript"].map((tag, idx) => (
-                      <Chip
-                        key={idx}
-                        label={tag}
-                        size="small"
-                        sx={{
-                          bgcolor: "rgba(139, 92, 246, 0.1)",
-                          color: "#a78bfa",
-                          fontSize: "0.75rem",
-                          height: 24,
-                          border: "1px solid rgba(139, 92, 246, 0.3)",
-                        }}
-                      />
-                    ))}
                   </Box>
                 </Box>
 
-                {/* Right Section - Date & Actions */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    justifyContent: "space-between",
-                    minWidth: 120,
-                  }}
-                >
-                  <Typography
-                    variant="caption"
+                  {/* Right Section - Date & Actions */}
+                  <Box
                     sx={{
-                      color: "#64748b",
-                      mb: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      justifyContent: "space-between",
+                      minWidth: 120,
                     }}
                   >
-                    Posted{" "}
-                    {new Date(app.application_date).toLocaleDateString("en-US", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#64748b",
+                        mb: 2,
+                      }}
+                    >
+                      Posted{" "}
+                      {new Date(app.application_date).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </Typography>
 
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    sx={{
-                      bgcolor: "rgba(139, 92, 246, 0.1)",
-                      border: "1px solid rgba(139, 92, 246, 0.3)",
-                      color: "#a78bfa",
-                      fontWeight: 600,
-                      textTransform: "none",
-                      "&:hover": {
-                        bgcolor: "rgba(139, 92, 246, 0.2)",
-                        borderColor: "#8b5cf6",
-                      },
-                    }}
-                  >
-                    View Details
-                  </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleViewDetails(app)}
+                      sx={{
+                        bgcolor: "rgba(139, 92, 246, 0.1)",
+                        border: "1px solid rgba(139, 92, 246, 0.3)",
+                        color: "#a78bfa",
+                        fontWeight: 600,
+                        textTransform: "none",
+                        "&:hover": {
+                          bgcolor: "rgba(139, 92, 246, 0.2)",
+                          borderColor: "#8b5cf6",
+                        },
+                      }}
+                    >
+                      View Details
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
             </Card>
@@ -405,6 +411,98 @@ export default function PostOpportunities() {
           Delete
         </MenuItem>
       </Menu>
+
+      {/* Details Dialog */}
+      <Dialog
+        open={detailsOpen}
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: "#1e293b",
+            color: "#e2e8f0",
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Opportunity Details
+          </Typography>
+          <IconButton onClick={handleCloseDetails} sx={{ color: "#94a3b8" }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: "#334155" }}>
+          {viewingApp && (
+            <Stack spacing={3}>
+              {viewingApp.media && (
+                <Box
+                  component="img"
+                  src={viewingApp.media}
+                  alt={viewingApp.company_name}
+                  sx={{
+                    width: "100%",
+                    maxHeight: 400,
+                    objectFit: "contain",
+                    borderRadius: 2,
+                    bgcolor: "#0f172a",
+                  }}
+                />
+              )}
+              
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                  {viewingApp.position}
+                </Typography>
+                <Typography variant="h6" sx={{ color: "#94a3b8", mb: 2 }}>
+                  {viewingApp.company_name}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#64748b" }}>Industry</Typography>
+                  <Typography sx={{ color: "#e2e8f0" }}>{viewingApp.industry}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#64748b" }}>Status</Typography>
+                  <Typography sx={{ color: "#e2e8f0" }}>{statusLabels[viewingApp.status]}</Typography>
+                </Box>
+                {viewingApp.package_offered && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "#64748b" }}>Package</Typography>
+                    <Typography sx={{ color: "#e2e8f0" }}>₹{viewingApp.package_offered}L</Typography>
+                  </Box>
+                )}
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#64748b" }}>Application Date</Typography>
+                  <Typography sx={{ color: "#e2e8f0" }}>
+                    {new Date(viewingApp.application_date).toLocaleDateString()}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {viewingApp.notes && (
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#64748b", mb: 1, display: "block" }}>
+                    Description
+                  </Typography>
+                  <Typography sx={{ color: "#e2e8f0", lineHeight: 1.7 }}>
+                    {viewingApp.notes}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
+          <Button onClick={handleCloseDetails} sx={{ color: "#94a3b8" }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Create Modal */}
       <CreateApplicationModal open={openModal} onClose={handleModalClose} />
