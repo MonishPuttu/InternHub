@@ -24,6 +24,7 @@ export const applications = pgTable("applications", {
   offer_date: timestamp("offer_date"),
   rejection_date: timestamp("rejection_date"),
   notes: text("notes"),
+  media: text("media"), // Store base64 encoded image/video or file path
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -55,3 +56,4 @@ export const interview_feedback = pgTable("interview_feedback", {
   conducted_date: timestamp("conducted_date").notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
+
