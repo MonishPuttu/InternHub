@@ -1,85 +1,9 @@
 {
-  "id": "b1bf2a71-be2c-40bf-8746-45f78fe5db14",
-  "prevId": "2ce7c173-0d09-4c8e-8026-6ba7f35b72c2",
+  "id": "ff39cdd6-1a66-4904-b6ef-a3d4436ef0d1",
+  "prevId": "b1bf2a71-be2c-40bf-8746-45f78fe5db14",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.calevents": {
-      "name": "calevents",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "event_date": {
-          "name": "event_date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "event_time": {
-          "name": "event_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "end_time": {
-          "name": "end_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "event_type": {
-          "name": "event_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'oncampus'"
-        },
-        "location": {
-          "name": "location",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "eligible_students": {
-          "name": "eligible_students",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.messages": {
       "name": "messages",
       "schema": "",
@@ -799,12 +723,6 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         },
         "email": {
           "name": "email",

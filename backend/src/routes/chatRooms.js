@@ -1,11 +1,59 @@
 import { db } from "../db/index.js";
-import * as schema from "../db/schema.js";
+import * as schema from "../db/schema/index.js";
 import crypto from "crypto";
 import { asc, eq, or, and } from "drizzle-orm";
 import express from "express";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
+
+// Helper function to get user name from profile tables
+async function getUserName(userId, role) {
+  try {
+    if (role === "student") {
+      const profile = await db
+        .select({ full_name: schema.student_profile.full_name })
+        .from(schema.student_profile)
+        .where(eq(schema.student_profile.user_id, userId))
+        .limit(1);
+      return profile[0]?.full_name || "Unknown";
+    } else if (role === "placement") {
+      const profile = await db
+        .select({ name: schema.placement_profile.name })
+        .from(schema.placement_profile)
+        .where(eq(schema.placement_profile.user_id, userId))
+        .limit(1);
+      return profile[0]?.name || "Unknown";
+    } else if (role === "recruiter") {
+      const profile = await db
+        .select({ full_name: schema.recruiter_profile.full_name })
+        .from(schema.recruiter_profile)
+        .where(eq(schema.recruiter_profile.user_id, userId))
+        .limit(1);
+      return profile[0]?.full_name || "Unknown";
+    }
+    return "Unknown";
+  } catch (error) {
+    console.error("Error fetching user name:", error);
+    return "Unknown";
+  }
+}
+
+// Helper function to check if user is member of room
+async function isUserInRoom(userId, roomId) {
+  const membership = await db
+    .select()
+    .from(schema.room_members)
+    .where(
+      and(
+        eq(schema.room_members.userId, userId),
+        eq(schema.room_members.roomId, roomId)
+      )
+    )
+    .limit(1);
+
+  return membership.length > 0;
+}
 
 router.post("/rooms", requireAuth, async (req, res) => {
   try {
@@ -15,14 +63,12 @@ router.post("/rooms", requireAuth, async (req, res) => {
 
     const id = crypto.randomUUID();
 
-    // Create the room
     await db.insert(schema.rooms).values({
       id,
       name,
       createdAt: new Date(),
     });
 
-    // Add the creator as a member of the room
     await db.insert(schema.room_members).values({
       roomId: id,
       userId: req.user.id,
@@ -40,7 +86,6 @@ router.get("/rooms", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get rooms where the user is a member
     const userRooms = await db
       .select({
         id: schema.rooms.id,
@@ -65,7 +110,6 @@ router.get("/messages", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all messages where user is sender or receiver
     const msgs = await db
       .select()
       .from(schema.messages)
@@ -85,9 +129,21 @@ router.get("/messages", requireAuth, async (req, res) => {
   }
 });
 
+// FIXED: Check room membership before returning messages
 router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
   try {
     const { roomId } = req.params;
+    const userId = req.user.id;
+
+    // Check if user is a member of this room
+    const isMember = await isUserInRoom(userId, roomId);
+
+    if (!isMember) {
+      return res.status(403).json({
+        ok: false,
+        error: "You are not a member of this room",
+      });
+    }
 
     const msgs = await db
       .select()
@@ -96,22 +152,40 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
       .orderBy(asc(schema.messages.createdAt));
 
     console.log(
-      `Fetched ${
-        Array.isArray(msgs) ? msgs.length : 0
+      `Fetched ${Array.isArray(msgs) ? msgs.length : 0
       } messages for room ${roomId}`
     );
 
-    const normalized = (msgs ?? []).map((m) => ({
-      id: m.id,
-      senderId: m.senderId,
-      receiverId: m.receiverId,
-      message: m.message,
-      roomId: m.roomId,
-      createdAt: m.createdAt,
-      timestamp: m.createdAt, // Add timestamp alias for UI compatibility
-    }));
+    // Get sender details for each message
+    const messagesWithSenders = await Promise.all(
+      msgs.map(async (m) => {
+        const users = await db
+          .select()
+          .from(schema.user)
+          .where(eq(schema.user.id, m.senderId))
+          .limit(1);
 
-    res.json({ ok: true, messages: normalized });
+        const sender = users[0];
+        const senderName = sender
+          ? await getUserName(sender.id, sender.role)
+          : "Unknown";
+
+        return {
+          id: m.id,
+          senderId: m.senderId,
+          receiverId: m.receiverId,
+          message: m.message,
+          roomId: m.roomId,
+          createdAt: m.createdAt,
+          timestamp: m.createdAt,
+          senderName,
+          senderEmail: sender?.email || "unknown",
+          senderRole: sender?.role || "unknown",
+        };
+      })
+    );
+
+    res.json({ ok: true, messages: messagesWithSenders });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: String(e) });
@@ -122,6 +196,14 @@ router.get("/messages/:userId/:receiverId", requireAuth, async (req, res) => {
   const { userId, receiverId } = req.params;
 
   try {
+    // Verify the requesting user is one of the participants
+    if (req.user.id !== userId && req.user.id !== receiverId) {
+      return res.status(403).json({
+        ok: false,
+        error: "You are not authorized to view these messages",
+      });
+    }
+
     const messages = await db
       .select()
       .from(schema.messages)
@@ -146,24 +228,49 @@ router.get("/messages/:userId/:receiverId", requireAuth, async (req, res) => {
   }
 });
 
+// FIXED: Check room membership before returning users
 router.get("/rooms/:roomId/users", requireAuth, async (req, res) => {
   try {
     const { roomId } = req.params;
+    const userId = req.user.id;
+
+    // Check if user is a member of this room
+    const isMember = await isUserInRoom(userId, roomId);
+
+    if (!isMember) {
+      return res.status(403).json({
+        ok: false,
+        error: "You are not a member of this room",
+      });
+    }
 
     const roomMembers = await db
       .select({
         id: schema.user.id,
-        name: schema.user.name,
         email: schema.user.email,
+        role: schema.user.role,
         joinedAt: schema.room_members.joinedAt,
       })
       .from(schema.room_members)
       .innerJoin(schema.user, eq(schema.room_members.userId, schema.user.id))
       .where(eq(schema.room_members.roomId, roomId));
 
-    res.json({ ok: true, users: roomMembers });
+    const usersWithNames = await Promise.all(
+      roomMembers.map(async (member) => {
+        const name = await getUserName(member.id, member.role);
+        return {
+          id: member.id,
+          name,
+          email: member.email,
+          role: member.role,
+          joinedAt: member.joinedAt,
+        };
+      })
+    );
+
+    res.json({ ok: true, users: usersWithNames });
   } catch (e) {
-    console.error(e);
+    console.error("Error fetching room users:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });

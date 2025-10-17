@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Box, AppBar, Toolbar, IconButton, Typography } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import Sidebar from "../../modules/sidebar";
 
 const DRAWER_WIDTH = 240;
@@ -9,80 +11,80 @@ export default function ProtectedLayout({ children }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (!token) router.push("/signin");
-
-    const m = window.matchMedia("(min-width: 900px)");
-    const handle = (ev) => setIsDesktop(ev.matches);
-    setIsDesktop(m.matches);
-    m.addEventListener
-      ? m.addEventListener("change", handle)
-      : m.addListener(handle);
-    return () => {
-      m.removeEventListener
-        ? m.removeEventListener("change", handle)
-        : m.removeListener(handle);
-    };
   }, [router]);
 
   if (!mounted) return null;
 
   return (
-    <div
-      style={{ minHeight: "100vh", display: "flex", background: "transparent" }}
-    >
-      {/* Sidebar container — in-flow on desktop so no extra margin calc is required */}
-      <div style={{ width: isDesktop ? DRAWER_WIDTH : "auto", flexShrink: 0 }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+      {/* Sidebar */}
+      <Box
+        component="nav"
+        sx={{
+          width: { md: DRAWER_WIDTH },
+          flexShrink: { md: 0 },
+        }}
+      >
         <Sidebar
-          variant={isDesktop ? "permanent" : "temporary"}
-          open={!isDesktop && mobileOpen}
+          variant="permanent"
+          open={mobileOpen}
           onClose={() => setMobileOpen(false)}
+          sx={{
+            display: { xs: "none", md: "block" },
+          }}
         />
-      </div>
+        <Sidebar
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          sx={{
+            display: { xs: "block", md: "none" },
+          }}
+        />
+      </Box>
 
-      {/* Main content area (no margin-left) */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* top bar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 12,
-            borderBottom: "1px solid rgba(255,255,255,0.04)",
-            background: "transparent",
-            zIndex: 1200,
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          minHeight: "100vh",
+        }}
+      >
+        {/* Top Bar */}
+        <AppBar
+          position="sticky"
+          elevation={0}
+          sx={{
+            bgcolor: "#1e293b",
+            borderBottom: "1px solid #334155",
           }}
         >
-          <button
-            onClick={() => setMobileOpen(true)}
-            style={{
-              display: isDesktop ? "none" : "inline-flex",
-              background: "#6d28d9",
-              color: "#fff",
-              border: "none",
-              padding: "8px 12px",
-              borderRadius: 8,
-              cursor: "pointer",
-              zIndex: 1300,
-            }}
-            aria-label="open menu"
-          >
-            Menu
-          </button>
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={() => setMobileOpen(true)}
+              sx={{ mr: 2, display: { md: "none" } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#e2e8f0" }}>
+              InternHub
+            </Typography>
+          </Toolbar>
+        </AppBar>
 
-          <div style={{ fontWeight: 700, color: "#e2e8f0" }}>InternHub</div>
-
-          <div style={{ width: 56 }} />
-        </div>
-
-        <main style={{ padding: 24 }}>{children}</main>
-      </div>
-    </div>
+        {/* Page Content */}
+        <Box>{children}</Box>
+      </Box>
+    </Box>
   );
 }
