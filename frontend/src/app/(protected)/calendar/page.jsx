@@ -1,4 +1,4 @@
-import EventCalendar from '@/components/calendar/cal';
+import EventCalendar from '@/modules/cal';
 
 export default function calenderpage() {
     return <EventCalendar />
