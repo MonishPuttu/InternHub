@@ -7,34 +7,44 @@ export async function requireAuth(req, res, next) {
     const token = req.get("authorization")?.replace("Bearer ", "");
 
     if (!token) {
-      return res.status(401).json({ ok: false, error: "Missing token" });
+      return res.status(401).json({ ok: false, error: "No token provided" });
     }
 
+    // Fetch session
     const sessions = await db
       .select()
       .from(session)
       .where(eq(session.token, token))
       .limit(1);
 
-    const s = sessions[0];
-    if (!s) {
-      return res.status(401).json({ ok: false, error: "Invalid session" });
+    if (sessions.length === 0) {
+      return res.status(401).json({ ok: false, error: "Invalid token" });
+    }
+
+    const userSession = sessions[0];
+
+    if (new Date() > new Date(userSession.expiresAt)) {
+      await db.delete(session).where(eq(session.token, token));
+      return res
+        .status(401)
+        .json({ ok: false, error: "Session expired", expired: true });
     }
 
     const users = await db
       .select()
       .from(user)
-      .where(eq(user.id, s.userId))
+      .where(eq(user.id, userSession.userId))
       .limit(1);
 
-    const u = users[0];
-    if (!u) {
+    if (users.length === 0) {
       return res.status(401).json({ ok: false, error: "User not found" });
     }
 
-    req.user = u; // attach the user object to the request
+    req.user = users[0];
+    req.session = userSession;
     next();
   } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
+    console.error("Auth middleware error:", e);
+    res.status(500).json({ ok: false, error: "Authentication failed" });
   }
 }
