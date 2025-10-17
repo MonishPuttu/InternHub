@@ -33,6 +33,7 @@ const drawerWidth = 240;
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard" },
   { text: "Opportunities", icon: <BusinessIcon />, path: "/opportunities" },
+  { text: "Post", icon: <DescriptionIcon />, path: "/post" },
   { text: "My Applications", icon: <DescriptionIcon />, path: "/applications" },
   { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile" },
   { text: "Schedule", icon: <ScheduleIcon />, path: "/schedule" },
