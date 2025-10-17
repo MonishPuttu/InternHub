@@ -156,7 +156,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         }
       });
 
-      const response = await fetch('http://localhost:4000/api/analytics/applications', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/posts/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

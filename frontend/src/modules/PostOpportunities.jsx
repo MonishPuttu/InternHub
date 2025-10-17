@@ -65,7 +65,7 @@ export default function PostOpportunities() {
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${BACKEND_URL}/api/analytics/applications`, {
+      const response = await axios.get(`${BACKEND_URL}/api/posts/applications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -93,7 +93,7 @@ export default function PostOpportunities() {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${BACKEND_URL}/api/analytics/applications/${selectedApp.id}`, {
+      await axios.delete(`${BACKEND_URL}/api/posts/applications/${selectedApp.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
