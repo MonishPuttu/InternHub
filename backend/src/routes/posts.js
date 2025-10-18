@@ -154,6 +154,9 @@ router.put("/admin/posts/:id/approve", requireAuth, async (req, res) => {
 // Get approved posts (for students)
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
+    // Only students should fetch approved posts
+    if (req.user.role !== "student") return res.status(403).json({ ok: false, error: "Forbidden" });
+
     const posts = await db.select().from(applications).where(eq(applications.approved, true)).orderBy(desc(applications.application_date)).limit(200);
     res.json({ ok: true, posts });
   } catch (e) {

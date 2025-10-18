@@ -21,8 +21,10 @@ export default function ProtectedRoute({ children }) {
 
     if (!hasAccess) {
       console.warn(`Access denied for role: ${userRole} to route: ${pathname}`);
-      // Redirect to login if unauthorized
-      router.push("/signin");
+      // Redirect to dashboard if unauthorized (user may be logged in but lacks role)
+      router.push("/dashboard");
+      setIsAuthorized(false);
+      setIsLoading(false);
       return;
     }
 

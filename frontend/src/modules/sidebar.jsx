@@ -30,19 +30,21 @@ import {
 
 const drawerWidth = 240;
 
+import { getUser } from "@/lib/session";
+
 const navigationItems = [
-  { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard" },
-  { text: "Opportunities", icon: <BusinessIcon />, path: "/opportunities" },
-  { text: "Browse Posts", icon: <DescriptionIcon />, path: "/post_student" },
-  { text: "Post Opportunity", icon: <DescriptionIcon />, path: "/post" },
-  { text: "Manage Posts", icon: <DescriptionIcon />, path: "/post_admin" },
-  { text: "My Applications", icon: <DescriptionIcon />, path: "/applications" },
-  { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile" },
-  { text: "Schedule", icon: <ScheduleIcon />, path: "/schedule" },
-  { text: "Analytics", icon: <BarChartIcon />, path: "/analytics" },
-  { text: "Skills & Certificates", icon: <EmojiEventsIcon />, path: "/skills" },
-  { text: "Chat", icon: <FeedbackIcon />, path: "/chat" },
-  { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+  { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
+  { text: "Opportunities", icon: <BusinessIcon />, path: "/opportunities", roles: null },
+  { text: "Browse Posts", icon: <DescriptionIcon />, path: "/post_student", roles: ["student"] },
+  { text: "Post Opportunity", icon: <DescriptionIcon />, path: "/post", roles: ["recruiter"] },
+  { text: "Manage Posts", icon: <DescriptionIcon />, path: "/post_admin", roles: ["placement"] },
+  { text: "My Applications", icon: <DescriptionIcon />, path: "/applications", roles: null },
+  { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile", roles: null },
+  { text: "Schedule", icon: <ScheduleIcon />, path: "/schedule", roles: null },
+  { text: "Analytics", icon: <BarChartIcon />, path: "/analytics", roles: null },
+  { text: "Skills & Certificates", icon: <EmojiEventsIcon />, path: "/skills", roles: null },
+  { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
+  { text: "Settings", icon: <SettingsIcon />, path: "/settings", roles: null },
 ];
 
 export default function Sidebar({
@@ -58,6 +60,9 @@ export default function Sidebar({
     router.push(path);
     if (variant === "temporary" && typeof onClose === "function") onClose();
   };
+
+  const user = typeof window !== "undefined" ? getUser() : null;
+  const userRole = user ? user.role : null;
 
   const drawerDisplay =
     variant === "permanent"
@@ -132,46 +137,54 @@ export default function Sidebar({
         </Box>
 
         <List sx={{ px: 1.5 }}>
-          {navigationItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => handleNavigation(item.path)}
-                  sx={{
-                    borderRadius: 1,
-                    py: 1,
-                    px: 1.5,
-                    backgroundColor: isActive
-                      ? alpha("#8b5cf6", 0.12)
-                      : "transparent",
-                    color: isActive ? "#a78bfa" : "#94a3b8",
-                    "&:hover": {
-                      backgroundColor: isActive
-                        ? alpha("#8b5cf6", 0.18)
-                        : alpha("#8b5cf6", 0.04),
-                    },
-                  }}
-                >
-                  <ListItemIcon
+          {navigationItems
+            .filter((item) => {
+              // If roles is null -> public item
+              if (!item.roles) return true;
+              // If user not available, hide role-restricted items
+              if (!userRole) return false;
+              return item.roles.includes(userRole);
+            })
+            .map((item) => {
+              const isActive = pathname === item.path;
+              return (
+                <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => handleNavigation(item.path)}
                     sx={{
-                      minWidth: 36,
-                      color: isActive ? "#a78bfa" : "#64748b",
+                      borderRadius: 1,
+                      py: 1,
+                      px: 1.5,
+                      backgroundColor: isActive
+                        ? alpha("#8b5cf6", 0.12)
+                        : "transparent",
+                      color: isActive ? "#a78bfa" : "#94a3b8",
+                      "&:hover": {
+                        backgroundColor: isActive
+                          ? alpha("#8b5cf6", 0.18)
+                          : alpha("#8b5cf6", 0.04),
+                      },
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: "0.875rem",
-                      fontWeight: isActive ? 600 : 400,
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 36,
+                        color: isActive ? "#a78bfa" : "#64748b",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: "0.875rem",
+                        fontWeight: isActive ? 600 : 400,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
         </List>
 
         <Box sx={{ px: 2, mt: 2 }}></Box>

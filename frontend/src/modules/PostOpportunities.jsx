@@ -28,6 +28,7 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { CreateApplicationModal } from "../components/CreateApplicationModal";
+import { getUser } from "@/lib/session";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -140,21 +141,31 @@ export default function PostOpportunities() {
             Manage your internship and job applications
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenModal(true)}
-          sx={{
-            bgcolor: "#8b5cf6",
-            "&:hover": { bgcolor: "#7c3aed" },
-            fontWeight: 600,
-            textTransform: "none",
-            px: 3,
-            py: 1.5,
-          }}
-        >
-          Create Post
-        </Button>
+        {(() => {
+          const user = typeof window !== "undefined" ? getUser() : null;
+          const role = user ? user.role : null;
+          // Only recruiters can create posts
+          if (role === "recruiter") {
+            return (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenModal(true)}
+                sx={{
+                  bgcolor: "#8b5cf6",
+                  "&:hover": { bgcolor: "#7c3aed" },
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 3,
+                  py: 1.5,
+                }}
+              >
+                Create Post
+              </Button>
+            );
+          }
+          return null;
+        })()}
       </Box>
 
       {/* Applications List */}

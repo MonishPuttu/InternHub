@@ -2,7 +2,7 @@ import { getUser } from "@/lib/session";
 
 const roleAccessMap = {
   "/post_student": ["student"], // Browse posts - only students
-  "/post_recruiter": ["recruiter"], // Create opportunity - only recruiters
+  "/post": ["recruiter"], // Create opportunity - only recruiters (route is /post)
   "/post_admin": ["placement"], // Manage posts - only placement cell
 };
 
