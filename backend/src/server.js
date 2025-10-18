@@ -5,7 +5,9 @@ import { Server } from "socket.io";
 import authRoutes from "./routes/auth.js"; // User login/signup routes
 import chatSocket from "./routes/chat.js"; // Websocket chat logic
 import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
-import calendarRoutes from "./routes/calendar.js";// calendar
+import analyticsRoutes from "./routes/analytics.js"; // Stats logic
+import profileRoutes from "./routes/profile.js"; // Profile Page
+
 const app = express();
 
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
@@ -13,32 +15,19 @@ app.use(express.json());
 
 import dotenv from "dotenv";
 
-// import authRoutes from "./routes/auth.js"; // User login/signup routes
-// import chatSocket from "./routes/chat.js"; // Websocket chat logic
-// import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
-import analyticsRoutes from "./routes/analytics.js"; // Stats logic
-import postsRoutes from "./routes/posts.js"; // Post management routes
-
-
-
 dotenv.config();
 
 const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoutes);
 app.use("/api/analytics", analyticsRoutes);
-app.use("/api/posts", postsRoutes);
-
-app.use("/api/auth", authRoutes);
-app.use("/api", chatRoutes);
-app.use("/api", calendarRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
