@@ -25,7 +25,6 @@ import {
     LocationOn,
     Close,
     Group,
-    Delete,
 } from "@mui/icons-material";
 
 export default function EventCalendar() {
@@ -38,7 +37,6 @@ export default function EventCalendar() {
     const [errorMsg, setErrorMsg] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
-    // const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: "",
         eventDate: "",
@@ -50,7 +48,10 @@ export default function EventCalendar() {
         description: "",
     });
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000/api/calendar";
+
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+    const BACKEND_URL = `${BASE_URL}/api/calendar`;
+    // console.log("BACKEND_URL:", BACKEND_URL);
 
     useEffect(() => {
         setCurrentDate(new Date());
@@ -106,6 +107,11 @@ export default function EventCalendar() {
 
             if (data.ok) {
                 let filteredEvents = data.calevents || [];
+
+                // Show info if duplicates were removed
+                if (data.duplicatesRemoved > 0) {
+                    setSuccessMsg(`Cleaned up ${data.duplicatesRemoved} duplicate event(s)`);
+                }
 
                 // Backend already filters out ended events, just apply UI filters
                 if (currentDate) {
@@ -268,7 +274,7 @@ export default function EventCalendar() {
         }
 
         try {
-            const response = await fetch(`${BACKEND_URL}`, {
+            const response = await fetch(BACKEND_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -293,7 +299,12 @@ export default function EventCalendar() {
                     description: "",
                 });
             } else {
-                setErrorMsg(data.error || "Failed to create event");
+                // Handle duplicate error specifically
+                if (data.duplicate) {
+                    setErrorMsg("This event already exists! A duplicate event was not created.");
+                } else {
+                    setErrorMsg(data.error || "Failed to create event");
+                }
             }
         } catch (error) {
             console.error("Error:", error);
@@ -305,7 +316,6 @@ export default function EventCalendar() {
 
     return (
         <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto", p: { xs: 2, sm: 3 } }}>
-
             {/* Header */}
             <Box sx={{ mb: 4 }}>
                 <Box

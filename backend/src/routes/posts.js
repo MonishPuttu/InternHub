@@ -154,10 +154,43 @@ router.put("/admin/posts/:id/approve", requireAuth, async (req, res) => {
 // Get approved posts (for students)
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
+    // Only students should fetch approved posts
+    if (req.user.role !== "student") return res.status(403).json({ ok: false, error: "Forbidden" });
+
     const posts = await db.select().from(applications).where(eq(applications.approved, true)).orderBy(desc(applications.application_date)).limit(200);
     res.json({ ok: true, posts });
   } catch (e) {
     console.error("Error fetching approved posts:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+
+// Get a single application by ID 
+router.get("/applications/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Fetch the application
+    const app = await db
+      .select()
+      .from(applications)
+      .where(eq(applications.id, id))
+      .limit(1);
+
+    if (app.length === 0) {
+      return res.status(404).json({ ok: false, error: "Application not found" });
+    }
+
+    // Check if user owns this application OR if user is placement cell (can view all)
+    if (app[0].user_id !== userId && req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden: You don't have access to this post" });
+    }
+
+    res.json({ ok: true, application: app[0] });
+  } catch (e) {
+    console.error("Error fetching application by ID:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });

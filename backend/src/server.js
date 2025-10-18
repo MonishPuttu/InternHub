@@ -7,16 +7,15 @@ import chatSocket from "./routes/chat.js"; // Websocket chat logic
 import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
 import calendarRoutes from "./routes/calendar.js";// calendar
 const app = express();
-const router = express.Router();
 
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
 app.use(express.json());
 
 import dotenv from "dotenv";
 
-import authRoutes from "./routes/auth.js"; // User login/signup routes
-import chatSocket from "./routes/chat.js"; // Websocket chat logic
-import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
+// import authRoutes from "./routes/auth.js"; // User login/signup routes
+// import chatSocket from "./routes/chat.js"; // Websocket chat logic
+// import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
 import analyticsRoutes from "./routes/analytics.js"; // Stats logic
 import postsRoutes from "./routes/posts.js"; // Post management routes
 
@@ -39,7 +38,7 @@ app.use("/api/posts", postsRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoutes);
-app.use("/api", calendarRoutes(router));
+app.use("/api", calendarRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
