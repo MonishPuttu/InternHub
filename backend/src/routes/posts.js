@@ -127,13 +127,20 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Delete post (only owner)
+// Delete post (owner or placement officers)
 router.delete("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
 
-    await db.delete(posts).where(and(eq(posts.id, id), eq(posts.user_id, userId)));
+    if (userRole === "placement") {
+      // placement officers may delete any post
+      await db.delete(posts).where(eq(posts.id, id));
+    } else {
+      // others may only delete their own posts
+      await db.delete(posts).where(and(eq(posts.id, id), eq(posts.user_id, userId)));
+    }
 
     res.json({ ok: true });
   } catch (e) {

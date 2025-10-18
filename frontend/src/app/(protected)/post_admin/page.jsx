@@ -85,7 +85,7 @@ export default function PostAdminPage() {
   const [editingApp, setEditingApp] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 
-    const handleError = (error, defaultMessage) => {
+  const handleError = (error, defaultMessage) => {
     console.error(defaultMessage, error);
     const errorMessage = error.response?.data?.error || error.message || defaultMessage;
     setErrorMsg(errorMessage);
@@ -135,93 +135,102 @@ export default function PostAdminPage() {
     setViewingApp(null);
   };
 
-  const openActionDialog = (type) => {
-    setActionType(type);
-    setRejectionReason("");
-    setActionDialogOpen(true);
-    handleMenuClose();
+const openActionDialog = (type, app) => {
+  setActionType(type);
+  setSelectedApp(app);
+  setRejectionReason("");
+  setActionDialogOpen(true);
+  // close context menu but keep selectedApp for the dialog actions
+  setAnchorEl(null);
+};
+
+  const handleApprovePost = async () => {
+    if (!selectedApp) {
+      console.error("❌ No app selected for approval");
+      setErrorMsg("No post selected");
+      return;
+    }
+
+    console.log("🔵 Approving post:", selectedApp.id);
+
+    try {
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        setErrorMsg("Authentication required");
+        return;
+      }
+      
+      const payload = {
+        approval_status: "approved",
+        rejection_reason: null,
+      };
+      
+      console.log("🔵 Sending approval payload:", payload);
+      
+      const response = await axios.put(
+        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log("✅ Approve response:", response.data);
+
+      if (response.data.ok) {
+        setSuccessMsg("Post approved successfully!");
+        setActionDialogOpen(false);
+        setSelectedApp(null);
+        await fetchAllApplications();
+      } else {
+        setErrorMsg(response.data.error || "Failed to approve post");
+      }
+    } catch (error) {
+      console.error("❌ Error approving post:", error.response || error);
+      handleError(error, "Failed to approve post");
+    }
   };
 
-const handleApprovePost = async () => {
-  if (!selectedApp) return;
+  const handleDisapprovePost = async () => {
+    if (!selectedApp) {
+      console.error("❌ No app selected for disapproval");
+      setErrorMsg("No post selected");
+      return;
+    }
 
-  console.log("🔵 Approving post:", selectedApp.id); // 👈 ADD THIS
+    console.log("🟠 Deleting post (disapprove):", selectedApp.id);
 
-  try {
-    const token = localStorage.getItem("token");
-    
-    const payload = {
-      approval_status: "approved",
-      rejection_reason: null,
-    };
-    
-    console.log("🔵 Sending approval payload:", payload); // 👈 ADD THIS
-    
-    const response = await axios.put(
-      `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-      payload,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setErrorMsg("Authentication required");
+        return;
+      }
 
-    console.log("✅ Approve response:", response.data); // 👈 ADD THIS
+      const response = await axios.delete(
+        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    setSuccessMsg("Post approved successfully!");
-    setActionDialogOpen(false);
-    setSelectedApp(null);
-    fetchAllApplications();
-  } catch (error) {
-    console.error("❌ Error approving post:", error.response || error); // 👈 ADD THIS
-    handleError(error, "Failed to approve post"); // 👈 USE THE HELPER
-  }
-};
-
-const handleDisapprovePost = async () => {
-  if (!selectedApp) return;
-
-  if (!rejectionReason.trim()) {
-    setErrorMsg("Please provide a reason for disapproval");
-    return;
-  }
-
-  console.log("🟠 Disapproving post:", selectedApp.id); // 👈 ADD THIS
-
-  try {
-    const token = localStorage.getItem("token");
-    
-    const payload = {
-      approval_status: "disapproved",
-      rejection_reason: rejectionReason,
-    };
-    
-    console.log("🟠 Sending disapproval payload:", payload); // 👈 ADD THIS
-
-    const response = await axios.put(
-      `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-      payload,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    console.log("✅ Disapprove response:", response.data); // 👈 ADD THIS
-
-    setSuccessMsg("Post disapproved successfully!");
-    setActionDialogOpen(false);
-    setRejectionReason("");
-    setSelectedApp(null);
-    fetchAllApplications();
-  } catch (error) {
-    console.error("❌ Error disapproving post:", error.response || error); // 👈 ADD THIS
-    handleError(error, "Failed to disapprove post"); // 👈 USE THE HELPER
-  }
-};
+      if (response.data && response.data.ok) {
+        setSuccessMsg("Post deleted successfully");
+        setActionDialogOpen(false);
+        setRejectionReason("");
+        setSelectedApp(null);
+        await fetchAllApplications();
+      } else {
+        setErrorMsg(response.data?.error || "Failed to delete post");
+      }
+    } catch (error) {
+      console.error("❌ Error deleting post:", error.response || error);
+      handleError(error, "Failed to delete post");
+    }
+  };
 
   const handleActionConfirm = () => {
     if (actionType === "approve") {
       handleApprovePost();
     } else if (actionType === "disapprove") {
-      if (!rejectionReason.trim()) {
-        setErrorMsg("Please provide a reason for disapproval");
-        return;
-      }
+      // disapprove now deletes the post (placement will be allowed server-side)
       handleDisapprovePost();
     }
   };
@@ -244,42 +253,39 @@ const handleDisapprovePost = async () => {
     handleMenuClose();
   };
 
-const handleSaveEdit = async () => {
-  if (!editingApp) return;
+  const handleSaveEdit = async () => {
+    if (!editingApp) return;
 
-  console.log("🟡 Editing post:", editingApp.id);
-  console.log("🟡 Edit form data:", editFormData); 
+    console.log("🟡 Editing post:", editingApp.id);
+    console.log("🟡 Edit form data:", editFormData); 
 
-  try {
-    const token = localStorage.getItem("token");
-    
-    // Prepare update data
-    const updatePayload = { ...editFormData };
-    
-    // Remove empty fields
-    Object.keys(updatePayload).forEach(key => {
-      if (updatePayload[key] === '' || updatePayload[key] === null) {
-        delete updatePayload[key];
-      }
-    });
+    try {
+      const token = localStorage.getItem("token");
+      
+      const updatePayload = { ...editFormData };
+      
+      Object.keys(updatePayload).forEach(key => {
+        if (updatePayload[key] === '' || updatePayload[key] === null) {
+          delete updatePayload[key];
+        }
+      });
 
-    await axios.put(
-      `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
-      updatePayload,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      await axios.put(
+        `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
+        updatePayload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    setSuccessMsg("Post updated successfully!");
-    setEditDialogOpen(false);
-    setEditingApp(null);
-    setEditFormData({});
-    fetchAllApplications();
-  } catch (error) {
-    console.error("Error updating post:", error);
-    setErrorMsg(error.response?.data?.error || "Failed to update post");
-  }
-};
-
+      setSuccessMsg("Post updated successfully!");
+      setEditDialogOpen(false);
+      setEditingApp(null);
+      setEditFormData({});
+      fetchAllApplications();
+    } catch (error) {
+      console.error("Error updating post:", error);
+      setErrorMsg(error.response?.data?.error || "Failed to update post");
+    }
+  };
 
   const getApprovalStatus = (app) => {
     return app.approval_status || "pending";
@@ -487,29 +493,17 @@ const handleSaveEdit = async () => {
               {isPending && (
                 <>
                   <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<CheckCircleIcon />}
-                    onClick={() => {
-                      setSelectedApp(app);
-                      openActionDialog("approve");
-                    }}
-                    sx={{
-                      bgcolor: "#10b981",
-                      "&:hover": { bgcolor: "#059669" },
-                      textTransform: "none",
-                      fontWeight: 600,
-                    }}
+                  variant="contained"
+                  size="small"
+                  startIcon={<CheckCircleIcon />}
+                  onClick={() => openActionDialog("approve", app)}
                   >
                     Approve
                   </Button>
                   <Button
                     variant="outlined"
                     size="small"
-                    onClick={() => {
-                      setSelectedApp(app);
-                      openActionDialog("disapprove");
-                    }}
+                    onClick={() => openActionDialog("disapprove", app)}
                     sx={{
                       color: "#ef4444",
                       borderColor: "#ef4444",
@@ -895,7 +889,7 @@ const handleSaveEdit = async () => {
               rows={4}
               value={editFormData.notes || ""}
               onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
-              sx={{
+                sx={{
                 "& .MuiOutlinedInput-root": {
                   backgroundColor: "#0f172a",
                   color: "#e2e8f0",
