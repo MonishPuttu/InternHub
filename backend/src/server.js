@@ -10,6 +10,7 @@ import chatSocket from "./routes/chat.js"; // Websocket chat logic
 import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
 import analyticsRoutes from "./routes/analytics.js"; // Stats logic
 import profileRoutes from "./routes/profile.js"; // Profile Page
+import dashboardRoutes from "./routes/Dashboard.js"; // Dashobard page
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", chatRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
