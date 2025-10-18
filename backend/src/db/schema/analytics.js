@@ -23,7 +23,6 @@ export const applications = pgTable("applications", {
   status: text("status").notNull().default("applied"), // applied, interview_scheduled, interviewed, offer, rejected
   package_offered: decimal("package_offered", { precision: 10, scale: 2 }), // in lakhs
   notes: text("notes"),
-  media: text("media"), // Store base64 encoded image/video or file path
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -56,4 +55,3 @@ export const interview_feedback = pgTable("interview_feedback", {
 
   created_at: timestamp("created_at").defaultNow(),
 });
-
