@@ -46,12 +46,6 @@ async function getUserName(userId, role) {
   }
 }
 
-const SESSION_DURATIONS = {
-  student: 7 * 24 * 60 * 60 * 1000, // 7 days
-  placement: 3 * 24 * 60 * 60 * 1000, // 3 days
-  recruiter: 1 * 24 * 60 * 60 * 1000, // 1 day
-};
-
 router.post("/signup", async (req, res) => {
   try {
     const { email, password, role, profileData } = req.body;
@@ -158,9 +152,7 @@ router.post("/signup", async (req, res) => {
     }
 
     const token = crypto.randomUUID();
-    const sessionDuration =
-      SESSION_DURATIONS[role] || SESSION_DURATIONS.student;
-    const expiresAt = new Date(Date.now() + sessionDuration);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await db.insert(session).values({
       token,
@@ -170,6 +162,7 @@ router.post("/signup", async (req, res) => {
       userAgent: req.get("user-agent") ?? null,
     });
 
+    // Get name for response
     const name = await getUserName(newUser.id, newUser.role);
 
     res.status(201).json({
@@ -178,10 +171,9 @@ router.post("/signup", async (req, res) => {
         id: newUser.id,
         email: newUser.email,
         role: newUser.role,
-        name,
+        name, // Add name field for backward compatibility
       },
       token,
-      expiresAt: expiresAt.toISOString(), // Send expiry to frontend
     });
   } catch (e) {
     console.error("Signup error:", e);
@@ -232,9 +224,7 @@ router.post("/signin", async (req, res) => {
     }
 
     const token = crypto.randomUUID();
-    const sessionDuration =
-      SESSION_DURATIONS[foundUser.role] || SESSION_DURATIONS.student;
-    const expiresAt = new Date(Date.now() + sessionDuration);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await db.insert(session).values({
       id: crypto.randomUUID(),
@@ -245,6 +235,7 @@ router.post("/signin", async (req, res) => {
       userAgent: req.get("user-agent") ?? null,
     });
 
+    // Get name for response
     const name = await getUserName(foundUser.id, foundUser.role);
 
     res.json({
@@ -253,10 +244,9 @@ router.post("/signin", async (req, res) => {
         id: foundUser.id,
         email: foundUser.email,
         role: foundUser.role,
-        name,
+        name, // Add name field for backward compatibility
       },
       token,
-      expiresAt: expiresAt.toISOString(),
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });

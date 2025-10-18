@@ -82,7 +82,6 @@ export default function SignUp() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("sessionExpires", data.expiresAt);
 
       router.push("/dashboard");
     } catch (err) {
