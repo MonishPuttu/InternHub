@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import {
   AttachMoney as AttachMoneyIcon,
@@ -25,7 +27,7 @@ import {
   Close as CloseIcon,
   MoreVert as MoreVertIcon,
   CheckCircle as CheckCircleIcon,
-  Cancel as CancelIconMui,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 
@@ -47,19 +49,27 @@ const statusLabels = {
   rejected: "Rejected",
 };
 
-const approvalStatusColors = {
-  pending: "#fbbf24",
-  approved: "#10b981",
-  disapproved: "#ef4444",
-};
+const INDUSTRIES = [
+  "Technology",
+  "Finance",
+  "Healthcare",
+  "Consulting",
+  "Manufacturing",
+  "Retail",
+  "Education",
+  "Other",
+];
 
-const approvalStatusLabels = {
-  pending: "Pending Review",
-  approved: "Approved",
-  disapproved: "Disapproved",
-};
+const STATUS_OPTIONS = [
+  { value: "applied", label: "Applied" },
+  { value: "interview_scheduled", label: "Interview Scheduled" },
+  { value: "interviewed", label: "Interviewed" },
+  { value: "offer", label: "Offer Received" },
+  { value: "rejected", label: "Rejected" },
+];
 
 export default function PostAdminPage() {
+  const [activeTab, setActiveTab] = useState(0);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -69,8 +79,11 @@ export default function PostAdminPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [viewingApp, setViewingApp] = useState(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [actionType, setActionType] = useState(null); // 'approve' or 'disapprove'
+  const [actionType, setActionType] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingApp, setEditingApp] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
 
   useEffect(() => {
     fetchAllApplications();
@@ -182,6 +195,46 @@ export default function PostAdminPage() {
     }
   };
 
+  const handleEditPost = (app) => {
+    setEditingApp(app);
+    setEditFormData({
+      company_name: app.company_name,
+      position: app.position,
+      industry: app.industry,
+      application_date: app.application_date?.split('T')[0] || '',
+      status: app.status,
+      package_offered: app.package_offered || '',
+      interview_date: app.interview_date?.split('T')[0] || '',
+      offer_date: app.offer_date?.split('T')[0] || '',
+      rejection_date: app.rejection_date?.split('T')[0] || '',
+      notes: app.notes || '',
+    });
+    setEditDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
+        {
+          ...editFormData,
+          updated_at: new Date(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setSuccessMsg("Post updated successfully!");
+      setEditDialogOpen(false);
+      setEditingApp(null);
+      fetchAllApplications();
+    } catch (error) {
+      console.error("Error updating post:", error);
+      setErrorMsg("Failed to update post");
+    }
+  };
+
   const getApprovalStatus = (app) => {
     return app.approval_status || "pending";
   };
@@ -189,6 +242,12 @@ export default function PostAdminPage() {
   const pendingPosts = applications.filter(
     (app) => getApprovalStatus(app) === "pending"
   );
+
+  const approvedPosts = applications.filter(
+    (app) => getApprovalStatus(app) === "approved"
+  );
+
+  const currentPosts = activeTab === 0 ? pendingPosts : approvedPosts;
 
   if (loading) {
     return (
@@ -198,6 +257,253 @@ export default function PostAdminPage() {
     );
   }
 
+  const renderPostCard = (app, isPending) => {
+    return (
+      <Card
+        key={app.id}
+        elevation={0}
+        sx={{
+          bgcolor: "#1e293b",
+          border: isPending
+            ? "2px solid #fbbf24"
+            : "1px solid #334155",
+          borderRadius: 2,
+          p: 3,
+          transition: "all 0.2s",
+          "&:hover": {
+            borderColor: "#8b5cf6",
+            transform: "translateY(-2px)",
+            boxShadow: "0 8px 24px rgba(139, 92, 246, 0.15)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {app.media && (
+            <Box
+              component="img"
+              src={app.media}
+              alt={app.company_name}
+              sx={{
+                width: "100%",
+                height: 280,
+                borderRadius: 2,
+                objectFit: "cover",
+                border: "2px solid #334155",
+              }}
+            />
+          )}
+
+          <Box sx={{ display: "flex", gap: 3, alignItems: "start", flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                alignItems: "center",
+                minWidth: 100,
+              }}
+            >
+              <Chip
+                label={statusLabels[app.status]}
+                size="small"
+                sx={{
+                  bgcolor: `${statusColors[app.status]}30`,
+                  color: statusColors[app.status],
+                  fontWeight: 600,
+                  fontSize: "0.7rem",
+                  px: 1,
+                }}
+              />
+              {isPending && (
+                <Chip
+                  label="Pending Review"
+                  size="small"
+                  sx={{
+                    bgcolor: `rgba(251, 191, 36, 0.2)`,
+                    color: "#fbbf24",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    border: `1px solid #fbbf24`,
+                  }}
+                />
+              )}
+              {!isPending && (
+                <Chip
+                  label="✓ Approved"
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(16, 185, 129, 0.2)",
+                    color: "#10b981",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    border: "1px solid #10b981",
+                  }}
+                />
+              )}
+            </Box>
+
+            <Box sx={{ flex: 1, minWidth: 300 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "start",
+                  mb: 2,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#e2e8f0",
+                      fontWeight: 700,
+                      mb: 0.5,
+                    }}
+                  >
+                    {app.position}
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: "#94a3b8",
+                      fontWeight: 600,
+                      mb: 1,
+                    }}
+                  >
+                    {app.company_name}
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleMenuOpen(e, app)}
+                  sx={{ color: "#94a3b8" }}
+                >
+                  <MoreVertIcon />
+                </IconButton>
+              </Box>
+
+              {app.notes && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#64748b",
+                    mb: 2,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {app.notes.length > 150
+                    ? `${app.notes.substring(0, 150)}...`
+                    : app.notes}
+                </Typography>
+              )}
+
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 3,
+                  mb: 2,
+                  flexWrap: "wrap",
+                }}
+              >
+                {app.package_offered && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <AttachMoneyIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                    <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                      ₹{app.package_offered}L
+                    </Typography>
+                  </Box>
+                )}
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <LocationOnIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                    {app.industry}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                    Posted {new Date(app.application_date).toLocaleDateString()}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                minWidth: 120,
+              }}
+            >
+              {isPending && (
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<CheckCircleIcon />}
+                    onClick={() => {
+                      setSelectedApp(app);
+                      openActionDialog("approve");
+                    }}
+                    sx={{
+                      bgcolor: "#10b981",
+                      "&:hover": { bgcolor: "#059669" },
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setSelectedApp(app);
+                      openActionDialog("disapprove");
+                    }}
+                    sx={{
+                      color: "#ef4444",
+                      borderColor: "#ef4444",
+                      "&:hover": {
+                        bgcolor: "rgba(239, 68, 68, 0.1)",
+                        borderColor: "#ef4444",
+                      },
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Disapprove
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<EditIcon />}
+                onClick={() => handleEditPost(app)}
+                sx={{
+                  color: "#8b5cf6",
+                  borderColor: "#8b5cf6",
+                  "&:hover": {
+                    bgcolor: "rgba(139, 92, 246, 0.1)",
+                    borderColor: "#8b5cf6",
+                  },
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Edit
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Card>
+    );
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -206,7 +512,7 @@ export default function PostAdminPage() {
           Post Management
         </Typography>
         <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-          Review and approve/disapprove posted opportunities
+          Review and manage posted opportunities
         </Typography>
         <Box sx={{ mt: 2, display: "flex", gap: 3 }}>
           <Box>
@@ -215,6 +521,14 @@ export default function PostAdminPage() {
             </Typography>
             <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 700 }}>
               {pendingPosts.length}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Approved Posts
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
+              {approvedPosts.length}
             </Typography>
           </Box>
           <Box>
@@ -228,8 +542,33 @@ export default function PostAdminPage() {
         </Box>
       </Box>
 
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: "#334155", mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{
+            "& .MuiTab-root": {
+              color: "#94a3b8",
+              textTransform: "none",
+              fontSize: "1rem",
+              fontWeight: 500,
+              "&.Mui-selected": {
+                color: "#8b5cf6",
+              },
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#8b5cf6",
+            },
+          }}
+        >
+          <Tab label={`Pending Review (${pendingPosts.length})`} />
+          <Tab label={`Approved Posts (${approvedPosts.length})`} />
+        </Tabs>
+      </Box>
+
       {/* Posts List */}
-      {applications.length === 0 ? (
+      {currentPosts.length === 0 ? (
         <Box
           sx={{
             textAlign: "center",
@@ -240,256 +579,17 @@ export default function PostAdminPage() {
           }}
         >
           <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
-            No posts available for review
+            {activeTab === 0 ? "No pending posts" : "No approved posts yet"}
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            Check back later for posts to review
+            {activeTab === 0
+              ? "All posts have been reviewed"
+              : "Approve posts from the Pending Review tab"}
           </Typography>
         </Box>
       ) : (
         <Stack spacing={3}>
-          {applications.map((app) => {
-            const approvalStatus = getApprovalStatus(app);
-            return (
-              <Card
-                key={app.id}
-                elevation={0}
-                sx={{
-                  bgcolor: "#1e293b",
-                  border:
-                    approvalStatus === "pending"
-                      ? "2px solid #fbbf24"
-                      : "1px solid #334155",
-                  borderRadius: 2,
-                  p: 3,
-                  transition: "all 0.2s",
-                  "&:hover": {
-                    borderColor: "#8b5cf6",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 8px 24px rgba(139, 92, 246, 0.15)",
-                  },
-                  opacity: approvalStatus === "disapproved" ? 0.6 : 1,
-                }}
-              >
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {/* Top Section - Image Banner (if exists) */}
-                  {app.media && (
-                    <Box
-                      component="img"
-                      src={app.media}
-                      alt={app.company_name}
-                      sx={{
-                        width: "100%",
-                        height: 280,
-                        borderRadius: 2,
-                        objectFit: "cover",
-                        border: "2px solid #334155",
-                      }}
-                    />
-                  )}
-
-                  {/* Content Section */}
-                  <Box sx={{ display: "flex", gap: 3, alignItems: "start", flexWrap: "wrap" }}>
-                    {/* Status & Approval Badge */}
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                        alignItems: "center",
-                        minWidth: 100,
-                      }}
-                    >
-                      <Chip
-                        label={statusLabels[app.status]}
-                        size="small"
-                        sx={{
-                          bgcolor: `${statusColors[app.status]}30`,
-                          color: statusColors[app.status],
-                          fontWeight: 600,
-                          fontSize: "0.7rem",
-                          px: 1,
-                        }}
-                      />
-                      <Chip
-                        label={approvalStatusLabels[approvalStatus]}
-                        size="small"
-                        sx={{
-                          bgcolor: `${approvalStatusColors[approvalStatus]}20`,
-                          color: approvalStatusColors[approvalStatus],
-                          fontWeight: 700,
-                          fontSize: "0.75rem",
-                          border: `1px solid ${approvalStatusColors[approvalStatus]}`,
-                        }}
-                      />
-                    </Box>
-
-                    {/* Main Content */}
-                    <Box sx={{ flex: 1, minWidth: 300 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "start",
-                          mb: 2,
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              color: "#e2e8f0",
-                              fontWeight: 700,
-                              mb: 0.5,
-                            }}
-                          >
-                            {app.position}
-                          </Typography>
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              color: "#94a3b8",
-                              fontWeight: 600,
-                              mb: 1,
-                            }}
-                          >
-                            {app.company_name}
-                          </Typography>
-                        </Box>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleMenuOpen(e, app)}
-                          sx={{ color: "#94a3b8" }}
-                          disabled={approvalStatus !== "pending"}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </Box>
-
-                      {app.notes && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: "#64748b",
-                            mb: 2,
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {app.notes.length > 150
-                            ? `${app.notes.substring(0, 150)}...`
-                            : app.notes}
-                        </Typography>
-                      )}
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 3,
-                          mb: 2,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {app.package_offered && (
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <AttachMoneyIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                              ₹{app.package_offered}L
-                            </Typography>
-                          </Box>
-                        )}
-
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <LocationOnIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                            {app.industry}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                            Posted {new Date(app.application_date).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-
-                    {/* Action Buttons */}
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                        minWidth: 120,
-                      }}
-                    >
-                      {approvalStatus === "pending" && (
-                        <>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<CheckCircleIcon />}
-                            onClick={() => {
-                              setSelectedApp(app);
-                              openActionDialog("approve");
-                            }}
-                            sx={{
-                              bgcolor: "#10b981",
-                              "&:hover": { bgcolor: "#059669" },
-                              textTransform: "none",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => {
-                              setSelectedApp(app);
-                              openActionDialog("disapprove");
-                            }}
-                            sx={{
-                              color: "#ef4444",
-                              borderColor: "#ef4444",
-                              "&:hover": {
-                                bgcolor: "rgba(239, 68, 68, 0.1)",
-                                borderColor: "#ef4444",
-                              },
-                              textTransform: "none",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Disapprove
-                          </Button>
-                        </>
-                      )}
-                      {approvalStatus === "approved" && (
-                        <Chip
-                          label="✓ Approved"
-                          sx={{
-                            bgcolor: "rgba(16, 185, 129, 0.2)",
-                            color: "#10b981",
-                            fontWeight: 700,
-                          }}
-                        />
-                      )}
-                      {approvalStatus === "disapproved" && (
-                        <Chip
-                          label="✕ Disapproved"
-                          sx={{
-                            bgcolor: "rgba(239, 68, 68, 0.2)",
-                            color: "#ef4444",
-                            fontWeight: 700,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-              </Card>
-            );
-          })}
+          {currentPosts.map((app) => renderPostCard(app, activeTab === 0))}
         </Stack>
       )}
 
@@ -504,6 +604,9 @@ export default function PostAdminPage() {
       >
         <MenuItem onClick={() => handleViewDetails(selectedApp)}>
           View Details
+        </MenuItem>
+        <MenuItem onClick={() => handleEditPost(selectedApp)}>
+          Edit Post
         </MenuItem>
       </Menu>
 
@@ -600,6 +703,182 @@ export default function PostAdminPage() {
             </Stack>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: "#1e293b",
+            color: "#e2e8f0",
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+          Edit Post
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: "#334155" }}>
+          <Stack spacing={2.5}>
+            <TextField
+              fullWidth
+              label="Company Name"
+              value={editFormData.company_name || ""}
+              onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#0f172a",
+                  color: "#e2e8f0",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": { color: "#94a3b8" },
+              }}
+            />
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Position"
+                value={editFormData.position || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, position: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                }}
+              />
+              <TextField
+                fullWidth
+                select
+                label="Industry"
+                value={editFormData.industry || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, industry: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                }}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                {INDUSTRIES.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </TextField>
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Application Date"
+                type="date"
+                value={editFormData.application_date || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, application_date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                }}
+              />
+              <TextField
+                fullWidth
+                select
+                label="Status"
+                value={editFormData.status || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                }}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </TextField>
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Package Offered (in Lakhs)"
+              type="number"
+              value={editFormData.package_offered || ""}
+              onChange={(e) => setEditFormData({ ...editFormData, package_offered: e.target.value })}
+              inputProps={{ step: "0.01", min: "0" }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#0f172a",
+                  color: "#e2e8f0",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": { color: "#94a3b8" },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Additional Notes"
+              multiline
+              rows={4}
+              value={editFormData.notes || ""}
+              onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#0f172a",
+                  color: "#e2e8f0",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": { color: "#94a3b8" },
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
+          <Button
+            onClick={() => setEditDialogOpen(false)}
+            sx={{ color: "#94a3b8" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveEdit}
+            sx={{
+              bgcolor: "#8b5cf6",
+              "&:hover": { bgcolor: "#7c3aed" },
+            }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Action Confirmation Dialog */}
