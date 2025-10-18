@@ -309,32 +309,4 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/all-posts", requireAuth, async (req, res) => {
-  try {
-    const userRole = req.user.role;
-
-    // Only placement cell can access all posts
-    if (userRole !== "placement") {
-      return res.status(403).json({ 
-        ok: false, 
-        error: "Forbidden: Only placement cell can access this" 
-      });
-    }
-
-    const { limit = 1000 } = req.query;
-
-    // Fetch ALL posts from ALL users
-    const apps = await db
-      .select()
-      .from(applications)
-      .orderBy(desc(applications.application_date))
-      .limit(parseInt(limit));
-
-    res.json({ ok: true, applications: apps });
-  } catch (e) {
-    console.error("Error fetching all posts:", e);
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
 export default router;
