@@ -1,9 +1,18 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, AppBar, Toolbar, IconButton, Typography } from "@mui/material";
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Stack,
+} from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import Sidebar from "../../modules/sidebar";
+import UserMenu from "@/components/auth/userMenu";
+import { isAuthenticated, startSessionChecker } from "@/lib/session";
 
 const DRAWER_WIDTH = 240;
 
@@ -14,9 +23,20 @@ export default function ProtectedLayout({ children }) {
 
   useEffect(() => {
     setMounted(true);
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) router.push("/signin");
+
+    // Check authentication
+    if (!isAuthenticated()) {
+      router.push("/signin");
+      return;
+    }
+
+    // Start session checker
+    const cleanup = startSessionChecker(() => {
+      alert("Your session has expired. Please login again.");
+      router.push("/signin");
+    });
+
+    return cleanup;
   }, [router]);
 
   if (!mounted) return null;
@@ -76,9 +96,12 @@ export default function ProtectedLayout({ children }) {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#e2e8f0" }}>
-              InternHub
-            </Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: "#e2e8f0", flexGrow: 1 }}
+            ></Typography>
+            {/* User Menu */}
+            <UserMenu />
           </Toolbar>
         </AppBar>
 
