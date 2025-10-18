@@ -7,20 +7,29 @@ import { requireAuth } from "../middleware/authmiddleware.js";
 const router = express.Router();
 
 // Get all posts (for the authenticated user)
+// Get all posts (for the authenticated user OR all posts for placement)
 router.get("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { status, industry, limit = 50 } = req.query;
 
-    const conditions = [eq(posts.user_id, userId)];
+    let conditions = [];
+
+    // Placement officers see ALL posts, others see only their own
+    if (userRole !== "placement") {
+      conditions.push(eq(posts.user_id, userId));
+    }
 
     if (status) conditions.push(eq(posts.status, status));
     if (industry) conditions.push(eq(posts.industry, industry));
 
+    const query = conditions.length > 0 ? and(...conditions) : undefined;
+
     const postsList = await db
       .select()
       .from(posts)
-      .where(and(...conditions))
+      .where(query)
       .orderBy(desc(posts.application_date))
       .limit(parseInt(limit));
 
@@ -107,7 +116,9 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
       .where(and(...conditions))
       .returning();
 
-    if (updated.length === 0) return res.status(404).json({ ok: false, error: "Post not found" });
+    if (updated.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found or unauthorized" });
+    }
 
     res.json({ ok: true, application: updated[0] });
   } catch (e) {

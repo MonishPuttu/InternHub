@@ -85,6 +85,12 @@ export default function PostAdminPage() {
   const [editingApp, setEditingApp] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 
+    const handleError = (error, defaultMessage) => {
+    console.error(defaultMessage, error);
+    const errorMessage = error.response?.data?.error || error.message || defaultMessage;
+    setErrorMsg(errorMessage);
+  };
+
   useEffect(() => {
     fetchAllApplications();
   }, []);
@@ -136,52 +142,77 @@ export default function PostAdminPage() {
     handleMenuClose();
   };
 
-  const handleApprovePost = async () => {
-    if (!selectedApp) return;
+const handleApprovePost = async () => {
+  if (!selectedApp) return;
 
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-        {
-          approval_status: "approved",
-          updated_at: new Date(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  console.log("🔵 Approving post:", selectedApp.id); // 👈 ADD THIS
 
-      setSuccessMsg("Post approved successfully!");
-      setActionDialogOpen(false);
-      fetchAllApplications();
-    } catch (error) {
-      console.error("Error approving post:", error);
-      setErrorMsg("Failed to approve post");
-    }
-  };
+  try {
+    const token = localStorage.getItem("token");
+    
+    const payload = {
+      approval_status: "approved",
+      rejection_reason: null,
+    };
+    
+    console.log("🔵 Sending approval payload:", payload); // 👈 ADD THIS
+    
+    const response = await axios.put(
+      `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-  const handleDisapprovePost = async () => {
-    if (!selectedApp) return;
+    console.log("✅ Approve response:", response.data); // 👈 ADD THIS
 
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-        {
-          approval_status: "disapproved",
-          rejection_reason: rejectionReason,
-          updated_at: new Date(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    setSuccessMsg("Post approved successfully!");
+    setActionDialogOpen(false);
+    setSelectedApp(null);
+    fetchAllApplications();
+  } catch (error) {
+    console.error("❌ Error approving post:", error.response || error); // 👈 ADD THIS
+    handleError(error, "Failed to approve post"); // 👈 USE THE HELPER
+  }
+};
 
-      setSuccessMsg("Post disapproved successfully!");
-      setActionDialogOpen(false);
-      fetchAllApplications();
-    } catch (error) {
-      console.error("Error disapproving post:", error);
-      setErrorMsg("Failed to disapprove post");
-    }
-  };
+const handleDisapprovePost = async () => {
+  if (!selectedApp) return;
+
+  if (!rejectionReason.trim()) {
+    setErrorMsg("Please provide a reason for disapproval");
+    return;
+  }
+
+  console.log("🟠 Disapproving post:", selectedApp.id); // 👈 ADD THIS
+
+  try {
+    const token = localStorage.getItem("token");
+    
+    const payload = {
+      approval_status: "disapproved",
+      rejection_reason: rejectionReason,
+    };
+    
+    console.log("🟠 Sending disapproval payload:", payload); // 👈 ADD THIS
+
+    const response = await axios.put(
+      `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    console.log("✅ Disapprove response:", response.data); // 👈 ADD THIS
+
+    setSuccessMsg("Post disapproved successfully!");
+    setActionDialogOpen(false);
+    setRejectionReason("");
+    setSelectedApp(null);
+    fetchAllApplications();
+  } catch (error) {
+    console.error("❌ Error disapproving post:", error.response || error); // 👈 ADD THIS
+    handleError(error, "Failed to disapprove post"); // 👈 USE THE HELPER
+  }
+};
 
   const handleActionConfirm = () => {
     if (actionType === "approve") {
@@ -213,27 +244,42 @@ export default function PostAdminPage() {
     handleMenuClose();
   };
 
-  const handleSaveEdit = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
-        {
-          ...editFormData,
-          updated_at: new Date(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+const handleSaveEdit = async () => {
+  if (!editingApp) return;
 
-      setSuccessMsg("Post updated successfully!");
-      setEditDialogOpen(false);
-      setEditingApp(null);
-      fetchAllApplications();
-    } catch (error) {
-      console.error("Error updating post:", error);
-      setErrorMsg("Failed to update post");
-    }
-  };
+  console.log("🟡 Editing post:", editingApp.id);
+  console.log("🟡 Edit form data:", editFormData); 
+
+  try {
+    const token = localStorage.getItem("token");
+    
+    // Prepare update data
+    const updatePayload = { ...editFormData };
+    
+    // Remove empty fields
+    Object.keys(updatePayload).forEach(key => {
+      if (updatePayload[key] === '' || updatePayload[key] === null) {
+        delete updatePayload[key];
+      }
+    });
+
+    await axios.put(
+      `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
+      updatePayload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setSuccessMsg("Post updated successfully!");
+    setEditDialogOpen(false);
+    setEditingApp(null);
+    setEditFormData({});
+    fetchAllApplications();
+  } catch (error) {
+    console.error("Error updating post:", error);
+    setErrorMsg(error.response?.data?.error || "Failed to update post");
+  }
+};
+
 
   const getApprovalStatus = (app) => {
     return app.approval_status || "pending";
