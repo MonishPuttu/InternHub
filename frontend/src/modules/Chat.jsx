@@ -11,9 +11,9 @@ import {
   TextField,
   Snackbar,
   Alert,
+  Typography,
 } from "@mui/material";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 
 import ChatSidebar from "@/components/Chat/ChatSidebar";
 import ChatMessages from "@/components/Chat/ChatMessages";
@@ -23,7 +23,6 @@ const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function ChatPage() {
-  const router = useRouter();
   const {
     user,
     messages,
@@ -41,7 +40,9 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
+  const [joinRoomId, setJoinRoomId] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   const getUserName = (id) => {
@@ -60,8 +61,12 @@ export default function ChatPage() {
     joinRoom(room.id);
   };
 
-  const handleCreateRoom = () => {
+  const handleOpenCreateDialog = () => {
     setCreateDialogOpen(true);
+  };
+
+  const handleOpenJoinDialog = () => {
+    setJoinDialogOpen(true);
   };
 
   const handleConfirmCreateRoom = () => {
@@ -69,6 +74,47 @@ export default function ChatPage() {
       createRoom(newRoomName.trim());
       setNewRoomName("");
       setCreateDialogOpen(false);
+    }
+  };
+
+  const handleConfirmJoinRoom = async () => {
+    if (!joinRoomId.trim()) {
+      setErrorMsg("Please enter a room ID");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      // Try to join the room
+      const response = await axios.post(
+        `${BACKEND_URL}/api/rooms/${joinRoomId.trim()}/join`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok) {
+        setSuccessMsg("Successfully joined room!");
+        setJoinRoomId("");
+        setJoinDialogOpen(false);
+
+        // Refresh rooms and select the newly joined room
+        await fetchRooms();
+
+        // Join the room via socket
+        joinRoom(joinRoomId.trim());
+      }
+    } catch (error) {
+      console.error("Error joining room:", error);
+      if (error.response?.status === 404) {
+        setErrorMsg("Room not found. Please check the Room ID.");
+      } else if (error.response?.status === 403) {
+        setErrorMsg("You don't have permission to join this room.");
+      } else {
+        setErrorMsg("Failed to join room. Please try again.");
+      }
     }
   };
 
@@ -115,7 +161,8 @@ export default function ChatPage() {
           rooms={availableRooms}
           selectedRoom={selectedRoom}
           onSelectRoom={handleSelectRoom}
-          onCreateRoom={handleCreateRoom}
+          onCreateRoom={handleOpenCreateDialog}
+          onJoinRoom={handleOpenJoinDialog}
           user={user}
         />
       </Box>
@@ -140,7 +187,7 @@ export default function ChatPage() {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+          sx: { bgcolor: "#1e293b", color: "#e2e8f0", minWidth: 400 },
         }}
       >
         <DialogTitle>Create New Room</DialogTitle>
@@ -180,6 +227,60 @@ export default function ChatPage() {
             sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
           >
             Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Join Room Dialog */}
+      <Dialog
+        open={joinDialogOpen}
+        onClose={() => setJoinDialogOpen(false)}
+        PaperProps={{
+          sx: { bgcolor: "#1e293b", color: "#e2e8f0", minWidth: 400 },
+        }}
+      >
+        <DialogTitle>Join Existing Room</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 2 }}>
+            Enter the Room ID to join an existing room
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Room ID"
+            fullWidth
+            placeholder="Enter room ID..."
+            value={joinRoomId}
+            onChange={(e) => setJoinRoomId(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleConfirmJoinRoom();
+              }
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                color: "#e2e8f0",
+                fontFamily: "monospace",
+                "& fieldset": { borderColor: "#334155" },
+                "&:hover fieldset": { borderColor: "#8b5cf6" },
+              },
+              "& .MuiInputLabel-root": { color: "#94a3b8" },
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setJoinDialogOpen(false)}
+            sx={{ color: "#94a3b8" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmJoinRoom}
+            variant="contained"
+            sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
+          >
+            Join Room
           </Button>
         </DialogActions>
       </Dialog>
