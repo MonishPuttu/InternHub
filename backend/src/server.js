@@ -17,6 +17,7 @@ import dotenv from "dotenv";
 // import chatSocket from "./routes/chat.js"; // Websocket chat logic
 // import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
 import analyticsRoutes from "./routes/analytics.js"; // Stats logic
+import profileRoutes from "./routes/profile.js"; // Profile Page
 import postsRoutes from "./routes/posts.js"; // Post management routes
 
 
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/profile", profileRoutes);
 app.use("/api/posts", postsRoutes);
 
 app.use("/api/auth", authRoutes);

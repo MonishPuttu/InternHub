@@ -80,9 +80,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     application_date: '',
     status: 'applied',
     package_offered: '',
-    interview_date: '',
-    offer_date: '',
-    rejection_date: '',
+    deadline: '',
     notes: '',
   });
   const [mediaFile, setMediaFile] = useState(null);
@@ -178,9 +176,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
           application_date: '',
           status: 'applied',
           package_offered: '',
-          interview_date: '',
-          offer_date: '',
-          rejection_date: '',
+          deadline: '',
           notes: '',
         });
         setMediaFile(null);
@@ -320,35 +316,13 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
               />
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
                 <TextField 
                   fullWidth 
-                  label="Interview Date" 
-                  name="interview_date" 
+                  label="Deadline Date" 
+                  name="deadline" 
                   type="date"
-                  value={formData.interview_date} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                  InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
-                />
-                <TextField 
-                  fullWidth 
-                  label="Offer Date" 
-                  name="offer_date" 
-                  type="date"
-                  value={formData.offer_date} 
-                  onChange={handleInputChange} 
-                  disabled={loading}
-                  InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
-                />
-                <TextField 
-                  fullWidth 
-                  label="Rejection Date" 
-                  name="rejection_date" 
-                  type="date"
-                  value={formData.rejection_date} 
+                  value={formData.deadline} 
                   onChange={handleInputChange} 
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}

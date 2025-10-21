@@ -1,37 +1,46 @@
 import express from "express";
 import { db } from "../db/index.js";
-import { applications } from "../db/schema/index.js";
-import { eq, gte, and, desc } from "drizzle-orm";
+import { posts } from "../db/schema/post.js"; // Use the new posts table
+import { eq, desc, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
-// Get all applications (for the authenticated user)
+// Get all posts (for the authenticated user)
+// Get all posts (for the authenticated user OR all posts for placement)
 router.get("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { status, industry, limit = 50 } = req.query;
 
-    const conditions = [eq(applications.user_id, userId)];
+    let conditions = [];
 
-    if (status) conditions.push(eq(applications.status, status));
-    if (industry) conditions.push(eq(applications.industry, industry));
+    // Placement officers see ALL posts, others see only their own
+    if (userRole !== "placement") {
+      conditions.push(eq(posts.user_id, userId));
+    }
 
-    const apps = await db
+    if (status) conditions.push(eq(posts.status, status));
+    if (industry) conditions.push(eq(posts.industry, industry));
+
+    const query = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const postsList = await db
       .select()
-      .from(applications)
-      .where(and(...conditions))
-      .orderBy(desc(applications.application_date))
+      .from(posts)
+      .where(query)
+      .orderBy(desc(posts.application_date))
       .limit(parseInt(limit));
 
-    res.json({ ok: true, applications: apps });
+    res.json({ ok: true, applications: postsList });
   } catch (e) {
-    console.error("Error fetching applications (posts):", e);
+    console.error("Error fetching posts:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
-// Create a new application/post (recruiter-only)
+// Create a new post (recruiter-only)
 router.post("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -56,8 +65,8 @@ router.post("/applications", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Company name, position and industry are required" });
     }
 
-    const newApp = await db
-      .insert(applications)
+    const newPost = await db
+      .insert(posts)
       .values({
         user_id: userId,
         company_name,
@@ -68,85 +77,74 @@ router.post("/applications", requireAuth, async (req, res) => {
         package_offered: package_offered || null,
         notes: notes || null,
         media: media || null,
+        approval_status: "pending", // Default to pending
       })
       .returning();
 
-    res.status(201).json({ ok: true, application: newApp[0] });
+    res.status(201).json({ ok: true, application: newPost[0] });
   } catch (e) {
-    console.error("Error creating application (post):", e);
+    console.error("Error creating post:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
-// Update application (only owner can update)
+// Update post (only owner can update)
 router.put("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
     const updateData = { ...req.body };
 
+    // Convert dates
     if (updateData.application_date) updateData.application_date = new Date(updateData.application_date);
+    if (updateData.interview_date) updateData.interview_date = new Date(updateData.interview_date);
+    if (updateData.offer_date) updateData.offer_date = new Date(updateData.offer_date);
+    if (updateData.rejection_date) updateData.rejection_date = new Date(updateData.rejection_date);
     updateData.updated_at = new Date();
 
+    // Allow placement officers to update any post (for approval)
+    // Allow owners to update their own posts
+    let conditions = [eq(posts.id, id)];
+    if (userRole !== "placement") {
+      conditions.push(eq(posts.user_id, userId));
+    }
+
     const updated = await db
-      .update(applications)
+      .update(posts)
       .set(updateData)
-      .where(and(eq(applications.id, id), eq(applications.user_id, userId)))
+      .where(and(...conditions))
       .returning();
 
-    if (updated.length === 0) return res.status(404).json({ ok: false, error: "Application not found" });
+    if (updated.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found or unauthorized" });
+    }
 
     res.json({ ok: true, application: updated[0] });
   } catch (e) {
-    console.error("Error updating application (post):", e);
+    console.error("Error updating post:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
-// Delete application (only owner)
+// Delete post (owner or placement officers)
 router.delete("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
 
-    await db.delete(applications).where(and(eq(applications.id, id), eq(applications.user_id, userId)));
+    if (userRole === "placement") {
+      // placement officers may delete any post
+      await db.delete(posts).where(eq(posts.id, id));
+    } else {
+      // others may only delete their own posts
+      await db.delete(posts).where(and(eq(posts.id, id), eq(posts.user_id, userId)));
+    }
 
     res.json({ ok: true });
   } catch (e) {
-    console.error("Error deleting application (post):", e);
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-// Admin: get pending posts (placement only)
-router.get("/admin/pending-posts", requireAuth, async (req, res) => {
-  try {
-    const u = req.user;
-    if (u.role !== "placement") return res.status(403).json({ ok: false, error: "Forbidden" });
-
-    const pending = await db.select().from(applications).where(eq(applications.approved, false)).orderBy(desc(applications.application_date)).limit(200);
-    res.json({ ok: true, posts: pending });
-  } catch (e) {
-    console.error("Error fetching pending posts:", e);
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-// Admin: approve/disapprove a post (placement only)
-router.put("/admin/posts/:id/approve", requireAuth, async (req, res) => {
-  try {
-    const u = req.user;
-    if (u.role !== "placement") return res.status(403).json({ ok: false, error: "Forbidden" });
-
-    const { id } = req.params;
-    const { approve = true } = req.body;
-
-    const updated = await db.update(applications).set({ approved: !!approve, updated_at: new Date() }).where(eq(applications.id, id)).returning();
-    if (!updated || updated.length === 0) return res.status(404).json({ ok: false, error: "Post not found" });
-
-    res.json({ ok: true, post: updated[0] });
-  } catch (e) {
-    console.error("Error updating post approval:", e);
+    console.error("Error deleting post:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
@@ -157,40 +155,51 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
     // Only students should fetch approved posts
     if (req.user.role !== "student") return res.status(403).json({ ok: false, error: "Forbidden" });
 
-    const posts = await db.select().from(applications).where(eq(applications.approved, true)).orderBy(desc(applications.application_date)).limit(200);
-    res.json({ ok: true, posts });
+    const approvedPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.approval_status, "approved"))
+      .orderBy(desc(posts.application_date))
+      .limit(200);
+
+    res.json({ ok: true, posts: approvedPosts });
   } catch (e) {
     console.error("Error fetching approved posts:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
-
 // Get a single application by ID 
+// Get a single post by ID
 router.get("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
 
-    // Fetch the application
-    const app = await db
+    // Fetch the post from posts table
+    const post = await db
       .select()
-      .from(applications)
-      .where(eq(applications.id, id))
+      .from(posts)  // ✅ FIXED - use posts table
+      .where(eq(posts.id, id))
       .limit(1);
 
-    if (app.length === 0) {
-      return res.status(404).json({ ok: false, error: "Application not found" });
+    if (post.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found" });
     }
 
-    // Check if user owns this application OR if user is placement cell (can view all)
-    if (app[0].user_id !== userId && req.user.role !== "placement") {
+    // Only allow: owner, placement cell, or student viewing approved posts
+    const isOwner = post[0].user_id === userId;
+    const isPlacement = userRole === "placement";
+    const isStudentViewingApproved = userRole === "student" && post[0].approval_status === "approved";
+
+    if (!isOwner && !isPlacement && !isStudentViewingApproved) {
       return res.status(403).json({ ok: false, error: "Forbidden: You don't have access to this post" });
     }
 
-    res.json({ ok: true, application: app[0] });
+    res.json({ ok: true, application: post[0] });
   } catch (e) {
-    console.error("Error fetching application by ID:", e);
+    console.error("Error fetching post by ID:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
