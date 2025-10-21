@@ -152,8 +152,7 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
       .orderBy(asc(schema.messages.createdAt));
 
     console.log(
-      `Fetched ${
-        Array.isArray(msgs) ? msgs.length : 0
+      `Fetched ${Array.isArray(msgs) ? msgs.length : 0
       } messages for room ${roomId}`
     );
 

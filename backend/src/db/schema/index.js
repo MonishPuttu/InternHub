@@ -9,3 +9,5 @@ export * from "./analytics.js";
 
 // Profile tables (education, projects, social links)
 export * from "./profile.js";
+export * from "./calendar.js";
+

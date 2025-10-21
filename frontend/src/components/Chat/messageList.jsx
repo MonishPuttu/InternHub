@@ -77,7 +77,7 @@ export default function MessageList({
                       minHeight: "20px",
                       color: isSender ? "white" : "black",
 
-                      color: isSender ? "white" : "black", 
+                      color: isSender ? "white" : "black",
                     }}
                   >
                     {msg.message || "[Empty message]"}
@@ -96,8 +96,8 @@ export default function MessageList({
                     {msg.timestamp
                       ? new Date(msg.timestamp).toLocaleTimeString()
                       : msg.createdAt
-                      ? new Date(msg.createdAt).toLocaleTimeString()
-                      : ""}
+                        ? new Date(msg.createdAt).toLocaleTimeString()
+                        : ""}
                   </Typography>
                 </Box>
               </Box>
