@@ -144,52 +144,52 @@ const openActionDialog = (type, app) => {
   setAnchorEl(null);
 };
 
-  const handleApprovePost = async () => {
-    if (!selectedApp) {
-      console.error("❌ No app selected for approval");
-      setErrorMsg("No post selected");
+const handleApprovePost = async () => {
+  if (!selectedApp) {
+    console.error("❌ No app selected for approval");
+    setErrorMsg("No post selected");
+    return;
+  }
+
+  console.log("🔵 Approving post:", selectedApp.id);
+
+  try {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      setErrorMsg("Authentication required");
       return;
     }
+    
+    // Update both approval_status AND status
+    const payload = {
+      approval_status: "approved",
+      rejection_reason: null,
+    };
+    
+    console.log("🔵 Sending approval payload:", payload);
+    
+    const response = await axios.put(
+      `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    console.log("🔵 Approving post:", selectedApp.id);
+    console.log("✅ Approve response:", response.data);
 
-    try {
-      const token = localStorage.getItem("token");
-      
-      if (!token) {
-        setErrorMsg("Authentication required");
-        return;
-      }
-      
-      const payload = {
-        approval_status: "approved",
-        rejection_reason: null,
-      };
-      
-      console.log("🔵 Sending approval payload:", payload);
-      
-      const response = await axios.put(
-        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      console.log("✅ Approve response:", response.data);
-
-      if (response.data.ok) {
-        setSuccessMsg("Post approved successfully!");
-        setActionDialogOpen(false);
-        setSelectedApp(null);
-        await fetchAllApplications();
-      } else {
-        setErrorMsg(response.data.error || "Failed to approve post");
-      }
-    } catch (error) {
-      console.error("❌ Error approving post:", error.response || error);
-      handleError(error, "Failed to approve post");
+    if (response.data.ok) {
+      setSuccessMsg("Post approved successfully!");
+      setActionDialogOpen(false);
+      setSelectedApp(null);
+      await fetchAllApplications();
+    } else {
+      setErrorMsg(response.data.error || "Failed to approve post");
     }
-  };
-
+  } catch (error) {
+    console.error("❌ Error approving post:", error.response || error);
+    handleError(error, "Failed to approve post");
+  }
+};
   const handleDisapprovePost = async () => {
     if (!selectedApp) {
       console.error("❌ No app selected for disapproval");
@@ -197,7 +197,7 @@ const openActionDialog = (type, app) => {
       return;
     }
 
-    console.log("🟠 Deleting post (disapprove):", selectedApp.id);
+    console.log("🟠 Disapproving post:", selectedApp.id);
 
     try {
       const token = localStorage.getItem("token");
@@ -206,34 +206,40 @@ const openActionDialog = (type, app) => {
         return;
       }
 
-      const response = await axios.delete(
+      const payload = {
+        approval_status: "disapproved",
+        status: "rejected",
+        rejection_reason: rejectionReason || null,
+      };
+
+      const response = await axios.put(
         `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data && response.data.ok) {
-        setSuccessMsg("Post deleted successfully");
+        setSuccessMsg("Post disapproved successfully");
         setActionDialogOpen(false);
         setRejectionReason("");
         setSelectedApp(null);
         await fetchAllApplications();
       } else {
-        setErrorMsg(response.data?.error || "Failed to delete post");
+        setErrorMsg(response.data?.error || "Failed to disapprove post");
       }
     } catch (error) {
-      console.error("❌ Error deleting post:", error.response || error);
-      handleError(error, "Failed to delete post");
+      console.error("❌ Error disapproving post:", error.response || error);
+      handleError(error, "Failed to disapprove post");
     }
   };
 
-  const handleActionConfirm = () => {
-    if (actionType === "approve") {
-      handleApprovePost();
-    } else if (actionType === "disapprove") {
-      // disapprove now deletes the post (placement will be allowed server-side)
-      handleDisapprovePost();
-    }
-  };
+const handleActionConfirm = () => {
+  if (actionType === "approve") {
+    handleApprovePost();
+  } else if (actionType === "disapprove") {
+    handleDisapprovePost();
+  }
+};
 
   const handleEditPost = (app) => {
     setEditingApp(app);
@@ -253,39 +259,44 @@ const openActionDialog = (type, app) => {
     handleMenuClose();
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingApp) return;
+const handleSaveEdit = async () => {
+  if (!editingApp) return;
 
-    console.log("🟡 Editing post:", editingApp.id);
-    console.log("🟡 Edit form data:", editFormData); 
+  console.log("🟡 Editing post:", editingApp.id);
+  console.log("🟡 Edit form data:", editFormData); 
 
-    try {
-      const token = localStorage.getItem("token");
-      
-      const updatePayload = { ...editFormData };
-      
-      Object.keys(updatePayload).forEach(key => {
-        if (updatePayload[key] === '' || updatePayload[key] === null) {
-          delete updatePayload[key];
-        }
-      });
+  try {
+    const token = localStorage.getItem("token");
+    
+    const updatePayload = { ...editFormData };
+    
+    // Remove empty fields
+    Object.keys(updatePayload).forEach(key => {
+      if (updatePayload[key] === '' || updatePayload[key] === null) {
+        delete updatePayload[key];
+      }
+    });
 
-      await axios.put(
-        `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
-        updatePayload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    // IMPORTANT: Don't overwrite approval_status if it's not in the form
+    // The form only edits basic details, not approval status
+    // So approval_status will remain unchanged
 
-      setSuccessMsg("Post updated successfully!");
-      setEditDialogOpen(false);
-      setEditingApp(null);
-      setEditFormData({});
-      fetchAllApplications();
-    } catch (error) {
-      console.error("Error updating post:", error);
-      setErrorMsg(error.response?.data?.error || "Failed to update post");
-    }
-  };
+    await axios.put(
+      `${BACKEND_URL}/api/posts/applications/${editingApp.id}`,
+      updatePayload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setSuccessMsg("Post updated successfully!");
+    setEditDialogOpen(false);
+    setEditingApp(null);
+    setEditFormData({});
+    fetchAllApplications();
+  } catch (error) {
+    console.error("Error updating post:", error);
+    setErrorMsg(error.response?.data?.error || "Failed to update post");
+  }
+};
 
   const getApprovalStatus = (app) => {
     return app.approval_status || "pending";
@@ -299,7 +310,11 @@ const openActionDialog = (type, app) => {
     (app) => getApprovalStatus(app) === "approved"
   );
 
-  const currentPosts = activeTab === 0 ? pendingPosts : approvedPosts;
+  const disapprovedPosts = applications.filter(
+    (app) => getApprovalStatus(app) === "disapproved"
+  );
+
+  const currentPosts = activeTab === 0 ? pendingPosts : activeTab === 1 ? approvedPosts : disapprovedPosts;
 
   if (loading) {
     return (
@@ -355,17 +370,7 @@ const openActionDialog = (type, app) => {
                 minWidth: 100,
               }}
             >
-              <Chip
-                label={statusLabels[app.status]}
-                size="small"
-                sx={{
-                  bgcolor: `${statusColors[app.status]}30`,
-                  color: statusColors[app.status],
-                  fontWeight: 600,
-                  fontSize: "0.7rem",
-                  px: 1,
-                }}
-              />
+              {/* Lifecycle status chip removed to avoid showing 'Rejected' etc. Only approval chips remain */}
               {isPending && (
                 <Chip
                   label="Pending Review"
@@ -379,7 +384,7 @@ const openActionDialog = (type, app) => {
                   }}
                 />
               )}
-              {!isPending && (
+              {!isPending && app.approval_status === "approved" && (
                 <Chip
                   label="✓ Approved"
                   size="small"
@@ -389,6 +394,19 @@ const openActionDialog = (type, app) => {
                     fontWeight: 700,
                     fontSize: "0.75rem",
                     border: "1px solid #10b981",
+                  }}
+                />
+              )}
+              {!isPending && app.approval_status === "disapproved" && (
+                <Chip
+                  label="✕ Disapproved"
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(239, 68, 68, 0.2)",
+                    color: "#ef4444",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    border: "1px solid #ef4444",
                   }}
                 />
               )}
@@ -519,24 +537,26 @@ const openActionDialog = (type, app) => {
                   </Button>
                 </>
               )}
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<EditIcon />}
-                onClick={() => handleEditPost(app)}
-                sx={{
-                  color: "#8b5cf6",
-                  borderColor: "#8b5cf6",
-                  "&:hover": {
-                    bgcolor: "rgba(139, 92, 246, 0.1)",
+              {activeTab !== 2 && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<EditIcon />}
+                  onClick={() => handleEditPost(app)}
+                  sx={{
+                    color: "#8b5cf6",
                     borderColor: "#8b5cf6",
-                  },
-                  textTransform: "none",
-                  fontWeight: 600,
-                }}
-              >
-                Edit
-              </Button>
+                    "&:hover": {
+                      bgcolor: "rgba(139, 92, 246, 0.1)",
+                      borderColor: "#8b5cf6",
+                    },
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  Edit
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
@@ -604,6 +624,7 @@ const openActionDialog = (type, app) => {
         >
           <Tab label={`Pending Review (${pendingPosts.length})`} />
           <Tab label={`Approved Posts (${approvedPosts.length})`} />
+          <Tab label={`Disapproved (${disapprovedPosts.length})`} />
         </Tabs>
       </Box>
 
@@ -619,12 +640,18 @@ const openActionDialog = (type, app) => {
           }}
         >
           <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
-            {activeTab === 0 ? "No pending posts" : "No approved posts yet"}
+            {activeTab === 0
+              ? "No pending posts"
+              : activeTab === 1
+              ? "No approved posts yet"
+              : "No disapproved posts"}
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
             {activeTab === 0
               ? "All posts have been reviewed"
-              : "Approve posts from the Pending Review tab"}
+              : activeTab === 1
+              ? "Approve posts from the Pending Review tab"
+              : "Disapproved posts will appear here"}
           </Typography>
         </Box>
       ) : (
@@ -645,9 +672,11 @@ const openActionDialog = (type, app) => {
         <MenuItem onClick={() => handleViewDetails(selectedApp)}>
           View Details
         </MenuItem>
-        <MenuItem onClick={() => handleEditPost(selectedApp)}>
-          Edit Post
-        </MenuItem>
+        {activeTab !== 2 && (
+          <MenuItem onClick={() => handleEditPost(selectedApp)}>
+            Edit Post
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Details Dialog */}
@@ -737,6 +766,17 @@ const openActionDialog = (type, app) => {
                   </Typography>
                   <Typography sx={{ color: "#e2e8f0", lineHeight: 1.7 }}>
                     {viewingApp.notes}
+                  </Typography>
+                </Box>
+              )}
+
+              {viewingApp.rejection_reason && (
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#ef4444", mb: 1, display: "block" }}>
+                    Disapproval Reason
+                  </Typography>
+                  <Typography sx={{ color: "#e2e8f0", lineHeight: 1.7 }}>
+                    {viewingApp.rejection_reason}
                   </Typography>
                 </Box>
               )}
@@ -863,6 +903,63 @@ const openActionDialog = (type, app) => {
                 ))}
               </TextField>
             </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Interview Date"
+                type="date"
+                value={editFormData.interview_date || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, interview_date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                helperText="Setting this will automatically set deadline to 1 week before"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                  "& .MuiFormHelperText-root": { color: "#94a3b8" },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Offer Date"
+                type="date"
+                value={editFormData.offer_date || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, offer_date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                }}
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Rejection Date"
+              type="date"
+              value={editFormData.rejection_date || ""}
+              onChange={(e) => setEditFormData({ ...editFormData, rejection_date: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#0f172a",
+                  color: "#e2e8f0",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": { color: "#94a3b8" },
+              }}
+            />
 
             <TextField
               fullWidth

@@ -79,27 +79,32 @@ export default function PostStudentPage() {
     loadSavedPosts();
   }, []);
 
-  const fetchApprovedPosts = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${BACKEND_URL}/api/analytics/applications?limit=1000`, {
+const fetchApprovedPosts = async () => {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `${BACKEND_URL}/api/posts/approved-posts?limit=1000`,
+      {
         headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.ok) {
-        const approvedPosts = response.data.applications.filter(
-          (app) => app.approval_status === "approved"
-        );
-        setPosts(approvedPosts);
       }
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      setErrorMsg("Failed to load posts");
-    } finally {
-      setLoading(false);
+    );
+    
+    if (response.data.ok) {
+      // Filter to only show approved posts
+      const approvedPosts = response.data.posts.filter(
+        (post) => post.approval_status === "approved"
+      );
+      setPosts(approvedPosts);
+      console.log("✅ Approved posts:", approvedPosts.length);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching approved posts:", error);
+    setErrorMsg("Failed to load opportunities");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const loadSavedPosts = () => {
     const saved = localStorage.getItem("savedPosts");

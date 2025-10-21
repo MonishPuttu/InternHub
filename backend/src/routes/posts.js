@@ -169,4 +169,39 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
   }
 });
 
+// Get a single application by ID 
+// Get a single post by ID
+router.get("/applications/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { id } = req.params;
+
+    // Fetch the post from posts table
+    const post = await db
+      .select()
+      .from(posts)  // ✅ FIXED - use posts table
+      .where(eq(posts.id, id))
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found" });
+    }
+
+    // Only allow: owner, placement cell, or student viewing approved posts
+    const isOwner = post[0].user_id === userId;
+    const isPlacement = userRole === "placement";
+    const isStudentViewingApproved = userRole === "student" && post[0].approval_status === "approved";
+
+    if (!isOwner && !isPlacement && !isStudentViewingApproved) {
+      return res.status(403).json({ ok: false, error: "Forbidden: You don't have access to this post" });
+    }
+
+    res.json({ ok: true, application: post[0] });
+  } catch (e) {
+    console.error("Error fetching post by ID:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 export default router;
