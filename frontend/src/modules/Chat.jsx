@@ -1,145 +1,190 @@
 "use client";
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+
+import { useState } from "react";
 import {
   Box,
-  TextField,
-  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Button,
-  Stack,
+  TextField,
   Snackbar,
   Alert,
 } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
-import RoomControls from "../components/Chat/RoomControls";
-import MessageList from "../components/Chat/messageList";
-import useChat from "../hooks/useChat";
+import ChatSidebar from "@/components/Chat/ChatSidebar";
+import ChatMessages from "@/components/Chat/ChatMessages";
+import useChat from "@/hooks/useChat";
 
-export default function Chat({ receiverId = "some-recruiter-uuid" }) {
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+export default function ChatPage() {
+  const router = useRouter();
   const {
     user,
     messages,
     joinedRoom,
-    typingUsers,
     availableRooms,
-    usersInRoom,
     socketConnected,
     errorMsg,
     setErrorMsg,
     joinRoom,
-    leaveRoom,
     createRoom,
     sendMessage,
-  } = useChat(receiverId);
+    fetchRooms,
+  } = useChat();
 
   const [input, setInput] = useState("");
-  const [roomId, setRoomId] = useState(joinedRoom ?? "");
-  const [roomName, setRoomName] = useState("");
-  const scrollRef = useRef(null);
-  const router = useRouter();
-
-  const initials = (name) => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map((s) => s[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
-  };
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newRoomName, setNewRoomName] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const getUserName = (id) => {
     if (id === user?.id) return user.name || "You";
-    const found = usersInRoom.find((u) => u.id === id);
-    return found?.name || (id === receiverId ? "Other" : "Unknown");
+    return "User";
   };
 
   const onSendMessage = () => {
-    if (!input.trim()) return;
-    sendMessage(input, receiverId);
+    if (!input.trim() || !selectedRoom) return;
+    sendMessage(input);
     setInput("");
+  };
+
+  const handleSelectRoom = (room) => {
+    setSelectedRoom(room);
+    joinRoom(room.id);
+  };
+
+  const handleCreateRoom = () => {
+    setCreateDialogOpen(true);
+  };
+
+  const handleConfirmCreateRoom = () => {
+    if (newRoomName.trim()) {
+      createRoom(newRoomName.trim());
+      setNewRoomName("");
+      setCreateDialogOpen(false);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.delete(
+        `${BACKEND_URL}/api/rooms/${roomId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok) {
+        setSuccessMsg("Room deleted successfully");
+
+        // Clear selected room
+        setSelectedRoom(null);
+
+        // Refresh rooms list
+        await fetchRooms();
+
+        // Clear local storage
+        localStorage.removeItem("joinedRoom");
+      }
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      setErrorMsg("Failed to delete room");
+    }
   };
 
   return (
     <Box
       sx={{
         width: "100%",
-        maxWidth: 720,
-        mx: "auto",
-        height: "80vh",
+        height: "calc(100vh - 64px)",
         display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        p: 2,
+        bgcolor: "#0a0f1a",
       }}
     >
-      <RoomControls
-        joinedRoom={joinedRoom}
-        roomId={roomId}
-        setRoomId={setRoomId}
-        roomName={roomName}
-        setRoomName={setRoomName}
-        user={user}
-        socketConnected={socketConnected}
-        createRoom={createRoom}
-        joinRoom={joinRoom}
-        leaveRoom={leaveRoom}
-        availableRooms={availableRooms}
-        initials={initials}
-        setErrorMsg={setErrorMsg}
-      />
-
-      <MessageList
-        messages={messages}
-        user={user}
-        usersInRoom={usersInRoom}
-        receiverId={receiverId}
-        joinedRoom={joinedRoom}
-        typingUsers={typingUsers}
-        initials={initials}
-        getUserName={getUserName}
-        scrollRef={scrollRef}
-      />
-
-      <Box
-        component="form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSendMessage();
-        }}
-        sx={{ p: 1 }}
-        elevation={2}
-      >
-        <Stack direction="row" spacing={1} alignItems="center">
-          <TextField
-            fullWidth
-            placeholder={
-              joinedRoom ? "Message room..." : "Type your message..."
-            }
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            size="small"
-          />
-          <IconButton
-            color="primary"
-            onClick={onSendMessage}
-            disabled={!socketConnected}
-            type="submit"
-          >
-            <SendIcon />
-          </IconButton>
-          <Button
-            variant="contained"
-            onClick={onSendMessage}
-            disabled={!socketConnected}
-            type="submit"
-          >
-            Send
-          </Button>
-        </Stack>
+      {/* Sidebar - 20% */}
+      <Box sx={{ width: "20%", minWidth: "280px", height: "100%" }}>
+        <ChatSidebar
+          rooms={availableRooms}
+          selectedRoom={selectedRoom}
+          onSelectRoom={handleSelectRoom}
+          onCreateRoom={handleCreateRoom}
+          user={user}
+        />
       </Box>
 
+      {/* Messages Area - 80% */}
+      <Box sx={{ flex: 1, height: "100%" }}>
+        <ChatMessages
+          selectedRoom={selectedRoom}
+          messages={messages}
+          user={user}
+          input={input}
+          setInput={setInput}
+          onSendMessage={onSendMessage}
+          socketConnected={socketConnected}
+          getUserName={getUserName}
+          onDeleteRoom={handleDeleteRoom}
+        />
+      </Box>
+
+      {/* Create Room Dialog */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        PaperProps={{
+          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+        }}
+      >
+        <DialogTitle>Create New Room</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Room Name"
+            fullWidth
+            value={newRoomName}
+            onChange={(e) => setNewRoomName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleConfirmCreateRoom();
+              }
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                color: "#e2e8f0",
+                "& fieldset": { borderColor: "#334155" },
+                "&:hover fieldset": { borderColor: "#8b5cf6" },
+              },
+              "& .MuiInputLabel-root": { color: "#94a3b8" },
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setCreateDialogOpen(false)}
+            sx={{ color: "#94a3b8" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmCreateRoom}
+            variant="contained"
+            sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Error Snackbar */}
       <Snackbar
         open={!!errorMsg}
         autoHideDuration={4000}
@@ -148,6 +193,18 @@ export default function Chat({ receiverId = "some-recruiter-uuid" }) {
       >
         <Alert severity="error" onClose={() => setErrorMsg(null)}>
           {errorMsg}
+        </Alert>
+      </Snackbar>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={!!successMsg}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMsg("")}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="success" onClose={() => setSuccessMsg("")}>
+          {successMsg}
         </Alert>
       </Snackbar>
     </Box>
