@@ -10,15 +10,17 @@ import {
   TextField,
   InputAdornment,
   IconButton,
-  Badge,
+  Button,
+  Stack,
 } from "@mui/material";
-import { Search, Add } from "@mui/icons-material";
+import { Search, Add, Login } from "@mui/icons-material";
 
 export default function ChatSidebar({
   rooms,
   selectedRoom,
   onSelectRoom,
   onCreateRoom,
+  onJoinRoom,
   user,
 }) {
   const initials = (name) => {
@@ -145,21 +147,38 @@ export default function ChatSidebar({
         )}
       </List>
 
-      {/* Create Room Button */}
+      {/* Action Buttons */}
       <Box sx={{ p: 2, borderTop: "1px solid #1e293b" }}>
-        <IconButton
-          onClick={onCreateRoom}
-          sx={{
-            bgcolor: "#8b5cf6",
-            color: "#fff",
-            width: "100%",
-            borderRadius: 2,
-            "&:hover": { bgcolor: "#7c3aed" },
-          }}
-        >
-          <Add sx={{ mr: 1 }} />
-          <Typography variant="body2">New Room</Typography>
-        </IconButton>
+        <Stack spacing={1}>
+          <Button
+            onClick={onCreateRoom}
+            startIcon={<Add />}
+            sx={{
+              bgcolor: "#8b5cf6",
+              color: "#fff",
+              width: "100%",
+              borderRadius: 2,
+              textTransform: "none",
+              "&:hover": { bgcolor: "#7c3aed" },
+            }}
+          >
+            New Room
+          </Button>
+          <Button
+            onClick={onJoinRoom}
+            startIcon={<Login />}
+            sx={{
+              bgcolor: "#334155",
+              color: "#e2e8f0",
+              width: "100%",
+              borderRadius: 2,
+              textTransform: "none",
+              "&:hover": { bgcolor: "#475569" },
+            }}
+          >
+            Join Room
+          </Button>
+        </Stack>
       </Box>
     </Box>
   );
