@@ -35,19 +35,19 @@ import { getUser } from "@/lib/session";
 
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
-  { text: "Opportunities", icon: <BusinessIcon />, path: "/opportunities", roles: null },
+
   { text: "Browse Posts", icon: <DescriptionIcon />, path: "/post_student", roles: ["student"] },
   { text: "Post Opportunity", icon: <DescriptionIcon />, path: "/post_recruiter", roles: ["recruiter"] },
   { text: "Manage Posts", icon: <DescriptionIcon />, path: "/post_admin", roles: ["placement"] },
-  { text: "My Applications", icon: <DescriptionIcon />, path: "/applications", roles: null },
+
   { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile", roles: null },
   { text: "Calendar", icon: <CalenderIcon />, path: "/calendar", roles: ["recruiter"] },
   { text: "Calendar", icon: <CalenderIcon />, path: "/cal_admin", roles: ["placement"] },
   { text: "Calendar", icon: <CalenderIcon />, path: "/cal_students", roles: ["student"] },
   { text: "Analytics", icon: <BarChartIcon />, path: "/analytics", roles: null },
-  { text: "Skills & Certificates", icon: <EmojiEventsIcon />, path: "/skills", roles: null },
+
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
-  { text: "Settings", icon: <SettingsIcon />, path: "/settings", roles: null },
+
 ];
 
 export default function Sidebar({
