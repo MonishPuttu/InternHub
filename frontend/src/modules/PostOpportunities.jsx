@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -31,6 +30,7 @@ import {
   AccessTime as AccessTimeIcon,
   Close as CloseIcon,
   Edit as EditIcon,
+  Upload as UploadIcon
 } from "@mui/icons-material";
 import axios from "axios";
 import { CreateApplicationModal } from "../components/CreateApplicationModal";
@@ -77,8 +77,11 @@ export default function PostOpportunities() {
     contact_person: "",
     contact_email: "",
     job_link: "",
+    application_date: "",
     application_deadline: "",
     interview_date: "",
+    offer_date: "",
+    rejection_date: "",
   });
 
   useEffect(() => {
@@ -141,7 +144,6 @@ export default function PostOpportunities() {
   };
 
   const handleViewDetails = (app) => {
-    // Navigate to details page
     router.push(`/postdetails/${app.id}`);
   };
 
@@ -163,16 +165,18 @@ export default function PostOpportunities() {
       contact_person: selectedApp.contact_person || "",
       contact_email: selectedApp.contact_email || "",
       job_link: selectedApp.job_link || "",
+      application_date: selectedApp.application_date ? selectedApp.application_date.split('T')[0] : "",
       application_deadline: selectedApp.application_deadline ? selectedApp.application_deadline.split('T')[0] : "",
       interview_date: selectedApp.interview_date ? selectedApp.interview_date.split('T')[0] : "",
+      offer_date: selectedApp.offer_date ? selectedApp.offer_date.split('T')[0] : "",
+      rejection_date: selectedApp.rejection_date ? selectedApp.rejection_date.split('T')[0] : "",
     });
     setEditDialogOpen(true);
-    // Don't close the menu yet - keep selectedApp
   };
 
   const handleCloseEditDialog = () => {
     setEditDialogOpen(false);
-    handleMenuClose(); // Close menu and clear selectedApp
+    handleMenuClose();
     setEditFormData({
       position: "",
       company_name: "",
@@ -186,8 +190,11 @@ export default function PostOpportunities() {
       contact_person: "",
       contact_email: "",
       job_link: "",
+      application_date: "",
       application_deadline: "",
       interview_date: "",
+      offer_date: "",
+      rejection_date: "",
     });
   };
 
@@ -204,12 +211,11 @@ export default function PostOpportunities() {
     try {
       const token = localStorage.getItem("token");
 
-      // Prepare the data - only send non-empty fields
       const updatePayload = {};
 
       Object.keys(editFormData).forEach(key => {
         const value = editFormData[key];
-        if (value !== "" && value !== null && value !== undefined) {
+        if (value !== null && value !== undefined) {
           updatePayload[key] = value;
         }
       });
@@ -238,7 +244,6 @@ export default function PostOpportunities() {
     }
   };
 
-  // Filter applications based on selected filter
   const filteredApplications = applications.filter(app => {
     if (filterStatus === "all") return true;
     if (filterStatus === "approved") return app.approval_status === 'approved';
@@ -427,7 +432,6 @@ export default function PostOpportunities() {
               }}
             >
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                {/* Top Section - Image Banner (if exists) */}
                 {app.media && (
                   <Box
                     component="img"
@@ -443,12 +447,8 @@ export default function PostOpportunities() {
                   />
                 )}
 
-                {/* Top Row - Status and Menu */}
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {/* Left - Lifecycle Status Badge removed to hide 'Rejected' etc. */}
                   <Box />
-
-                  {/* Right Section - Menu */}
                   <IconButton
                     size="small"
                     onClick={(e) => handleMenuOpen(e, app)}
@@ -458,9 +458,7 @@ export default function PostOpportunities() {
                   </IconButton>
                 </Box>
 
-                {/* Main Content Section */}
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {/* Left - Position & Company */}
                   <Box sx={{ flex: 1 }}>
                     <Typography
                       variant="h6"
@@ -485,7 +483,6 @@ export default function PostOpportunities() {
                     </Typography>
                   </Box>
 
-                  {/* Right - Posted Date */}
                   <Typography
                     variant="body2"
                     sx={{
@@ -493,15 +490,9 @@ export default function PostOpportunities() {
                       fontSize: "0.85rem",
                     }}
                   >
-                    Posted {new Date(app.application_date).toLocaleDateString("en-US", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
                   </Typography>
                 </Box>
 
-                {/* Bottom Info Row */}
                 <Box
                   sx={{
                     display: "flex",
@@ -510,7 +501,6 @@ export default function PostOpportunities() {
                     mt: 1,
                   }}
                 >
-                  {/* Info Items */}
                   <Box
                     sx={{
                       display: "flex",
@@ -542,7 +532,6 @@ export default function PostOpportunities() {
                     </Box>
                   </Box>
 
-                  {/* Right - Approval Status and View Details Button */}
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     {app.approval_status === 'approved' ? (
                       <Chip
@@ -659,22 +648,7 @@ export default function PostOpportunities() {
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: "#334155" }}>
           <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField
-              fullWidth
-              label="Position"
-              value={editFormData.position}
-              onChange={(e) => handleEditFormChange("position", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-              }}
-            />
-
+            {/* Company Name */}
             <TextField
               fullWidth
               label="Company Name"
@@ -691,12 +665,13 @@ export default function PostOpportunities() {
               }}
             />
 
+            {/* Position and Industry - 2 columns */}
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
               <TextField
                 fullWidth
-                label="Industry"
-                value={editFormData.industry}
-                onChange={(e) => handleEditFormChange("industry", e.target.value)}
+                label="Position *"
+                value={editFormData.position}
+                onChange={(e) => handleEditFormChange("position", e.target.value)}
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "#0f172a",
@@ -707,14 +682,106 @@ export default function PostOpportunities() {
                   "& .MuiInputLabel-root": { color: "#94a3b8" },
                 }}
               />
+
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: "#94a3b8" }}>Industry *</InputLabel>
+                <Select
+                  value={editFormData.industry}
+                  onChange={(e) => handleEditFormChange("industry", e.target.value)}
+                  label="Industry *"
+                  sx={{
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                    "& .MuiSvgIcon-root": { color: "#94a3b8" },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: "#1e293b",
+                        color: "#e2e8f0",
+                        "& .MuiMenuItem-root": {
+                          "&:hover": { bgcolor: "#334155" },
+                          "&.Mui-selected": { bgcolor: "#8b5cf620" },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="Technology">Technology</MenuItem>
+                  <MenuItem value="Finance">Finance</MenuItem>
+                  <MenuItem value="Healthcare">Healthcare</MenuItem>
+                  <MenuItem value="Education">Education</MenuItem>
+                  <MenuItem value="Retail">Retail</MenuItem>
+                  <MenuItem value="Manufacturing">Manufacturing</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
 
+            {/* Application Date and Status - 2 columns */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Application Date *"
+                type="date"
+                value={editFormData.application_date}
+                onChange={(e) => handleEditFormChange("application_date", e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& fieldset": { borderColor: "#334155" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                }}
+              />
+
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: "#94a3b8" }}>Status</InputLabel>
+                <Select
+                  value={editFormData.status}
+                  onChange={(e) => handleEditFormChange("status", e.target.value)}
+                  label="Status"
+                  sx={{
+                    backgroundColor: "#0f172a",
+                    color: "#e2e8f0",
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                    "& .MuiSvgIcon-root": { color: "#94a3b8" },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: "#1e293b",
+                        color: "#e2e8f0",
+                        "& .MuiMenuItem-root": {
+                          "&:hover": { bgcolor: "#334155" },
+                          "&.Mui-selected": { bgcolor: "#8b5cf620" },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="applied">Applied</MenuItem>
+                  <MenuItem value="interview_scheduled">Interview Scheduled</MenuItem>
+                  <MenuItem value="interviewed">Interviewed</MenuItem>
+                  <MenuItem value="offer">Offer Received</MenuItem>
+                  <MenuItem value="rejected">Rejected</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* Package Offered */}
             <TextField
               fullWidth
-              label="Media URL"
-              value={editFormData.media}
-              onChange={(e) => handleEditFormChange("media", e.target.value)}
-              placeholder="https://example.com/image.jpg"
+              label="Package Offered (in Lakhs)"
+              type="number"
+              value={editFormData.package_offered}
+              onChange={(e) => handleEditFormChange("package_offered", e.target.value)}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   backgroundColor: "#0f172a",
@@ -726,11 +793,31 @@ export default function PostOpportunities() {
               }}
             />
 
+            {/* Deadline Date */}
+            <TextField
+              fullWidth
+              label="Deadline Date"
+              type="date"
+              value={editFormData.application_deadline}
+              onChange={(e) => handleEditFormChange("application_deadline", e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#0f172a",
+                  color: "#e2e8f0",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": { color: "#94a3b8" },
+              }}
+            />
+
+            {/* Additional Notes */}
             <TextField
               fullWidth
               multiline
               rows={4}
-              label="Description/Notes"
+              label="Additional Notes"
               value={editFormData.notes}
               onChange={(e) => handleEditFormChange("notes", e.target.value)}
               sx={{
@@ -743,12 +830,104 @@ export default function PostOpportunities() {
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
             />
+
+            {/* Media Section with Preview and Upload */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: "#94a3b8", mb: 1.5, fontWeight: 600 }}>
+                Upload Poster/Media (Optional)
+              </Typography>
+
+              {editFormData.media ? (
+                <Box sx={{ position: "relative", mb: 2 }}>
+                  {/* Image Preview */}
+                  <Box
+                    component="img"
+                    src={editFormData.media}
+                    alt="Post media"
+                    sx={{
+                      width: "100%",
+                      height: 200,
+                      borderRadius: 2,
+                      objectFit: "cover",
+                      border: "2px solid #334155",
+                    }}
+                  />
+
+                  {/* Remove Button */}
+                  <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<CloseIcon />}
+                      onClick={() => handleEditFormChange("media", "")}
+                      sx={{
+                        borderColor: "#ef4444",
+                        color: "#ef4444",
+                        "&:hover": {
+                          bgcolor: "rgba(239, 68, 68, 0.1)",
+                          borderColor: "#ef4444",
+                        },
+                        textTransform: "none",
+                      }}
+                    >
+                      Remove Image
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                // Upload Area
+                <Box
+                  component="label"
+                  htmlFor="upload-media-edit"
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 1.5,
+                    border: "2px dashed #8b5cf6",
+                    borderRadius: 2,
+                    bgcolor: "#0f172a",
+                    color: "#a78bfa",
+                    py: 6,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: "#a78bfa",
+                      bgcolor: "#1e293b",
+                    },
+                  }}
+                >
+                  <UploadIcon sx={{ fontSize: 48, color: "#a78bfa" }} />
+                  <Typography variant="body1" sx={{ color: "#e2e8f0", fontWeight: 500 }}>
+                    Click to upload image
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                    Images only (JPG, PNG, GIF, WebP) — Max 50 MB
+                  </Typography>
+                  <input
+                    id="upload-media-edit"
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => handleEditFormChange("media", reader.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
           <Button
             onClick={handleCloseEditDialog}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "#94a3b8", textTransform: "none" }}
           >
             Cancel
           </Button>
@@ -758,6 +937,8 @@ export default function PostOpportunities() {
             sx={{
               bgcolor: "#8b5cf6",
               "&:hover": { bgcolor: "#7c3aed" },
+              textTransform: "none",
+              fontWeight: 600,
             }}
           >
             Save Changes

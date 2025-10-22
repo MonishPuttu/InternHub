@@ -103,6 +103,19 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     if (updateData.rejection_date) updateData.rejection_date = new Date(updateData.rejection_date);
     updateData.updated_at = new Date();
 
+    // Handle media deletion - explicitly set to null if empty string
+    if (updateData.media === "") {
+      updateData.media = null;
+    }
+
+    // Handle other fields - convert empty strings to null for nullable fields
+    const nullableFields = ['package_offered', 'notes', 'location', 'job_type', 'contact_person', 'contact_email', 'job_link', 'application_deadline', 'interview_date'];
+    nullableFields.forEach(field => {
+      if (updateData[field] === "") {
+        updateData[field] = null;
+      }
+    });
+
     // Allow placement officers to update any post (for approval)
     // Allow owners to update their own posts
     let conditions = [eq(posts.id, id)];
