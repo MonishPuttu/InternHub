@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -69,6 +70,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function PostAdminPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -538,24 +540,43 @@ const handleSaveEdit = async () => {
                 </>
               )}
               {activeTab !== 2 && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<EditIcon />}
-                  onClick={() => handleEditPost(app)}
-                  sx={{
-                    color: "#8b5cf6",
-                    borderColor: "#8b5cf6",
-                    "&:hover": {
-                      bgcolor: "rgba(139, 92, 246, 0.1)",
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => router.push(`/postdetails/${app.id}`)}
+                    sx={{
+                      color: "#8b5cf6",
                       borderColor: "#8b5cf6",
-                    },
-                    textTransform: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  Edit
-                </Button>
+                      "&:hover": {
+                        bgcolor: "rgba(139, 92, 246, 0.1)",
+                        borderColor: "#8b5cf6",
+                      },
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={() => handleEditPost(app)}
+                    sx={{
+                      color: "#8b5cf6",
+                      borderColor: "#8b5cf6",
+                      "&:hover": {
+                        bgcolor: "rgba(139, 92, 246, 0.1)",
+                        borderColor: "#8b5cf6",
+                      },
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </>
               )}
             </Box>
           </Box>

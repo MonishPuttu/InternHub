@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -59,6 +60,7 @@ const INDUSTRIES = [
 ];
 
 export default function PostStudentPage() {
+  const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState("");
@@ -455,6 +457,19 @@ const fetchApprovedPosts = async () => {
                       minWidth: 120,
                     }}
                   >
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => router.push(`/postdetails/${post.id}`)}
+                      sx={{
+                        bgcolor: "#8b5cf6",
+                        "&:hover": { bgcolor: "#7c3aed" },
+                        textTransform: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      View Details
+                    </Button>
                     <Button
                       variant="contained"
                       size="small"
