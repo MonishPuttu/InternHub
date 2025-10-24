@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -34,7 +35,6 @@ import axios from "axios";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 const statusColors = {
-  applied: "#64748b",
   interview_scheduled: "#0ea5e9",
   interviewed: "#8b5cf6",
   offer: "#10b981",
@@ -42,7 +42,6 @@ const statusColors = {
 };
 
 const statusLabels = {
-  applied: "Applied",
   interview_scheduled: "Interview Scheduled",
   interviewed: "Interviewed",
   offer: "Offer Received",
@@ -61,6 +60,7 @@ const INDUSTRIES = [
 ];
 
 export default function PostStudentPage() {
+  const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState("");
@@ -357,19 +357,21 @@ const fetchApprovedPosts = async () => {
                 {/* Content Section */}
                 <Box sx={{ display: "flex", gap: 3, alignItems: "start", flexWrap: "wrap" }}>
                   {/* Status Badge */}
-                  <Box sx={{ minWidth: 100 }}>
-                    <Chip
-                      label={statusLabels[post.status]}
-                      size="small"
-                      sx={{
-                        bgcolor: `${statusColors[post.status]}30`,
-                        color: statusColors[post.status],
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                        px: 1,
-                      }}
-                    />
-                  </Box>
+                  {statusLabels[post.status] && (
+                    <Box sx={{ minWidth: 100 }}>
+                      <Chip
+                        label={statusLabels[post.status]}
+                        size="small"
+                        sx={{
+                          bgcolor: `${statusColors[post.status]}30`,
+                          color: statusColors[post.status],
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                          px: 1,
+                        }}
+                      />
+                    </Box>
+                  )}
 
                   {/* Main Content */}
                   <Box sx={{ flex: 1, minWidth: 250 }}>
@@ -455,6 +457,19 @@ const fetchApprovedPosts = async () => {
                       minWidth: 120,
                     }}
                   >
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => router.push(`/postdetails/${post.id}`)}
+                      sx={{
+                        bgcolor: "#8b5cf6",
+                        "&:hover": { bgcolor: "#7c3aed" },
+                        textTransform: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      View Details
+                    </Button>
                     <Button
                       variant="contained"
                       size="small"
