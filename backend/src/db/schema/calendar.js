@@ -13,4 +13,5 @@ export const calevents = pgTable("calevents", {
     eligibleStudents: text("eligible_students"),
     description: text("description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+
 });

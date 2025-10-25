@@ -103,19 +103,7 @@ export default function RecommendedCard({ opportunities }) {
         ))}
       </Stack>
 
-      <Button
-        fullWidth
-        variant="outlined"
-        sx={{
-          mt: 3,
-          color: "#8b5cf6",
-          borderColor: "#334155",
-          textTransform: "none",
-          "&:hover": { borderColor: "#8b5cf6", bgcolor: "#1e293b" },
-        }}
-      >
-        View All Opportunities
-      </Button>
+
     </Box>
   );
 }

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from "../db/index.js";
 import { calevents } from "../db/schema/calendar.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, lt } from "drizzle-orm";
 
 const router = Router();
 
@@ -17,7 +17,7 @@ const findDuplicates = async (eventData) => {
                 eq(calevents.title, title),
                 eq(calevents.eventDate, eventDate),
                 eq(calevents.eventTime, eventTime),
-                eq(calevents.eventType, eventType || "oncampus"),
+                eq(calevents.eventType, eventType || "events"),
                 eq(calevents.location, location || null),
                 eq(calevents.eligibleStudents, eligibleStudents || null)
             )
@@ -58,48 +58,53 @@ const removeDuplicates = async () => {
     }
 };
 
-// Get all events (with auto-cleanup of ended events and duplicates)
-router.get("/calendar", async (req, res) => {
+// Helper function to delete old events based on date only
+const deleteOldEvents = async () => {
     try {
-        // First remove duplicates
-        const duplicatesRemoved = await removeDuplicates();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of today
 
-        // Get all events
-        const allEvents = await db
-            .select()
-            .from(calevents)
-            .orderBy(calevents.eventDate, calevents.eventTime);
+        const todayString = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
-        // Filter and delete ended events
-        const now = new Date();
-        const endedEventIds = [];
+        // Get all events with dates before today
+        const allEvents = await db.select().from(calevents);
+        const oldEventIds = [];
 
         allEvents.forEach(event => {
-            const eventDate = new Date(event.eventDate);
-            const timeToCheck = event.endTime || event.eventTime;
-
-            if (timeToCheck) {
-                const [hours, minutes] = timeToCheck.split(':').map(Number);
-                const eventEndDateTime = new Date(eventDate);
-                eventEndDateTime.setHours(hours, minutes, 0, 0);
-
-                // If event has ended, mark for deletion
-                if (now > eventEndDateTime) {
-                    endedEventIds.push(event.id);
-                }
+            if (event.eventDate < todayString) {
+                oldEventIds.push(event.id);
             }
         });
 
-        // Delete ended events from database
-        if (endedEventIds.length > 0) {
-            for (const id of endedEventIds) {
-                await db
-                    .delete(calevents)
-                    .where(eq(calevents.id, id));
+        // Delete old events from database
+        if (oldEventIds.length > 0) {
+            for (const id of oldEventIds) {
+                await db.delete(calevents).where(eq(calevents.id, id));
             }
+            console.log(`Auto-deleted ${oldEventIds.length} old events (before ${todayString})`);
         }
 
-        // Get fresh list of active events
+        return oldEventIds.length;
+    } catch (error) {
+        console.error("Error deleting old events:", error);
+        return 0;
+    }
+};
+
+// Auto-cleanup function
+const autoCleanup = async () => {
+    const duplicatesRemoved = await removeDuplicates();
+    const oldEventsRemoved = await deleteOldEvents();
+    return { duplicatesRemoved, oldEventsRemoved };
+};
+
+// Get all events (with auto-cleanup)
+router.get("/calendar", async (req, res) => {
+    try {
+        // Auto-cleanup old events and duplicates
+        const { duplicatesRemoved, oldEventsRemoved } = await autoCleanup();
+
+        // Get all remaining events
         const activeEvents = await db
             .select()
             .from(calevents)
@@ -109,7 +114,7 @@ router.get("/calendar", async (req, res) => {
             ok: true,
             calevents: activeEvents,
             duplicatesRemoved,
-            endedEventsRemoved: endedEventIds.length
+            oldEventsRemoved
         });
     } catch (e) {
         console.error(e);
@@ -135,6 +140,19 @@ router.post("/calendar", async (req, res) => {
             return res.status(400).json({
                 ok: false,
                 error: "Title, date, and time are required"
+            });
+        }
+
+        // Check if the event date is in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const eventDateObj = new Date(eventDate);
+        eventDateObj.setHours(0, 0, 0, 0);
+
+        if (eventDateObj < today) {
+            return res.status(400).json({
+                ok: false,
+                error: "Cannot create events for past dates"
             });
         }
 
@@ -166,7 +184,7 @@ router.post("/calendar", async (req, res) => {
                 eventDate,
                 eventTime,
                 endTime: endTime || null,
-                eventType: eventType || "oncampus",
+                eventType: eventType || "events",
                 location: location || null,
                 eligibleStudents: eligibleStudents || null,
                 description: description || null
@@ -177,6 +195,74 @@ router.post("/calendar", async (req, res) => {
             ok: true,
             message: 'Event created successfully',
             event: newEvent[0]
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
+// Update event
+router.put("/calendar/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            title,
+            eventDate,
+            eventTime,
+            endTime,
+            eventType,
+            location,
+            eligibleStudents,
+            description
+        } = req.body;
+
+        if (!title || !eventDate || !eventTime) {
+            return res.status(400).json({
+                ok: false,
+                error: "Title, date, and time are required"
+            });
+        }
+
+        // Check if the event date is in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const eventDateObj = new Date(eventDate);
+        eventDateObj.setHours(0, 0, 0, 0);
+
+        if (eventDateObj < today) {
+            return res.status(400).json({
+                ok: false,
+                error: "Cannot update events to past dates"
+            });
+        }
+
+        const updatedEvent = await db
+            .update(calevents)
+            .set({
+                title,
+                eventDate,
+                eventTime,
+                endTime: endTime || null,
+                eventType: eventType || "events",
+                location: location || null,
+                eligibleStudents: eligibleStudents || null,
+                description: description || null
+            })
+            .where(eq(calevents.id, id))
+            .returning();
+
+        if (updatedEvent.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                error: "Event not found"
+            });
+        }
+
+        res.json({
+            ok: true,
+            message: 'Event updated successfully',
+            event: updatedEvent[0]
         });
     } catch (e) {
         console.error(e);
@@ -214,12 +300,13 @@ router.delete("/calendar/:id", async (req, res) => {
 // Manual cleanup endpoint (optional - for admin use)
 router.post("/calendar/cleanup", async (req, res) => {
     try {
-        const duplicatesRemoved = await removeDuplicates();
+        const { duplicatesRemoved, oldEventsRemoved } = await autoCleanup();
 
         res.json({
             ok: true,
-            message: `Cleanup completed. Removed ${duplicatesRemoved} duplicate events.`,
-            duplicatesRemoved
+            message: `Cleanup completed. Removed ${duplicatesRemoved} duplicates and ${oldEventsRemoved} old events.`,
+            duplicatesRemoved,
+            oldEventsRemoved
         });
     } catch (e) {
         console.error(e);

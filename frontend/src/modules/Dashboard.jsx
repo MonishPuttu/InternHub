@@ -83,13 +83,24 @@ export default function DashboardPage() {
     }
   };
 
+  const userRole = user?.role || "student";
+
+  const getRoleBasedPath = (role) => {
+    const rolePaths = {
+      student: "/post_student",
+      recruiter: "/post_recruiter",
+      placement: "/post_admin",
+    };
+    return rolePaths[role] || "/post_student";
+  };
+
   const quickActions = [
     {
       title: "Browse Jobs",
       subtitle: "Find new opportunities",
       icon: WorkOutline,
       color: "#8b5cf6",
-      path: "/posts",
+      path: getRoleBasedPath(userRole),  // Only this path changes
     },
     {
       title: "Update Profile",

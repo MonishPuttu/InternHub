@@ -1,9 +1,22 @@
 import { Box, Typography, Stack, Chip, Button } from "@mui/material";
 import { Business, WorkOutline, ArrowForward } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { getUser } from "@/lib/session";
 
 export default function RecentApplicationsCard({ applications }) {
   const router = useRouter();
+  const user = getUser();
+
+  const handleViewAll = () => {
+    const userRole = user?.role || "student";
+    const rolePaths = {
+      student: "/post_student",
+      recruiter: "/post_recruiter",
+      placement: "/post_admin",
+    };
+    const targetPath = rolePaths[userRole] || "/post_student";
+    router.push(targetPath);
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -46,7 +59,7 @@ export default function RecentApplicationsCard({ applications }) {
         <Stack direction="row" spacing={1}>
           <Button
             endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-            onClick={() => router.push("/applications")}
+            onClick={handleViewAll}
             sx={{
               color: "#8b5cf6",
               textTransform: "none",
@@ -219,6 +232,7 @@ export default function RecentApplicationsCard({ applications }) {
           </Typography>
           <Button
             variant="outlined"
+            onClick={handleViewAll}
             sx={{
               color: "#8b5cf6",
               borderColor: "#334155",
