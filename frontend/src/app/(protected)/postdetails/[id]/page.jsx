@@ -200,27 +200,27 @@ export default function PostDetailsPage() {
                             </Box>
 
                             {/* Status Badges */}
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                            <Box >
                                 <Chip
-                                    label={statusLabels[post.status]}
+                                    label={post.approval_status === "approved" ? "Approved" : post.approval_status === "disapproved" ? "Disapproved" : "Pending Approval"}
                                     sx={{
-                                        bgcolor: `${statusColors[post.status]}30`,
-                                        color: statusColors[post.status],
-                                        fontWeight: 600,
-                                        border: `1px solid ${statusColors[post.status]}`,
-                                    }}
-                                />
-                                <Chip
-                                    label={post.is_approved ? "Approved" : "Pending Approval"}
-                                    sx={{
-                                        bgcolor: post.is_approved
+                                        bgcolor: post.approval_status === "approved"
                                             ? "rgba(16, 185, 129, 0.1)"
-                                            : "rgba(251, 191, 36, 0.1)",
-                                        color: post.is_approved ? "#10b981" : "#fbbf24",
+                                            : post.approval_status === "disapproved"
+                                                ? "rgba(239, 68, 68, 0.1)"
+                                                : "rgba(251, 191, 36, 0.1)",
+                                        color: post.approval_status === "approved"
+                                            ? "#10b981"
+                                            : post.approval_status === "disapproved"
+                                                ? "#ef4444"
+                                                : "#fbbf24",
                                         fontWeight: 600,
-                                        border: `1px solid ${post.is_approved
-                                            ? "rgba(16, 185, 129, 0.3)"
-                                            : "rgba(251, 191, 36, 0.3)"
+                                        border: `1px solid ${
+                                            post.approval_status === "approved"
+                                                ? "rgba(16, 185, 129, 0.3)"
+                                                : post.approval_status === "disapproved"
+                                                    ? "rgba(239, 68, 68, 0.3)"
+                                                    : "rgba(251, 191, 36, 0.3)"
                                             }`,
                                     }}
                                 />
