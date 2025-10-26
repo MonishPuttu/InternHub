@@ -12,14 +12,16 @@ const roleAccessMap = {
   "/Post/recruiter": ["recruiter"],
   "/Post/postdetails": ["student", "placement", "recruiter"],
 
+  // Calendar routes
+  "/calendar/recruiter": ["recruiter"],
+  "/calendar/placement": ["placement"],
+  "/calendar/student": ["student"],
+
   // Other routes
   "/my-applications": ["student"],
   "/analytics": ["student", "placement", "recruiter"],
   "/profile": ["student", "placement", "recruiter"],
   "/chat": ["student", "placement", "recruiter"],
-  "/calendar": ["recruiter"],
-  "/cal_admin": ["placement"],
-  "/cal_students": ["student"],
 };
 
 export const canAccessRoute = (route) => {
