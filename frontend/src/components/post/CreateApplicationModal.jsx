@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from 'react';
-import { 
-  Button, TextField, IconButton, Typography, Box, Paper, Modal, 
-  Snackbar, Alert, MenuItem, LinearProgress 
+import {
+  Button, TextField, IconButton, Typography, Box, Paper, Modal,
+  Snackbar, Alert, MenuItem, LinearProgress
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -15,7 +15,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 const INDUSTRIES = [
-  'Technology', 'Finance', 'Healthcare', 'Consulting', 
+  'Technology', 'Finance', 'Healthcare', 'Consulting',
   'Manufacturing', 'Retail', 'Education', 'Other'
 ];
 
@@ -55,7 +55,7 @@ const MediaPreview = ({ file, onDelete, preview }) => {
       ) : (
         <InsertDriveFileIcon sx={{ color: VIOLET_PRIMARY, fontSize: 32 }} />
       )}
-      
+
       <Box sx={{ flex: 1 }}>
         <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
           {file.name}
@@ -97,7 +97,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    
+
     if (!file) return;
 
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -106,7 +106,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setErrorMsg('File size exceeds 50MB limit');
+      setErrorMsg('File size exceeds 1MB limit');
       return;
     }
 
@@ -132,7 +132,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     setSuccessMsg('');
     setLoading(true);
     setUploadProgress(0);
-    
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -167,7 +167,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
 
       if (result.ok) {
         setSuccessMsg('Application posted successfully!');
-        
+
         // Reset form
         setFormData({
           company_name: '',
@@ -181,7 +181,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         });
         setMediaFile(null);
         setMediaPreview(null);
-        
+
         setTimeout(() => {
           onClose();
           setSuccessMsg('');
@@ -224,48 +224,48 @@ export const CreateApplicationModal = ({ open, onClose }) => {
 
           <form onSubmit={handleSubmit}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-              
-              <TextField 
-                fullWidth 
-                label="Company Name" 
-                name="company_name" 
+
+              <TextField
+                fullWidth
+                label="Company Name"
+                name="company_name"
                 required
-                value={formData.company_name} 
-                onChange={handleInputChange} 
+                value={formData.company_name}
+                onChange={handleInputChange}
                 disabled={loading}
                 InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: '8px', 
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-                    color: 'white' 
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: 'white'
                   }
                 }}
               />
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField 
-                  fullWidth 
-                  label="Position" 
-                  name="position" 
+                <TextField
+                  fullWidth
+                  label="Position"
+                  name="position"
                   required
-                  value={formData.position} 
-                  onChange={handleInputChange} 
+                  value={formData.position}
+                  onChange={handleInputChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
                 />
-                <TextField 
-                  fullWidth 
+                <TextField
+                  fullWidth
                   select
-                  label="Industry" 
-                  name="industry" 
+                  label="Industry"
+                  name="industry"
                   required
-                  value={formData.industry} 
-                  onChange={handleInputChange} 
+                  value={formData.industry}
+                  onChange={handleInputChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
                 >
                   {INDUSTRIES.map((option) => (
                     <MenuItem key={option} value={option}>{option}</MenuItem>
@@ -274,28 +274,28 @@ export const CreateApplicationModal = ({ open, onClose }) => {
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField 
-                  fullWidth 
-                  label="Application Date" 
-                  name="application_date" 
+                <TextField
+                  fullWidth
+                  label="Application Date"
+                  name="application_date"
                   type="date"
                   required
-                  value={formData.application_date} 
-                  onChange={handleInputChange} 
+                  value={formData.application_date}
+                  onChange={handleInputChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
                 />
-                <TextField 
-                  fullWidth 
+                <TextField
+                  fullWidth
                   select
-                  label="Status" 
-                  name="status" 
-                  value={formData.status} 
-                  onChange={handleInputChange} 
+                  label="Status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
@@ -303,44 +303,44 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                 </TextField>
               </Box>
 
-              <TextField 
-                fullWidth 
-                label="Package Offered (in Lakhs)" 
-                name="package_offered" 
+              <TextField
+                fullWidth
+                label="Package Offered (in Lakhs)"
+                name="package_offered"
                 type="number"
-                value={formData.package_offered} 
-                onChange={handleInputChange} 
+                value={formData.package_offered}
+                onChange={handleInputChange}
                 disabled={loading}
                 InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
                 inputProps={{ step: '0.01', min: '0' }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
               />
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-                <TextField 
-                  fullWidth 
-                  label="Deadline Date" 
-                  name="deadline" 
+                <TextField
+                  fullWidth
+                  label="Deadline Date"
+                  name="deadline"
                   type="date"
-                  value={formData.deadline} 
-                  onChange={handleInputChange} 
+                  value={formData.deadline}
+                  onChange={handleInputChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
                 />
               </Box>
 
-              <TextField 
-                fullWidth 
-                label="Additional Notes" 
-                name="notes" 
-                multiline 
-                rows={3} 
-                value={formData.notes} 
-                onChange={handleInputChange} 
+              <TextField
+                fullWidth
+                label="Additional Notes"
+                name="notes"
+                multiline
+                rows={3}
+                value={formData.notes}
+                onChange={handleInputChange}
                 disabled={loading}
                 InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
               />
 
               <Box sx={{ mt: 1 }}>
@@ -348,10 +348,10 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                   Upload Poster/Media (Optional)
                 </Typography>
 
-                <Paper 
-                  elevation={0} 
-                  sx={{ 
-                    p: 4, 
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 4,
                     borderRadius: '12px',
                     border: '2px dashed',
                     borderColor: 'rgba(139, 92, 246, 0.4)',
@@ -379,7 +379,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                         Click to upload image
                       </Typography>
                       <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
-                        Images only (JPG, PNG, GIF, WebP) - Max 50MB
+                        Images only (JPG, PNG, GIF, WebP) - Max 1MB
                       </Typography>
                     </Box>
                   </label>
@@ -387,7 +387,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
 
                 {mediaFile && (
                   <Box sx={{ mt: 2 }}>
-                    <MediaPreview 
+                    <MediaPreview
                       file={mediaFile}
                       preview={mediaPreview}
                       onDelete={removeMediaFile}
@@ -406,8 +406,8 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                       {Math.round(uploadProgress)}%
                     </Typography>
                   </Box>
-                  <LinearProgress 
-                    variant="determinate" 
+                  <LinearProgress
+                    variant="determinate"
                     value={uploadProgress}
                     sx={{
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -420,16 +420,16 @@ export const CreateApplicationModal = ({ open, onClose }) => {
               )}
 
               <Box sx={{ pt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <Button 
-                  variant="text" 
+                <Button
+                  variant="text"
                   onClick={onClose}
                   disabled={loading}
                   sx={{ color: TEXT_SECONDARY, textTransform: 'none', fontWeight: 'bold' }}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   type="submit"
                   disabled={loading}
                   sx={{

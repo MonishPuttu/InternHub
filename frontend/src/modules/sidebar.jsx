@@ -131,36 +131,6 @@ export default function Sidebar({
           </Box>
         </Box>
 
-        <Box sx={{ px: 2, pb: 2, mb: 1 }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              backgroundColor: "#071026",
-              borderRadius: 1,
-              px: 1.5,
-              py: 0.75,
-              border: "1px solid rgba(255, 255, 255, 0.03)",
-            }}
-          >
-            <SearchIcon sx={{ color: "#64748b", fontSize: 20, mr: 1 }} />
-            <InputBase
-              placeholder="Quick search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                flex: 1,
-                color: "#94a3b8",
-                fontSize: "0.875rem",
-                "& input::placeholder": { color: "#64748b", opacity: 1 },
-              }}
-            />
-            <IconButton size="small" sx={{ p: 0.5 }}>
-              <ArrowForwardIcon sx={{ color: "#64748b", fontSize: 18 }} />
-            </IconButton>
-          </Box>
-        </Box>
-
         <List sx={{ px: 1.5 }}>
           {navigationItems
             .filter((item) => {
