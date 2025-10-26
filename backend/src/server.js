@@ -8,7 +8,8 @@ import chatRoutes from "./routes/chatRooms.js"; // Rooms logic
 import calendarRoutes from "./routes/calendar.js"; // calendar
 import analyticsRoutes from "./routes/analytics.js"; // Stats logic
 import profileRoutes from "./routes/profile.js"; // Profile Page
-import dashboardRoutes from "./routes/Dashboard.js"; // Dashobard page
+import dashboardRoutes from "./routes/Dashboard/Dashboard.js"; // Dashobard page
+import studentApplicationsRoutes from "./routes/Dashboard/student_application.js"; // Dashobard page [placementcell]
 import postsRoutes from "./routes/posts.js"; // Post management routes
 
 const app = express();
@@ -33,9 +34,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/posts", postsRoutes);
-
-app.use("/api/auth", authRoutes);
-app.use("/api", chatRoutes);
+app.use("/api/student-applications", studentApplicationsRoutes);
 app.use("/api", calendarRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));

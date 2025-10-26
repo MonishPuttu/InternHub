@@ -30,7 +30,7 @@ export default function UserMenu() {
 
   const handleProfile = () => {
     handleClose();
-    router.push("/dashboard/profile");
+    router.push("/profile");
   };
 
   const handleLogout = async () => {

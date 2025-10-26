@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/session";
 import { Box, CircularProgress } from "@mui/material";
 
-export default function DashboardPage() {
+export default function PostPage() {
   const router = useRouter();
   const user = getUser();
 
@@ -15,19 +15,19 @@ export default function DashboardPage() {
       return;
     }
 
-    // Role-based routing
+    // Role-based routing for Post section
     switch (user.role) {
       case "student":
-        router.push("/dashboard/student");
+        router.push("/Post/student");
         break;
       case "placement":
-        router.push("/dashboard/placement");
+        router.push("/Post/placement");
         break;
       case "recruiter":
-        router.push("/dashboard/recruiter");
+        router.push("/Post/recruiter");
         break;
       default:
-        router.push("/dashboard/student");
+        router.push("/Post/student");
     }
   }, [user, router]);
 

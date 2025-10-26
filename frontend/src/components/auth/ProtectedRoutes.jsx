@@ -1,6 +1,3 @@
-// File: frontend/src/components/ProtectedRoute.jsx
-// Wrapper component for role-based route protection
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,8 +18,22 @@ export default function ProtectedRoute({ children }) {
 
     if (!hasAccess) {
       console.warn(`Access denied for role: ${userRole} to route: ${pathname}`);
-      // Redirect to dashboard if unauthorized (user may be logged in but lacks role)
-      router.push("/dashboard");
+
+      // Redirect to appropriate dashboard based on role
+      switch (userRole) {
+        case "student":
+          router.push("/dashboard/student");
+          break;
+        case "placement":
+          router.push("/dashboard/placement");
+          break;
+        case "recruiter":
+          router.push("/dashboard/recruiter");
+          break;
+        default:
+          router.push("/dashboard");
+      }
+
       setIsAuthorized(false);
       setIsLoading(false);
       return;
@@ -40,7 +51,7 @@ export default function ProtectedRoute({ children }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          minHeight: "100vh",
+          minHeight: "80vh",
           bgcolor: "#0f172a",
         }}
       >
@@ -49,22 +60,23 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // If not authorized, show error (this shouldn't show due to redirect above)
+  // If not authorized, show nothing (redirect is happening)
   if (!isAuthorized) {
     return (
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          minHeight: "100vh",
+          minHeight: "80vh",
           bgcolor: "#0f172a",
           color: "#e2e8f0",
+          gap: 2,
         }}
       >
-        <Typography variant="h5">
-          You don't have permission to access this page
-        </Typography>
+        <Typography variant="h5">Redirecting to your dashboard...</Typography>
+        <CircularProgress sx={{ color: "#8b5cf6" }} />
       </Box>
     );
   }

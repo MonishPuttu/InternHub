@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -19,9 +18,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Select,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -33,27 +29,14 @@ import {
   Edit as EditIcon,
 } from "@mui/icons-material";
 import axios from "axios";
-import { CreateApplicationModal } from "../components/CreateApplicationModal";
+import { CreateApplicationModal } from "@/components/post/CreateApplicationModal";
+import {
+  BACKEND_URL,
+  STATUS_COLORS,
+  STATUS_LABELS,
+} from "@/constants/postConstants";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-
-const statusColors = {
-  applied: "#64748b",
-  interview_scheduled: "#0ea5e9",
-  interviewed: "#8b5cf6",
-  offer: "#10b981",
-  rejected: "#ef4444",
-};
-
-const statusLabels = {
-  applied: "Applied",
-  interview_scheduled: "Interview Scheduled",
-  interviewed: "Interviewed",
-  offer: "Offer Received",
-  rejected: "Rejected",
-};
-
-export default function PostOpportunities() {
+export default function RecruiterPost() {
   const router = useRouter();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,19 +68,23 @@ export default function PostOpportunities() {
     fetchApplications();
   }, []);
 
-  // Calculate statistics
   const stats = {
     total: applications.length,
-    approved: applications.filter(app => app.approval_status === 'approved').length,
-    pending: applications.filter(app => app.approval_status !== 'approved').length,
+    approved: applications.filter((app) => app.approval_status === "approved")
+      .length,
+    pending: applications.filter((app) => app.approval_status !== "approved")
+      .length,
   };
 
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${BACKEND_URL}/api/posts/applications`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${BACKEND_URL}/api/posts/applications`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.ok) {
         setApplications(response.data.applications);
@@ -123,9 +110,12 @@ export default function PostOpportunities() {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${BACKEND_URL}/api/posts/applications/${selectedApp.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(
+        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setSuccessMsg("Application deleted successfully");
       fetchApplications();
@@ -141,14 +131,11 @@ export default function PostOpportunities() {
   };
 
   const handleViewDetails = (app) => {
-    // Navigate to details page
-    router.push(`/postdetails/${app.id}`);
+    router.push(`/Post/postdetails/${app.id}`);
   };
 
   const handleOpenEditDialog = () => {
     if (!selectedApp) return;
-
-    console.log("Opening edit dialog for:", selectedApp);
 
     setEditFormData({
       position: selectedApp.position || "",
@@ -163,16 +150,19 @@ export default function PostOpportunities() {
       contact_person: selectedApp.contact_person || "",
       contact_email: selectedApp.contact_email || "",
       job_link: selectedApp.job_link || "",
-      application_deadline: selectedApp.application_deadline ? selectedApp.application_deadline.split('T')[0] : "",
-      interview_date: selectedApp.interview_date ? selectedApp.interview_date.split('T')[0] : "",
+      application_deadline: selectedApp.application_deadline
+        ? selectedApp.application_deadline.split("T")[0]
+        : "",
+      interview_date: selectedApp.interview_date
+        ? selectedApp.interview_date.split("T")[0]
+        : "",
     });
     setEditDialogOpen(true);
-    // Don't close the menu yet - keep selectedApp
   };
 
   const handleCloseEditDialog = () => {
     setEditDialogOpen(false);
-    handleMenuClose(); // Close menu and clear selectedApp
+    handleMenuClose();
     setEditFormData({
       position: "",
       company_name: "",
@@ -192,9 +182,9 @@ export default function PostOpportunities() {
   };
 
   const handleEditFormChange = (field, value) => {
-    setEditFormData(prev => ({
+    setEditFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -203,26 +193,20 @@ export default function PostOpportunities() {
 
     try {
       const token = localStorage.getItem("token");
-
-      // Prepare the data - only send non-empty fields
       const updatePayload = {};
 
-      Object.keys(editFormData).forEach(key => {
+      Object.keys(editFormData).forEach((key) => {
         const value = editFormData[key];
         if (value !== "" && value !== null && value !== undefined) {
           updatePayload[key] = value;
         }
       });
 
-      console.log("Sending update payload:", updatePayload);
-
       const response = await axios.put(
         `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
         updatePayload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      console.log("Update response:", response.data);
 
       if (response.data.ok) {
         setSuccessMsg("Post updated successfully!");
@@ -233,23 +217,23 @@ export default function PostOpportunities() {
       }
     } catch (error) {
       console.error("Error updating post:", error);
-      console.error("Error details:", error.response?.data);
       setErrorMsg(error.response?.data?.error || "Failed to update post");
     }
   };
 
-  // Filter applications based on selected filter
-  const filteredApplications = applications.filter(app => {
+  const filteredApplications = applications.filter((app) => {
     if (filterStatus === "all") return true;
-    if (filterStatus === "approved") return app.approval_status === 'approved';
-    if (filterStatus === "pending") return app.approval_status !== 'approved';
+    if (filterStatus === "approved") return app.approval_status === "approved";
+    if (filterStatus === "pending") return app.approval_status !== "approved";
     return true;
   });
 
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>Loading opportunities...</Typography>
+        <Typography sx={{ color: "#e2e8f0" }}>
+          Loading opportunities...
+        </Typography>
       </Box>
     );
   }
@@ -257,9 +241,19 @@ export default function PostOpportunities() {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 4,
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}>
+          <Typography
+            variant="h4"
+            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+          >
             Post Opportunities
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
@@ -296,7 +290,9 @@ export default function PostOpportunities() {
           onClick={() => setFilterStatus("all")}
           sx={{
             bgcolor: filterStatus === "all" ? "#8b5cf620" : "#1e293b",
-            border: `2px solid ${filterStatus === "all" ? "#8b5cf6" : "#334155"}`,
+            border: `2px solid ${
+              filterStatus === "all" ? "#8b5cf6" : "#334155"
+            }`,
             borderRadius: 2,
             p: 1.5,
             cursor: "pointer",
@@ -307,7 +303,10 @@ export default function PostOpportunities() {
             },
           }}
         >
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}>
+          <Typography
+            variant="body2"
+            sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}
+          >
             Total Opportunities
           </Typography>
           <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 600 }}>
@@ -319,7 +318,9 @@ export default function PostOpportunities() {
           onClick={() => setFilterStatus("approved")}
           sx={{
             bgcolor: filterStatus === "approved" ? "#10b98120" : "#1e293b",
-            border: `2px solid ${filterStatus === "approved" ? "#10b981" : "#334155"}`,
+            border: `2px solid ${
+              filterStatus === "approved" ? "#10b981" : "#334155"
+            }`,
             borderRadius: 2,
             p: 1.5,
             cursor: "pointer",
@@ -330,7 +331,10 @@ export default function PostOpportunities() {
             },
           }}
         >
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}>
+          <Typography
+            variant="body2"
+            sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}
+          >
             Approved Posts
           </Typography>
           <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 600 }}>
@@ -342,7 +346,9 @@ export default function PostOpportunities() {
           onClick={() => setFilterStatus("pending")}
           sx={{
             bgcolor: filterStatus === "pending" ? "#fbbf2420" : "#1e293b",
-            border: `2px solid ${filterStatus === "pending" ? "#fbbf24" : "#334155"}`,
+            border: `2px solid ${
+              filterStatus === "pending" ? "#fbbf24" : "#334155"
+            }`,
             borderRadius: 2,
             p: 1.5,
             cursor: "pointer",
@@ -353,7 +359,10 @@ export default function PostOpportunities() {
             },
           }}
         >
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}>
+          <Typography
+            variant="body2"
+            sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}
+          >
             Pending Approval
           </Typography>
           <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 600 }}>
@@ -374,10 +383,14 @@ export default function PostOpportunities() {
           }}
         >
           <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
-            {filterStatus === "all" ? "No opportunities posted yet" : `No ${filterStatus} opportunities`}
+            {filterStatus === "all"
+              ? "No opportunities posted yet"
+              : `No ${filterStatus} opportunities`}
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
-            {filterStatus === "all" ? "Start by creating your first opportunity post" : "Try a different filter"}
+            {filterStatus === "all"
+              ? "Start by creating your first opportunity post"
+              : "Try a different filter"}
           </Typography>
           {filterStatus === "all" ? (
             <Button
@@ -427,7 +440,6 @@ export default function PostOpportunities() {
               }}
             >
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                {/* Top Section - Image Banner (if exists) */}
                 {app.media && (
                   <Box
                     component="img"
@@ -443,12 +455,14 @@ export default function PostOpportunities() {
                   />
                 )}
 
-                {/* Top Row - Status and Menu */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {/* Left - Lifecycle Status Badge removed to hide 'Rejected' etc. */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Box />
-
-                  {/* Right Section - Menu */}
                   <IconButton
                     size="small"
                     onClick={(e) => handleMenuOpen(e, app)}
@@ -458,9 +472,13 @@ export default function PostOpportunities() {
                   </IconButton>
                 </Box>
 
-                {/* Main Content Section */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {/* Left - Position & Company */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Box sx={{ flex: 1 }}>
                     <Typography
                       variant="h6"
@@ -485,7 +503,6 @@ export default function PostOpportunities() {
                     </Typography>
                   </Box>
 
-                  {/* Right - Posted Date */}
                   <Typography
                     variant="body2"
                     sx={{
@@ -493,15 +510,18 @@ export default function PostOpportunities() {
                       fontSize: "0.85rem",
                     }}
                   >
-                    Posted {new Date(app.application_date).toLocaleDateString("en-US", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    Posted{" "}
+                    {new Date(app.application_date).toLocaleDateString(
+                      "en-US",
+                      {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )}
                   </Typography>
                 </Box>
 
-                {/* Bottom Info Row */}
                 <Box
                   sx={{
                     display: "flex",
@@ -510,41 +530,51 @@ export default function PostOpportunities() {
                     mt: 1,
                   }}
                 >
-                  {/* Info Items */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 3,
-                      alignItems: "center",
-                    }}
-                  >
+                  <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
                     {app.package_offered && (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <AttachMoneyIcon sx={{ fontSize: 16, color: "#64748b" }} />
-                        <Typography variant="body2" sx={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                      >
+                        <AttachMoneyIcon
+                          sx={{ fontSize: 16, color: "#64748b" }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                        >
                           ₹{app.package_offered}L
                         </Typography>
                       </Box>
                     )}
 
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    >
                       <LocationOnIcon sx={{ fontSize: 16, color: "#64748b" }} />
-                      <Typography variant="body2" sx={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                      >
                         {app.industry}
                       </Typography>
                     </Box>
 
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    >
                       <AccessTimeIcon sx={{ fontSize: 16, color: "#64748b" }} />
-                      <Typography variant="body2" sx={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-                        Posted {new Date(app.application_date).toLocaleDateString()}
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                      >
+                        Posted{" "}
+                        {new Date(app.application_date).toLocaleDateString()}
                       </Typography>
                     </Box>
                   </Box>
 
-                  {/* Right - Approval Status and View Details Button */}
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    {app.approval_status === 'approved' ? (
+                    {app.approval_status === "approved" ? (
                       <Chip
                         label="Approved"
                         size="small"
@@ -556,7 +586,7 @@ export default function PostOpportunities() {
                           border: "1px solid rgba(16, 185, 129, 0.3)",
                         }}
                       />
-                    ) : app.approval_status === 'disapproved' ? (
+                    ) : app.approval_status === "disapproved" ? (
                       <Chip
                         label="Disapproved"
                         size="small"
@@ -679,7 +709,9 @@ export default function PostOpportunities() {
               fullWidth
               label="Company Name"
               value={editFormData.company_name}
-              onChange={(e) => handleEditFormChange("company_name", e.target.value)}
+              onChange={(e) =>
+                handleEditFormChange("company_name", e.target.value)
+              }
               sx={{
                 "& .MuiOutlinedInput-root": {
                   backgroundColor: "#0f172a",
@@ -691,23 +723,21 @@ export default function PostOpportunities() {
               }}
             />
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-              <TextField
-                fullWidth
-                label="Industry"
-                value={editFormData.industry}
-                onChange={(e) => handleEditFormChange("industry", e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#0f172a",
-                    color: "#e2e8f0",
-                    "& fieldset": { borderColor: "#334155" },
-                    "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
-                }}
-              />
-            </Box>
+            <TextField
+              fullWidth
+              label="Industry"
+              value={editFormData.industry}
+              onChange={(e) => handleEditFormChange("industry", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#0f172a",
+                  color: "#e2e8f0",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": { color: "#94a3b8" },
+              }}
+            />
 
             <TextField
               fullWidth
@@ -746,10 +776,7 @@ export default function PostOpportunities() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
-          <Button
-            onClick={handleCloseEditDialog}
-            sx={{ color: "#94a3b8" }}
-          >
+          <Button onClick={handleCloseEditDialog} sx={{ color: "#94a3b8" }}>
             Cancel
           </Button>
           <Button

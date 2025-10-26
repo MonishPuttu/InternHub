@@ -20,7 +20,7 @@ export const room_members = pgTable("room_members", {
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  roomId: uuid("room_id").references(() => rooms.id, { onDelete: "cascade" }), // REMOVED .notNull() - can be null for direct messages
+  roomId: uuid("room_id").references(() => rooms.id, { onDelete: "cascade" }),
   senderId: uuid("sender_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),

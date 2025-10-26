@@ -10,8 +10,9 @@ import {
   Stack,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import Sidebar from "../../modules/sidebar";
+import Sidebar from "@/modules/sidebar";
 import UserMenu from "@/components/auth/userMenu";
+import ProtectedRoute from "@/components/auth/ProtectedRoutes";
 import { isAuthenticated, startSessionChecker } from "@/lib/session";
 
 const DRAWER_WIDTH = 240;
@@ -105,8 +106,10 @@ export default function ProtectedLayout({ children }) {
           </Toolbar>
         </AppBar>
 
-        {/* Page Content */}
-        <Box>{children}</Box>
+        {/* Page Content with Role Protection */}
+        <Box>
+          <ProtectedRoute>{children}</ProtectedRoute>
+        </Box>
       </Box>
     </Box>
   );

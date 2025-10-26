@@ -28,7 +28,7 @@ import RecommendedCard from "@/components/dashboard/RecommendedCard";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
-export default function DashboardPage() {
+export default function StudentDashboard() {
   const router = useRouter();
   const user = getUser();
   const [timeFilter, setTimeFilter] = useState("year");

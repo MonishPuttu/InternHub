@@ -1,54 +1,64 @@
 import { getUser } from "@/lib/session";
 
 const roleAccessMap = {
-  "/post_student": ["student"], // Browse posts - only students
-  "/post": ["recruiter"], // Create opportunity - only recruiters (route is /post)
-  "/post_admin": ["placement"], // Manage posts - only placement cell
+  // Dashboard routes
+  "/dashboard/student": ["student"],
+  "/dashboard/placement": ["placement"],
+  "/dashboard/recruiter": ["recruiter"],
+
+  // Post routes
+  "/Post/student": ["student"],
+  "/Post/placement": ["placement"],
+  "/Post/recruiter": ["recruiter"],
+  "/Post/postdetails": ["student", "placement", "recruiter"],
+
+  // Other routes
+  "/my-applications": ["student"],
+  "/analytics": ["student", "placement", "recruiter"],
+  "/profile": ["student", "placement", "recruiter"],
+  "/chat": ["student", "placement", "recruiter"],
+  "/calendar": ["recruiter"],
+  "/cal_admin": ["placement"],
+  "/cal_students": ["student"],
 };
 
-/**
- * Check if user has access to a route
- * @param {string} route - The route path (e.g., "/post_student")
- * @returns {boolean} - True if user can access, false otherwise
- */
 export const canAccessRoute = (route) => {
   const user = getUser();
-  
+
   // If not logged in, deny access
   if (!user) return false;
-  
-  // Check if route requires role restriction
-  const allowedRoles = roleAccessMap[route];
-  
-  // If route has no restrictions, allow
-  if (!allowedRoles) return true;
-  
-  // Check if user's role is in allowed roles
-  return allowedRoles.includes(user.role);
+
+  // Check for exact match first
+  if (roleAccessMap[route]) {
+    return roleAccessMap[route].includes(user.role);
+  }
+
+  // Check for pattern matches (e.g., /Post/postdetails/[id])
+  for (const [pattern, allowedRoles] of Object.entries(roleAccessMap)) {
+    if (route.startsWith(pattern)) {
+      return allowedRoles.includes(user.role);
+    }
+  }
+
+  // If route not in map, allow access (public route within protected area)
+  return true;
 };
 
-/**
- * Get user's role
- * @returns {string|null} - User's role or null if not logged in
- */
 export const getUserRole = () => {
   const user = getUser();
   return user ? user.role : null;
 };
 
-/**
- * Check if user is a student
- */
 export const isStudent = () => getUserRole() === "student";
 
-/**
- * Check if user is a recruiter
- */
 export const isRecruiter = () => getUserRole() === "recruiter";
 
-/**
- * Check if user is placement cell
- */
 export const isPlacement = () => getUserRole() === "placement";
 
-export default { canAccessRoute, getUserRole, isStudent, isRecruiter, isPlacement };
+export default {
+  canAccessRoute,
+  getUserRole,
+  isStudent,
+  isRecruiter,
+  isPlacement,
+};

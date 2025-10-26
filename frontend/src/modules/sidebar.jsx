@@ -17,16 +17,13 @@ import {
 import {
   Search as SearchIcon,
   Home as HomeIcon,
-  Business as BusinessIcon,
   Description as DescriptionIcon,
   Person as PersonIcon,
-  Schedule as ScheduleIcon,
   BarChart as BarChartIcon,
-  EmojiEvents as EmojiEventsIcon,
   Feedback as FeedbackIcon,
-  Settings as SettingsIcon,
   ArrowForward as ArrowForwardIcon,
-  CalendarToday as CalenderIcon
+  CalendarToday as CalenderIcon,
+  WorkOutline as WorkOutlineIcon,
 } from "@mui/icons-material";
 
 const drawerWidth = 240;
@@ -36,24 +33,51 @@ import { getUser } from "@/lib/session";
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
 
-  { text: "Browse Posts", icon: <DescriptionIcon />, path: "/post_student", roles: ["student"] },
-  { text: "Post Opportunity", icon: <DescriptionIcon />, path: "/post_recruiter", roles: ["recruiter"] },
-  { text: "Manage Posts", icon: <DescriptionIcon />, path: "/post_admin", roles: ["placement"] },
+  { text: "Posts", icon: <DescriptionIcon />, path: "/Post", roles: null },
 
-  { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile", roles: null },
-  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar", roles: ["recruiter"] },
-  { text: "Calendar", icon: <CalenderIcon />, path: "/cal_admin", roles: ["placement"] },
-  { text: "Calendar", icon: <CalenderIcon />, path: "/cal_students", roles: ["student"] },
-  { text: "Analytics", icon: <BarChartIcon />, path: "/analytics", roles: null },
-
+  {
+    text: "My Applications",
+    icon: <WorkOutlineIcon />,
+    path: "/my-applications",
+    roles: ["student"],
+  },
+  {
+    text: "Profile & Resume",
+    icon: <PersonIcon />,
+    path: "/profile",
+    roles: null,
+  },
+  {
+    text: "Calendar",
+    icon: <CalenderIcon />,
+    path: "/calendar",
+    roles: ["recruiter"],
+  },
+  {
+    text: "Calendar",
+    icon: <CalenderIcon />,
+    path: "/cal_admin",
+    roles: ["placement"],
+  },
+  {
+    text: "Calendar",
+    icon: <CalenderIcon />,
+    path: "/cal_students",
+    roles: ["student"],
+  },
+  {
+    text: "Analytics",
+    icon: <BarChartIcon />,
+    path: "/analytics",
+    roles: null,
+  },
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
-
 ];
 
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => { },
+  onClose = () => {},
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -86,14 +110,12 @@ export default function Sidebar({
           boxSizing: "border-box",
           backgroundColor: "#0f172a",
           borderRight: "1px solid rgba(255, 255, 255, 0.04)",
-          // overlay on xs, in-flow on md+
           position: { xs: "fixed", md: "relative" },
           height: { xs: "100%", md: "100vh" },
           overflow: "visible",
         },
       }}
     >
-      {" "}
       <Box sx={{ width: drawerWidth, pt: 2 }}>
         <Box sx={{ px: 2, mb: 1 }}>
           <Box
@@ -142,9 +164,7 @@ export default function Sidebar({
         <List sx={{ px: 1.5 }}>
           {navigationItems
             .filter((item) => {
-              // If roles is null -> public item
               if (!item.roles) return true;
-              // If user not available, hide role-restricted items
               if (!userRole) return false;
               return item.roles.includes(userRole);
             })
