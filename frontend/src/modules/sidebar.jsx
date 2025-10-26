@@ -35,49 +35,30 @@ const navigationItems = [
 
   { text: "Posts", icon: <DescriptionIcon />, path: "/Post", roles: null },
 
+  { text: "Profile & Resume", icon: <PersonIcon />, path: "/profile", roles: null },
+  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar/recruiter", roles: ["recruiter"] },
+  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar/placementcell", roles: ["placement"] },
+  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar/students", roles: ["student"] },
+  { text: "Analytics", icon: <BarChartIcon />, path: "/analytics_rec", roles: ["recruiter"] },
+  { text: "Analytics", icon: <BarChartIcon />, path: "/analytics/placementanalytics", roles: ["placement"] },
+  { text: "Analytics", icon: <BarChartIcon />, path: "/analytics", roles: ["student"] },
+
   {
     text: "My Applications",
     icon: <WorkOutlineIcon />,
     path: "/my-applications",
     roles: ["student"],
   },
-  {
-    text: "Profile & Resume",
-    icon: <PersonIcon />,
-    path: "/profile",
-    roles: null,
-  },
-  {
-    text: "Calendar",
-    icon: <CalenderIcon />,
-    path: "/calendar",
-    roles: ["recruiter"],
-  },
-  {
-    text: "Calendar",
-    icon: <CalenderIcon />,
-    path: "/cal_admin",
-    roles: ["placement"],
-  },
-  {
-    text: "Calendar",
-    icon: <CalenderIcon />,
-    path: "/cal_students",
-    roles: ["student"],
-  },
-  {
-    text: "Analytics",
-    icon: <BarChartIcon />,
-    path: "/analytics",
-    roles: null,
-  },
+
+
+
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
 ];
 
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   const router = useRouter();
   const pathname = usePathname();

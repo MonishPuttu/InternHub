@@ -1,4 +1,4 @@
-import AdminCalendar from '@/modules/cal_admin';
+import AdminCalendar from '@/modules/calendar/placementcell';
 
 export default function Placementcalendar() {
     return < AdminCalendar />
