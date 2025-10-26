@@ -88,7 +88,7 @@ const Hero = () => {
             >
               Welcome to{" "}
               <Box component="span" sx={{ color: "#a883ff" }}>
-                Ace Graders
+                InternHub
               </Box>
             </Typography>
 
