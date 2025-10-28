@@ -367,21 +367,7 @@ export default function ProfilePage() {
                 >
                   {getInitials(data.profile?.full_name)}
                 </Avatar>
-                <IconButton
-                  sx={{
-                    position: "absolute",
-                    bottom: 0,
-                    right: 0,
-                    bgcolor: "#334155",
-                    color: "#e2e8f0",
-                    width: 32,
-                    height: 32,
-                    "&:hover": { bgcolor: "#475569" },
-                  }}
-                  size="small"
-                >
-                  <Edit fontSize="small" />
-                </IconButton>
+
               </Box>
 
               <Box sx={{ textAlign: "center", width: "100%" }}>
@@ -430,36 +416,36 @@ export default function ProfilePage() {
               {(data.socialLinks?.portfolio_website ||
                 data.socialLinks?.linkedin_profile ||
                 data.socialLinks?.github_profile) && (
-                <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                  {data.socialLinks?.portfolio_website && (
-                    <IconButton
-                      sx={{ color: "#8b5cf6" }}
-                      href={data.socialLinks.portfolio_website}
-                      target="_blank"
-                    >
-                      <Language />
-                    </IconButton>
-                  )}
-                  {data.socialLinks?.linkedin_profile && (
-                    <IconButton
-                      sx={{ color: "#06b6d4" }}
-                      href={data.socialLinks.linkedin_profile}
-                      target="_blank"
-                    >
-                      <LinkedIn />
-                    </IconButton>
-                  )}
-                  {data.socialLinks?.github_profile && (
-                    <IconButton
-                      sx={{ color: "#e2e8f0" }}
-                      href={data.socialLinks.github_profile}
-                      target="_blank"
-                    >
-                      <GitHub />
-                    </IconButton>
-                  )}
-                </Stack>
-              )}
+                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    {data.socialLinks?.portfolio_website && (
+                      <IconButton
+                        sx={{ color: "#8b5cf6" }}
+                        href={data.socialLinks.portfolio_website}
+                        target="_blank"
+                      >
+                        <Language />
+                      </IconButton>
+                    )}
+                    {data.socialLinks?.linkedin_profile && (
+                      <IconButton
+                        sx={{ color: "#06b6d4" }}
+                        href={data.socialLinks.linkedin_profile}
+                        target="_blank"
+                      >
+                        <LinkedIn />
+                      </IconButton>
+                    )}
+                    {data.socialLinks?.github_profile && (
+                      <IconButton
+                        sx={{ color: "#e2e8f0" }}
+                        href={data.socialLinks.github_profile}
+                        target="_blank"
+                      >
+                        <GitHub />
+                      </IconButton>
+                    )}
+                  </Stack>
+                )}
             </Stack>
           </Box>
 
@@ -592,15 +578,16 @@ export default function ProfilePage() {
             <TextField
               label="Full Name"
               value={formData.full_name || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, full_name: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, full_name: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -621,15 +608,16 @@ export default function ProfilePage() {
             <TextField
               label="Phone Number"
               value={formData.contact_number || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, contact_number: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, contact_number: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -637,15 +625,16 @@ export default function ProfilePage() {
             <TextField
               label="College Name"
               value={formData.college_name || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, college_name: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, college_name: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -653,15 +642,16 @@ export default function ProfilePage() {
             <TextField
               label="Branch"
               value={formData.branch || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, branch: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, branch: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -669,15 +659,16 @@ export default function ProfilePage() {
             <TextField
               label="Current Semester"
               value={formData.current_semester || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, current_semester: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, current_semester: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -685,15 +676,16 @@ export default function ProfilePage() {
             <TextField
               label="CGPA"
               value={formData.cgpa || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, cgpa: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, cgpa: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -701,15 +693,16 @@ export default function ProfilePage() {
             <TextField
               label="10th Score (%)"
               value={formData.tenth_score || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, tenth_score: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, tenth_score: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -717,15 +710,16 @@ export default function ProfilePage() {
             <TextField
               label="12th Score (%)"
               value={formData.twelfth_score || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, twelfth_score: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, twelfth_score: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -733,15 +727,16 @@ export default function ProfilePage() {
             <TextField
               label="LinkedIn"
               value={formData.linkedin || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, linkedin: e.target.value })
-              }
+              disabled
+              // onChange={(e) =>
+              //   setFormData({ ...formData, linkedin: e.target.value })
+              // }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -751,9 +746,10 @@ export default function ProfilePage() {
           <TextField
             label="Skills"
             value={formData.skills || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, skills: e.target.value })
-            }
+            disabled
+            // onChange={(e) =>
+            //   setFormData({ ...formData, skills: e.target.value })
+            // }
             multiline
             rows={2}
             fullWidth
@@ -763,7 +759,7 @@ export default function ProfilePage() {
               "& .MuiOutlinedInput-root": {
                 color: "#e2e8f0",
                 "& fieldset": { borderColor: "#334155" },
-                "&:hover fieldset": { borderColor: "#8b5cf6" },
+                // "&:hover fieldset": { borderColor: "#8b5cf6" },
               },
               "& .MuiInputLabel-root": { color: "#94a3b8" },
             }}

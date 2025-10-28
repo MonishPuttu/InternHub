@@ -199,8 +199,8 @@ export default function PlacementPosts() {
     activeTab === 0
       ? pendingPosts
       : activeTab === 1
-      ? approvedPosts
-      : disapprovedPosts;
+        ? approvedPosts
+        : disapprovedPosts;
 
   if (loading) {
     return (
@@ -290,8 +290,8 @@ export default function PlacementPosts() {
             {activeTab === 0
               ? "No pending posts"
               : activeTab === 1
-              ? "No approved posts yet"
-              : "No disapproved posts"}
+                ? "No approved posts yet"
+                : "No disapproved posts"}
           </Typography>
         </Box>
       ) : (
@@ -411,13 +411,6 @@ export default function PlacementPosts() {
                           {app.company_name}
                         </Typography>
                       </Box>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleMenuOpen(e, app)}
-                        sx={{ color: "#94a3b8" }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
                     </Box>
 
                     {app.notes && (
