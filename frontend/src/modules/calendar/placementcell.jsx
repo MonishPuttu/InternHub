@@ -537,7 +537,7 @@ export default function AdminCalendar() {
                                     sx={{
                                         minWidth: { xs: "100%", sm: 80 },
                                         textAlign: "center",
-                                        bgcolor: data.isNearing ? "#ef4444" : data.isWithinWeek ? "#f97316" : "primary.main",
+                                        bgcolor: "primary.main",
                                         color: "white",
                                         borderRadius: 2,
                                         p: 1.5,
@@ -596,12 +596,13 @@ export default function AdminCalendar() {
                                                         <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: "wrap", gap: 1 }}>
                                                             {isNearing && (
                                                                 <Chip
-                                                                    label={isToday(event.displayDate) ? "TODAY" : "TOMORROW"}
+                                                                    label={isToday(event.eventDate) ? "TODAY" : "TOMORROW"}
                                                                     size="small"
                                                                     sx={{
                                                                         fontWeight: "bold",
+                                                                        bgcolor: "#8b5cf620",
                                                                         color: "white",
-                                                                        bgcolor: "#ef4444"
+                                                                        border: data.isNearing ? "2px solid #ef4444" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}
@@ -610,9 +611,9 @@ export default function AdminCalendar() {
                                                                     label="THIS WEEK"
                                                                     size="small"
                                                                     sx={{
-                                                                        fontWeight: "bold",
+                                                                        bgcolor: "#8b5cf620",
                                                                         color: "white",
-                                                                        bgcolor: "#f97316"
+                                                                        border: data.isNearing ? "2px solid #efcd44ff" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}

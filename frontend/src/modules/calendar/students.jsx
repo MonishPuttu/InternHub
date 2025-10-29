@@ -501,7 +501,7 @@ export default function IntegratedStudentCalendar() {
                                     sx={{
                                         minWidth: { xs: "100%", sm: 80 },
                                         textAlign: "center",
-                                        bgcolor: data.isNearing ? "#ef4444" : data.isWithinWeek ? "#f97316" : "primary.main",
+                                        bgcolor: "#8b5cf6",
                                         color: "white",
                                         borderRadius: 2,
                                         p: 1.5,
@@ -564,8 +564,9 @@ export default function IntegratedStudentCalendar() {
                                                                     size="small"
                                                                     sx={{
                                                                         fontWeight: "bold",
+                                                                        bgcolor: "#8b5cf620",
                                                                         color: "white",
-                                                                        bgcolor: "#ef4444"
+                                                                        border: data.isNearing ? "2px solid #ef4444" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}
@@ -574,9 +575,9 @@ export default function IntegratedStudentCalendar() {
                                                                     label="THIS WEEK"
                                                                     size="small"
                                                                     sx={{
-                                                                        fontWeight: "bold",
+                                                                        bgcolor: "#8b5cf620",
                                                                         color: "white",
-                                                                        bgcolor: "#f97316"
+                                                                        border: data.isNearing ? "2px solid #efcd44ff" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}

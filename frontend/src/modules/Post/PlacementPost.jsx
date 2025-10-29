@@ -526,7 +526,7 @@ export default function PlacementPosts() {
                           variant="outlined"
                           size="small"
                           onClick={() =>
-                            router.push(`/Post/postdetails/${app.id}`)
+                            router.push(`/post/postdetails/${app.id}`)
                           }
                           sx={{
                             color: "#8b5cf6",

@@ -49,6 +49,7 @@ export default function ProfilePage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentEducation, setCurrentEducation] = useState(null);
   const [formData, setFormData] = useState({});
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     fetchOverview();
@@ -68,6 +69,12 @@ export default function ProfilePage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(response.data);
+
+      // Extract user role from token or response
+      // Assuming the role is stored in the profile data
+      if (response.data.profile?.role) {
+        setUserRole(response.data.profile.role);
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -211,6 +218,9 @@ export default function ProfilePage() {
 
   const totalExperiencePages = Math.ceil(experience.length / ITEMS_PER_PAGE);
 
+  // Check if user can edit personal information
+  const canEditPersonalInfo = userRole === 'placement' || userRole === 'recruiter';
+
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
@@ -222,8 +232,8 @@ export default function ProfilePage() {
   return (
     <Box sx={{ p: 3 }}>
       <ProfileHeader
-        onSave={activeTab === "personal" ? handleSavePersonal : null}
-        showSave={activeTab === "personal"}
+        onSave={activeTab === "personal" && canEditPersonalInfo ? handleSavePersonal : null}
+        showSave={activeTab === "personal" && canEditPersonalInfo}
       />
 
       <Box
@@ -578,16 +588,16 @@ export default function ProfilePage() {
             <TextField
               label="Full Name"
               value={formData.full_name || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, full_name: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, full_name: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -608,16 +618,16 @@ export default function ProfilePage() {
             <TextField
               label="Phone Number"
               value={formData.contact_number || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, contact_number: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, contact_number: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -625,16 +635,16 @@ export default function ProfilePage() {
             <TextField
               label="College Name"
               value={formData.college_name || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, college_name: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, college_name: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -642,16 +652,16 @@ export default function ProfilePage() {
             <TextField
               label="Branch"
               value={formData.branch || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, branch: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, branch: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -659,16 +669,16 @@ export default function ProfilePage() {
             <TextField
               label="Current Semester"
               value={formData.current_semester || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, current_semester: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, current_semester: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -676,16 +686,16 @@ export default function ProfilePage() {
             <TextField
               label="CGPA"
               value={formData.cgpa || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, cgpa: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, cgpa: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -693,16 +703,16 @@ export default function ProfilePage() {
             <TextField
               label="10th Score (%)"
               value={formData.tenth_score || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, tenth_score: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, tenth_score: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -710,16 +720,16 @@ export default function ProfilePage() {
             <TextField
               label="12th Score (%)"
               value={formData.twelfth_score || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, twelfth_score: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, twelfth_score: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -727,16 +737,16 @@ export default function ProfilePage() {
             <TextField
               label="LinkedIn"
               value={formData.linkedin || ""}
-              disabled
-              // onChange={(e) =>
-              //   setFormData({ ...formData, linkedin: e.target.value })
-              // }
+              disabled={!canEditPersonalInfo}
+              onChange={(e) =>
+                canEditPersonalInfo && setFormData({ ...formData, linkedin: e.target.value })
+              }
               fullWidth
               sx={{
                 "& .MuiOutlinedInput-root": {
                   color: "#e2e8f0",
                   "& fieldset": { borderColor: "#334155" },
-                  // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
                 },
                 "& .MuiInputLabel-root": { color: "#94a3b8" },
               }}
@@ -746,10 +756,10 @@ export default function ProfilePage() {
           <TextField
             label="Skills"
             value={formData.skills || ""}
-            disabled
-            // onChange={(e) =>
-            //   setFormData({ ...formData, skills: e.target.value })
-            // }
+            disabled={!canEditPersonalInfo}
+            onChange={(e) =>
+              canEditPersonalInfo && setFormData({ ...formData, skills: e.target.value })
+            }
             multiline
             rows={2}
             fullWidth
@@ -759,7 +769,7 @@ export default function ProfilePage() {
               "& .MuiOutlinedInput-root": {
                 color: "#e2e8f0",
                 "& fieldset": { borderColor: "#334155" },
-                // "&:hover fieldset": { borderColor: "#8b5cf6" },
+                "&:hover fieldset": { borderColor: canEditPersonalInfo ? "#8b5cf6" : "#334155" },
               },
               "& .MuiInputLabel-root": { color: "#94a3b8" },
             }}
