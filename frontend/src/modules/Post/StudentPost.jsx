@@ -87,6 +87,17 @@ export default function StudentPosts() {
     setApplyDialogOpen(true);
   };
 
+  const handleShare = async (post) => {
+    const url = `${window.location.origin}/Post/postdetails/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setSuccessMsg("Post link copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy URL:", error);
+      setErrorMsg("Failed to copy link");
+    }
+  };
+
   const handleApplySubmit = async (coverLetter, resumeLink) => {
     if (!selectedPost) return;
 
@@ -284,6 +295,7 @@ export default function StudentPosts() {
               onToggleSave={() => toggleSavePost(post.id)}
               onApply={() => handleApplyClick(post)}
               onViewDetails={() => router.push(`/Post/postdetails/${post.id}`)}
+              onShare={() => handleShare(post)}
             />
           ))}
         </Stack>

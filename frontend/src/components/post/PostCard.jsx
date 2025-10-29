@@ -15,6 +15,7 @@ export default function PostCard({
   onToggleSave,
   onApply,
   onViewDetails,
+  onShare,
 }) {
   return (
     <Card
@@ -199,6 +200,7 @@ export default function PostCard({
               </IconButton>
               <IconButton
                 size="small"
+                onClick={onShare}
                 sx={{
                   flex: 1,
                   color: "#64748b",
