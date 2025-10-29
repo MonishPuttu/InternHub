@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children }) {
     if (!hasAccess) {
       console.warn(`Access denied for role: ${userRole} to route: ${pathname}`);
 
-      // Redirect to appropriate dashboard based on role
+      // Redirect to appropriate dashboard based on role, or signin if not logged in
       switch (userRole) {
         case "student":
           router.push("/dashboard/student");
@@ -30,8 +30,11 @@ export default function ProtectedRoute({ children }) {
         case "recruiter":
           router.push("/dashboard/recruiter");
           break;
+        case null:
+          router.push("/signin");
+          break;
         default:
-          router.push("/dashboard");
+          router.push("/signin");
       }
 
       setIsAuthorized(false);
