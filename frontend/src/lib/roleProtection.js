@@ -17,6 +17,15 @@ const roleAccessMap = {
   "/calendar/placement": ["placement"],
   "/calendar/student": ["student"],
 
+  // Training routes
+  "/training/student": ["student"],
+  "/training/student/assessments": ["student"],
+  "/training/student/take-assessment": ["student"],
+  "/training/student/report-card": ["student"],
+  "/training/placement": ["placement"],
+  "/training/placement/create-assessment": ["placement"],
+  "/training/placement/leaderboard": ["placement"],
+
   // Other routes
   "/my-applications": ["student"],
   "/analytics": ["student", "placement", "recruiter"],
