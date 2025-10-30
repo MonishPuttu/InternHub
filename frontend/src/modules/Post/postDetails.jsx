@@ -29,12 +29,14 @@ import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
 import ApplyDialog from "@/components/post/ApplyDialog";
 import useApplyToPost from "@/hooks/useApplyToPost";
+import { getUser } from "@/lib/session";
 
 export default function PostDetails({ postId }) {
   const router = useRouter();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const user = getUser();
 
   const {
     applyDialogOpen,
@@ -188,39 +190,41 @@ export default function PostDetails({ postId }) {
                 </Typography>
               </Box>
 
-              <Box>
-                <Chip
-                  label={
-                    post.approval_status === "approved"
-                      ? "Approved"
-                      : post.approval_status === "disapproved"
-                      ? "Disapproved"
-                      : "Pending Approval"
-                  }
-                  sx={{
-                    bgcolor:
+              {user && user.role !== "student" && (
+                <Box>
+                  <Chip
+                    label={
                       post.approval_status === "approved"
-                        ? "rgba(16, 185, 129, 0.1)"
+                        ? "Approved"
                         : post.approval_status === "disapproved"
-                        ? "rgba(239, 68, 68, 0.1)"
-                        : "rgba(251, 191, 36, 0.1)",
-                    color:
-                      post.approval_status === "approved"
-                        ? "#10b981"
-                        : post.approval_status === "disapproved"
-                        ? "#ef4444"
-                        : "#fbbf24",
-                    fontWeight: 600,
-                    border: `1px solid ${
-                      post.approval_status === "approved"
-                        ? "rgba(16, 185, 129, 0.3)"
-                        : post.approval_status === "disapproved"
-                        ? "rgba(239, 68, 68, 0.3)"
-                        : "rgba(251, 191, 36, 0.3)"
-                    }`,
-                  }}
-                />
-              </Box>
+                        ? "Disapproved"
+                        : "Pending Approval"
+                    }
+                    sx={{
+                      bgcolor:
+                        post.approval_status === "approved"
+                          ? "rgba(16, 185, 129, 0.1)"
+                          : post.approval_status === "disapproved"
+                          ? "rgba(239, 68, 68, 0.1)"
+                          : "rgba(251, 191, 36, 0.1)",
+                      color:
+                        post.approval_status === "approved"
+                          ? "#10b981"
+                          : post.approval_status === "disapproved"
+                          ? "#ef4444"
+                          : "#fbbf24",
+                      fontWeight: 600,
+                      border: `1px solid ${
+                        post.approval_status === "approved"
+                          ? "rgba(16, 185, 129, 0.3)"
+                          : post.approval_status === "disapproved"
+                          ? "rgba(239, 68, 68, 0.3)"
+                          : "rgba(251, 191, 36, 0.3)"
+                      }`,
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
           </Box>
 
