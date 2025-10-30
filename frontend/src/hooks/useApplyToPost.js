@@ -18,7 +18,7 @@ export default function useApplyToPost(postId) {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${BACKEND_URL}/api/dashboard/student-application/check-applied/${postId}`,
+        `${BACKEND_URL}/api/student-applications/check-applied/${postId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -37,7 +37,7 @@ export default function useApplyToPost(postId) {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${BACKEND_URL}/api/dashboard/student-application/apply/${postId}`,
+        `${BACKEND_URL}/api/student-applications/apply/${postId}`,
         {
           cover_letter: coverLetter,
           resume_link: resumeLink,
