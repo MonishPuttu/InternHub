@@ -1,4 +1,4 @@
-import { db } from "../db/index.js";
+import { db } from "../src/db/schema/index.js";
 import {
     department_strength,
     department_applications,

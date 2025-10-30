@@ -28,8 +28,9 @@ export default function PlacementAnalytics() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [departmentStrength, setDepartmentStrength] = useState([]);
+    console.log("Department Strength Data:", departmentStrength);
     const [statistics, setStatistics] = useState(null);
-
+    console.log("Placement Statistics Data:", statistics);
     useEffect(() => {
         fetchAnalyticsData();
     }, []);
@@ -49,6 +50,7 @@ export default function PlacementAnalytics() {
             ]);
 
             if (strengthRes.data.ok) {
+                console.log("Fetched Department Strength:", strengthRes.data.data);
                 setDepartmentStrength(strengthRes.data.data);
             }
 

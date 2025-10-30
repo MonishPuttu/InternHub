@@ -79,11 +79,13 @@ export default function IntegratedStudentCalendar() {
         try {
             const token = localStorage.getItem("token");
 
-            // Fetch calendar events
-            const calResponse = await fetch(CAL_API);
+            // Fetch calendar events - NOW WITH TOKEN
+            const calResponse = await fetch(CAL_API, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             const calData = await calResponse.json();
 
-            // Fetch approved posts
+            // Fetch approved posts - ALREADY HAS TOKEN
             const postsResponse = await fetch(APPROVED_POSTS_API, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -370,7 +372,7 @@ export default function IntegratedStudentCalendar() {
     const getEventTypeConfig = (type) => {
         const configs = {
             oncampus: { color: "primary", label: "Oncampus", icon: "🏢" },
-            offcampus: { color: "secondary", label: "Offcampus", icon: "🌍" },
+            offcampus: { color: "secondary", label: "Offcampus", icon: "🌐" },
             hackathon: { color: "warning", label: "Hackathon", icon: "💻" },
             workshop: { color: "success", label: "Workshop", icon: "🎓" },
             post: { color: "info", label: "Opportunity", icon: "💼" }
