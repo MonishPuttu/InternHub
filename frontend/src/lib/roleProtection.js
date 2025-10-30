@@ -35,7 +35,7 @@ export const canAccessRoute = (route) => {
     return roleAccessMap[route].includes(user.role);
   }
 
-  // Check for pattern matches (e.g., /Post/postdetails/[id])
+  // Check for pattern matches (e.g., /post/postdetails/[id])
   for (const [pattern, allowedRoles] of Object.entries(roleAccessMap)) {
     if (route.startsWith(pattern)) {
       return allowedRoles.includes(user.role);

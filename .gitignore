@@ -33,6 +33,3 @@ yarn-error.log*
 # vercel
 .vercel
 
-# Ignore analytics modules
-frontend/src/modules/analytics/
-backend/src/routes/analytics/

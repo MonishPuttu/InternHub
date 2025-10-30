@@ -430,7 +430,7 @@ export default function EventCalendar() {
                                     sx={{
                                         minWidth: { xs: "100%", sm: 80 },
                                         textAlign: "center",
-                                        bgcolor: data.isNearing ? "#ef4444" : data.isWithinWeek ? "#f97316" : "primary.main",
+                                        bgcolor: "primary.main",
                                         color: "white",
                                         borderRadius: 2,
                                         p: 1.5,
@@ -491,7 +491,9 @@ export default function EventCalendar() {
                                                                     size="small"
                                                                     sx={{
                                                                         fontWeight: "bold",
-                                                                        color: "white"
+                                                                        bgcolor: "#8b5cf620",
+                                                                        color: "white",
+                                                                        border: data.isNearing ? "2px solid #ef4444" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}
@@ -500,8 +502,9 @@ export default function EventCalendar() {
                                                                     label="THIS WEEK"
                                                                     size="small"
                                                                     sx={{
-                                                                        fontWeight: "bold",
-                                                                        color: "white"
+                                                                        bgcolor: "#8b5cf620",
+                                                                        color: "white",
+                                                                        border: data.isNearing ? "2px solid #efcd44ff" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}
