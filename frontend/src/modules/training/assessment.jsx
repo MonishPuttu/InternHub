@@ -22,11 +22,11 @@ import {
 import { Timer, NavigateNext, NavigateBefore } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
-export default function TakeAssessment({ params }) {
+export default function TakeAssessment({ params: paramsPromise }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { assessmentId } = params;
 
+  const [assessmentId, setAssessmentId] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -36,23 +36,47 @@ export default function TakeAssessment({ params }) {
   const [attemptId, setAttemptId] = useState(null);
   const [error, setError] = useState("");
 
+  // Extract and await params
   useEffect(() => {
-    // Get attemptId from search params
-    const id = searchParams.get("attemptId");
-    if (!id) {
-      setError("Invalid attempt. Please start the assessment again.");
-      setLoading(false);
-      setTimeout(() => router.push("/training/student"), 2000);
-      return;
-    }
-    setAttemptId(id);
-    fetchAssessmentData(id);
-  }, [searchParams, assessmentId, router]);
+    const extractParams = async () => {
+      try {
+        // Await the params promise
+        const resolvedParams = await paramsPromise;
+
+        if (!resolvedParams?.assessmentId) {
+          setError("Invalid assessment ID");
+          setLoading(false);
+          return;
+        }
+
+        setAssessmentId(resolvedParams.assessmentId);
+
+        // Get attemptId from URL
+        const id = searchParams.get("attemptId");
+        if (!id) {
+          setError("Invalid attempt. Please start the assessment again.");
+          setLoading(false);
+          setTimeout(() => router.push("/training/student"), 2000);
+          return;
+        }
+
+        setAttemptId(id);
+        // Now fetch data with both IDs
+        await fetchAttemptData(id, resolvedParams.assessmentId);
+      } catch (err) {
+        console.error("Error extracting params:", err);
+        setError("Failed to load assessment");
+        setLoading(false);
+      }
+    };
+
+    extractParams();
+  }, [paramsPromise, searchParams, router]);
 
   // Timer effect
   useEffect(() => {
     if (!timeRemaining || timeRemaining <= 0) {
-      if (timeRemaining === 0 && questions.length > 0) {
+      if (timeRemaining === 0 && questions.length > 0 && attemptId) {
         handleSubmit();
       }
       return;
@@ -69,28 +93,55 @@ export default function TakeAssessment({ params }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeRemaining, questions.length]);
+  }, [timeRemaining, questions.length, attemptId]);
 
-  const fetchAssessmentData = async (attemptIdParam) => {
+  const fetchAttemptData = async (attemptIdParam, assessmentIdParam) => {
     try {
-      const response = await apiRequest(
-        `/api/training/student/assessments/${assessmentId}/start`,
-        { method: "POST" }
-      );
-
-      if (!response.data || !response.data.questions) {
-        throw new Error("Invalid response from server");
+      if (!attemptIdParam || !assessmentIdParam) {
+        throw new Error("Missing attempt ID or assessment ID");
       }
 
-      setQuestions(response.data.questions);
+      console.log(
+        "Fetching with attemptId:",
+        attemptIdParam,
+        "assessmentId:",
+        assessmentIdParam
+      );
 
-      // Get duration from assessment, not attempt
-      const duration = response.data.assessment?.duration || 60;
-      setTimeRemaining(duration * 60); // convert to seconds
+      // Fetch the attempt details
+      const attemptResponse = await apiRequest(
+        `/api/training/student/attempts/${attemptIdParam}`
+      );
+
+      if (!attemptResponse.data) {
+        throw new Error("Attempt not found");
+      }
+
+      const attempt = attemptResponse.data;
+
+      // Fetch questions for the assessment
+      const questionsResponse = await apiRequest(
+        `/api/training/student/assessments/${assessmentIdParam}/questions`
+      );
+
+      if (!questionsResponse.data || !questionsResponse.data.questions) {
+        throw new Error("Questions not found");
+      }
+
+      setQuestions(questionsResponse.data.questions);
+
+      // Calculate remaining time
+      const startTime = new Date(attempt.start_time);
+      const now = new Date();
+      const elapsedSeconds = Math.floor((now - startTime) / 1000);
+      const totalSeconds = attempt.duration * 60;
+      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+
+      setTimeRemaining(remaining);
       setLoading(false);
       setError("");
     } catch (error) {
-      console.error("Error fetching assessment:", error);
+      console.error("Error fetching attempt data:", error);
       setError(error.message || "Failed to load assessment. Redirecting...");
       setLoading(false);
       setTimeout(() => router.push("/training/student"), 2000);
@@ -121,9 +172,13 @@ export default function TakeAssessment({ params }) {
 
   const handleAnswerChange = (value) => {
     const currentQuestion = questions[currentQuestionIndex];
-    const newAnswers = { ...answers, [currentQuestion.id]: value };
+
+    const answerValue =
+      currentQuestion.questionType === "mcq" ? [value] : value;
+
+    const newAnswers = { ...answers, [currentQuestion.id]: answerValue };
     setAnswers(newAnswers);
-    saveAnswer(currentQuestion.id, value);
+    saveAnswer(currentQuestion.id, answerValue);
   };
 
   const handleSubmit = async () => {
@@ -147,7 +202,6 @@ export default function TakeAssessment({ params }) {
       );
 
       if (response.ok) {
-        // Navigate with attemptId in URL
         router.push(`/training/student/report-card/${attemptId}`);
       } else {
         throw new Error("Failed to submit assessment");
@@ -172,7 +226,7 @@ export default function TakeAssessment({ params }) {
       <Box sx={{ width: "100%", mt: 4 }}>
         <LinearProgress />
         {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
+          <Alert severity="error" sx={{ mt: 2, mx: 2 }}>
             {error}
           </Alert>
         )}
@@ -186,16 +240,28 @@ export default function TakeAssessment({ params }) {
         <Alert severity="error">
           {error || "No questions found for this assessment"}
         </Alert>
+        <Button
+          onClick={() => router.push("/training/student")}
+          sx={{ mt: 2, color: "#8b5cf6" }}
+        >
+          Back to Assessments
+        </Button>
       </Container>
     );
   }
 
-  if (!attemptId) {
+  if (!attemptId || !assessmentId) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
         <Alert severity="error">
-          Attempt ID is missing. Please start the assessment again.
+          Required IDs are missing. Please start the assessment again.
         </Alert>
+        <Button
+          onClick={() => router.push("/training/student")}
+          sx={{ mt: 2, color: "#8b5cf6" }}
+        >
+          Back to Assessments
+        </Button>
       </Container>
     );
   }
@@ -223,9 +289,6 @@ export default function TakeAssessment({ params }) {
           <Typography variant="h6" sx={{ color: "#e2e8f0" }}>
             Question {currentQuestionIndex + 1} of {questions.length}
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            Attempt ID: {attemptId.slice(0, 8)}...
-          </Typography>
         </Box>
         <Box display="flex" alignItems="center" gap={2}>
           <Box display="flex" alignItems="center" gap={1}>
@@ -247,7 +310,7 @@ export default function TakeAssessment({ params }) {
         </Box>
       </Paper>
 
-      {timeRemaining < 300 && (
+      {timeRemaining < 300 && timeRemaining > 0 && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           ⚠️ Less than 5 minutes remaining!
         </Alert>
@@ -288,7 +351,11 @@ export default function TakeAssessment({ params }) {
           <Typography
             variant="h6"
             gutterBottom
-            sx={{ color: "#e2e8f0", flex: 1 }}
+            sx={{
+              color: "#e2e8f0",
+              flex: 1,
+              wordBreak: "break-word",
+            }}
           >
             {currentQuestion.questionText}
           </Typography>
@@ -298,6 +365,7 @@ export default function TakeAssessment({ params }) {
               bgcolor: "#8b5cf620",
               color: "#8b5cf6",
               flexShrink: 0,
+              ml: 2,
             }}
           />
         </Box>

@@ -190,19 +190,55 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
 
     const { studentId } = req.params;
 
-    // Get student profile
-    const [studentDetails] = await db
-      .select()
-      .from(student_profile)
-      .where(eq(student_profile.user_id, studentId))
-      .limit(1);
-
-    if (!studentDetails) {
-      return res.status(404).json({ ok: false, error: "Student not found" });
+    if (!studentId) {
+      return res.status(400).json({ ok: false, error: "Student ID required" });
     }
 
-    // Get all assessment attempts
-    const attempts = await db
+    console.log("Fetching student details for:", studentId);
+
+    // Get student profile
+    const profileQuery = db
+      .select()
+      .from(student_profile)
+      .where(eq(student_profile.user_id, studentId));
+
+    const profileResult = await profileQuery;
+
+    if (!profileResult || profileResult.length === 0) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Student profile not found" });
+    }
+
+    const studentProfileData = profileResult[0];
+
+    // Get user details
+    const userQuery = db.select().from(user).where(eq(user.id, studentId));
+
+    const userResult = await userQuery;
+
+    if (!userResult || userResult.length === 0) {
+      return res.status(404).json({ ok: false, error: "User not found" });
+    }
+
+    const userData = userResult[0];
+
+    // Combine results
+    const profile = {
+      userId: studentProfileData.user_id,
+      fullName: studentProfileData.full_name,
+      rollNumber: studentProfileData.roll_number,
+      branch: studentProfileData.branch || "N/A",
+      email: userData.email || "N/A",
+      phone: userData.contact_number || userData.phone || "N/A",
+      cgpa: studentProfileData.cgpa || "N/A",
+      tenthScore: studentProfileData.tenth_score || "N/A",
+      twelfthScore: studentProfileData.twelfth_score || "N/A",
+      currentSemester: studentProfileData.current_semester || "N/A",
+    };
+
+    // Get assessment attempts
+    const attemptsQuery = db
       .select({
         assessmentTitle: assessments.title,
         score: student_attempts.total_score,
@@ -218,18 +254,29 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
       .where(eq(student_attempts.student_id, studentId))
       .orderBy(desc(student_attempts.created_at));
 
+    const attempts = await attemptsQuery;
+
+    console.log("Successfully fetched student details:", {
+      fullName: profile.fullName,
+      email: profile.email,
+      phone: profile.phone,
+      assessmentCount: attempts.length,
+    });
+
     res.json({
       ok: true,
       data: {
-        profile: studentDetails,
-        assessmentHistory: attempts,
+        profile,
+        assessmentHistory: attempts || [],
       },
     });
   } catch (error) {
     console.error("Error fetching student details:", error);
-    res
-      .status(500)
-      .json({ ok: false, error: "Failed to fetch student details" });
+    res.status(500).json({
+      ok: false,
+      error: "Failed to fetch student details",
+      details: error.message,
+    });
   }
 });
 
@@ -578,19 +625,50 @@ router.post(
         )
         .where(eq(questions.assessment_id, attempt.assessment_id));
 
-      // Auto-evaluate answers
+      // Auto-evaluate answers with FIXED comparison logic
       let totalScore = 0;
       for (const q of questionsWithAnswers) {
         if (q.answerId && q.studentAnswer) {
-          const isCorrect =
-            JSON.stringify(q.correctAnswer) === JSON.stringify(q.studentAnswer);
+          let isCorrect = false;
+
+          // FIXED: Normalize both answers to arrays for comparison
+          const correctAnswerArray = Array.isArray(q.correctAnswer)
+            ? q.correctAnswer.map(String)
+            : [String(q.correctAnswer)];
+
+          const studentAnswerArray = Array.isArray(q.studentAnswer)
+            ? q.studentAnswer.map(String)
+            : [String(q.studentAnswer)];
+
+          // Sort both arrays for accurate comparison
+          const sortedCorrect = correctAnswerArray.sort();
+          const sortedStudent = studentAnswerArray.sort();
+
+          // Compare arrays
+          if (sortedCorrect.length === sortedStudent.length) {
+            isCorrect = sortedCorrect.every(
+              (val, idx) => val === sortedStudent[idx]
+            );
+          }
+
           const marksAwarded = isCorrect ? q.marks : 0;
           totalScore += marksAwarded;
+
+          console.log("Question Evaluation:", {
+            questionId: q.questionId,
+            correctAnswer: sortedCorrect,
+            studentAnswer: sortedStudent,
+            isCorrect,
+            marksAwarded,
+          });
 
           // Update answer with evaluation
           await db
             .update(student_answers)
-            .set({ is_correct: isCorrect, marks_awarded: marksAwarded })
+            .set({
+              is_correct: isCorrect,
+              marks_awarded: marksAwarded,
+            })
             .where(eq(student_answers.id, q.answerId));
         }
       }
@@ -626,12 +704,113 @@ router.post(
       await updateLeaderboard(attempt.assessment_id);
 
       // Generate report card
-      await generateReportCard(
+      // Helper function to generate report card - FIXED
+      async function generateReportCard(
         attemptId,
-        attempt.student_id,
-        attempt.assessment_id,
+        studentId,
+        assessmentId,
         questionsWithAnswers
-      );
+      ) {
+        try {
+          const [attempt] = await db
+            .select()
+            .from(student_attempts)
+            .where(eq(student_attempts.id, attemptId))
+            .limit(1);
+
+          // Calculate grade
+          const percentage = attempt.percentage_score;
+          let grade;
+          if (percentage >= 90) grade = "A+";
+          else if (percentage >= 80) grade = "A";
+          else if (percentage >= 70) grade = "B+";
+          else if (percentage >= 60) grade = "B";
+          else if (percentage >= 50) grade = "C";
+          else grade = "F";
+
+          // Analyze performance by tags
+          const tagPerformance = {};
+
+          questionsWithAnswers.forEach((q) => {
+            if (q.tags && q.answerId) {
+              q.tags.forEach((tag) => {
+                if (!tagPerformance[tag]) {
+                  tagPerformance[tag] = {
+                    total: 0,
+                    correct: 0,
+                    marks: 0,
+                    earned: 0,
+                  };
+                }
+                tagPerformance[tag].total++;
+                tagPerformance[tag].marks += q.marks;
+
+                if (q.studentAnswer) {
+                  // ✅ FIXED: Use same comparison logic as submit endpoint
+                  const correctAnswerArray = Array.isArray(q.correctAnswer)
+                    ? q.correctAnswer.map(String)
+                    : [String(q.correctAnswer)];
+
+                  const studentAnswerArray = Array.isArray(q.studentAnswer)
+                    ? q.studentAnswer.map(String)
+                    : [String(q.studentAnswer)];
+
+                  const sortedCorrect = correctAnswerArray.sort();
+                  const sortedStudent = studentAnswerArray.sort();
+
+                  let isCorrect = false;
+                  if (sortedCorrect.length === sortedStudent.length) {
+                    isCorrect = sortedCorrect.every(
+                      (val, idx) => val === sortedStudent[idx]
+                    );
+                  }
+
+                  if (isCorrect) {
+                    tagPerformance[tag].correct++;
+                    tagPerformance[tag].earned += q.marks;
+                  }
+                }
+              });
+            }
+          });
+
+          // Identify strengths and weaknesses
+          const strengths = [];
+          const weaknesses = [];
+
+          Object.entries(tagPerformance).forEach(([tag, perf]) => {
+            const successRate = (perf.earned / perf.marks) * 100;
+            if (successRate >= 75) {
+              strengths.push(tag);
+            } else if (successRate < 50) {
+              weaknesses.push(tag);
+            }
+          });
+
+          const recommendations =
+            weaknesses.length > 0
+              ? `Focus on improving: ${weaknesses.join(
+                  ", "
+                )}. Practice more problems in these areas.`
+              : "Great performance! Continue practicing to maintain your level.";
+
+          // Insert report card
+          await db.insert(report_cards).values({
+            student_id: studentId,
+            attempt_id: attemptId,
+            assessment_id: assessmentId,
+            overall_score: attempt.total_score,
+            percentage_score: attempt.percentage_score,
+            grade,
+            strengths,
+            weaknesses,
+            recommendations,
+            detailed_analysis: tagPerformance,
+          });
+        } catch (error) {
+          console.error("Error generating report card:", error);
+        }
+      }
 
       res.json({
         ok: true,
@@ -739,6 +918,11 @@ async function updateLeaderboard(assessmentId) {
       )
       .orderBy(desc(student_attempts.total_score), student_attempts.time_taken);
 
+    if (!attempts || attempts.length === 0) {
+      console.log("No completed attempts found for assessment:", assessmentId);
+      return;
+    }
+
     // Delete existing leaderboard entries
     await db
       .delete(leaderboard)
@@ -755,9 +939,7 @@ async function updateLeaderboard(assessmentId) {
       attempt_date: attempt.end_time,
     }));
 
-    if (leaderboardEntries.length > 0) {
-      await db.insert(leaderboard).values(leaderboardEntries);
-    }
+    await db.insert(leaderboard).values(leaderboardEntries);
   } catch (error) {
     console.error("Error updating leaderboard:", error);
   }
@@ -848,5 +1030,98 @@ async function generateReportCard(
     console.error("Error generating report card:", error);
   }
 }
+
+// Get attempt details by ID (for resuming/loading assessment)
+router.get("/student/attempts/:attemptId", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ ok: false, error: "Access denied" });
+    }
+
+    const { attemptId } = req.params;
+
+    const [attempt] = await db
+      .select()
+      .from(student_attempts)
+      .where(
+        and(
+          eq(student_attempts.id, attemptId),
+          eq(student_attempts.student_id, req.user.id)
+        )
+      )
+      .limit(1);
+
+    if (!attempt) {
+      return res.status(404).json({ ok: false, error: "Attempt not found" });
+    }
+
+    // Get assessment details for duration
+    const [assessment] = await db
+      .select()
+      .from(assessments)
+      .where(eq(assessments.id, attempt.assessment_id))
+      .limit(1);
+
+    res.json({
+      ok: true,
+      data: {
+        ...attempt,
+        duration: assessment.duration,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching attempt:", error);
+    res.status(500).json({ ok: false, error: "Failed to fetch attempt" });
+  }
+});
+
+// Get questions for an assessment (without correct answers for students)
+router.get(
+  "/student/assessments/:assessmentId/questions",
+  requireAuth,
+  async (req, res) => {
+    try {
+      if (req.user.role !== "student") {
+        return res.status(403).json({ ok: false, error: "Access denied" });
+      }
+
+      const { assessmentId } = req.params;
+
+      // Validate assessmentId is not undefined
+      if (!assessmentId || assessmentId === "undefined") {
+        return res
+          .status(400)
+          .json({ ok: false, error: "Assessment ID is required" });
+      }
+
+      const assessmentQuestions = await db
+        .select({
+          id: questions.id,
+          questionText: questions.question_text,
+          questionType: questions.question_type,
+          options: questions.options,
+          marks: questions.marks,
+          orderIndex: questions.order_index,
+        })
+        .from(questions)
+        .where(eq(questions.assessment_id, assessmentId))
+        .orderBy(questions.order_index);
+
+      if (!assessmentQuestions || assessmentQuestions.length === 0) {
+        return res.status(404).json({ ok: false, error: "No questions found" });
+      }
+
+      res.json({
+        ok: true,
+        data: {
+          questions: assessmentQuestions,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      res.status(500).json({ ok: false, error: "Failed to fetch questions" });
+    }
+  }
+);
 
 export default router;
