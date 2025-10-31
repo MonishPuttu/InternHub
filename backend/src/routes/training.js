@@ -196,13 +196,11 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
 
     console.log("Fetching student details for:", studentId);
 
-    // Get student profile
-    const profileQuery = db
+    // Get student profile (contains phone number)
+    const profileResult = await db
       .select()
       .from(student_profile)
       .where(eq(student_profile.user_id, studentId));
-
-    const profileResult = await profileQuery;
 
     if (!profileResult || profileResult.length === 0) {
       return res
@@ -213,9 +211,10 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
     const studentProfileData = profileResult[0];
 
     // Get user details
-    const userQuery = db.select().from(user).where(eq(user.id, studentId));
-
-    const userResult = await userQuery;
+    const userResult = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, studentId));
 
     if (!userResult || userResult.length === 0) {
       return res.status(404).json({ ok: false, error: "User not found" });
@@ -223,14 +222,14 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
 
     const userData = userResult[0];
 
-    // Combine results
+    // Combine results - contact_number is in student_profile
     const profile = {
       userId: studentProfileData.user_id,
       fullName: studentProfileData.full_name,
       rollNumber: studentProfileData.roll_number,
       branch: studentProfileData.branch || "N/A",
       email: userData.email || "N/A",
-      phone: userData.contact_number || userData.phone || "N/A",
+      phone: studentProfileData.contact_number || "N/A",
       cgpa: studentProfileData.cgpa || "N/A",
       tenthScore: studentProfileData.tenth_score || "N/A",
       twelfthScore: studentProfileData.twelfth_score || "N/A",
@@ -238,7 +237,7 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
     };
 
     // Get assessment attempts
-    const attemptsQuery = db
+    const attempts = await db
       .select({
         assessmentTitle: assessments.title,
         score: student_attempts.total_score,
@@ -253,8 +252,6 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
       )
       .where(eq(student_attempts.student_id, studentId))
       .orderBy(desc(student_attempts.created_at));
-
-    const attempts = await attemptsQuery;
 
     console.log("Successfully fetched student details:", {
       fullName: profile.fullName,
@@ -625,13 +622,10 @@ router.post(
         )
         .where(eq(questions.assessment_id, attempt.assessment_id));
 
-      // Auto-evaluate answers with FIXED comparison logic
+      // Auto-evaluate answers
       let totalScore = 0;
       for (const q of questionsWithAnswers) {
         if (q.answerId && q.studentAnswer) {
-          let isCorrect = false;
-
-          // FIXED: Normalize both answers to arrays for comparison
           const correctAnswerArray = Array.isArray(q.correctAnswer)
             ? q.correctAnswer.map(String)
             : [String(q.correctAnswer)];
@@ -640,16 +634,12 @@ router.post(
             ? q.studentAnswer.map(String)
             : [String(q.studentAnswer)];
 
-          // Sort both arrays for accurate comparison
           const sortedCorrect = correctAnswerArray.sort();
           const sortedStudent = studentAnswerArray.sort();
 
-          // Compare arrays
-          if (sortedCorrect.length === sortedStudent.length) {
-            isCorrect = sortedCorrect.every(
-              (val, idx) => val === sortedStudent[idx]
-            );
-          }
+          const isCorrect =
+            sortedCorrect.length === sortedStudent.length &&
+            sortedCorrect.every((val, idx) => val === sortedStudent[idx]);
 
           const marksAwarded = isCorrect ? q.marks : 0;
           totalScore += marksAwarded;
@@ -662,7 +652,6 @@ router.post(
             marksAwarded,
           });
 
-          // Update answer with evaluation
           await db
             .update(student_answers)
             .set({
@@ -703,114 +692,12 @@ router.post(
       // Update leaderboard
       await updateLeaderboard(attempt.assessment_id);
 
-      // Generate report card
-      // Helper function to generate report card - FIXED
-      async function generateReportCard(
+      await generateReportCard(
         attemptId,
-        studentId,
-        assessmentId,
+        attempt.student_id,
+        attempt.assessment_id,
         questionsWithAnswers
-      ) {
-        try {
-          const [attempt] = await db
-            .select()
-            .from(student_attempts)
-            .where(eq(student_attempts.id, attemptId))
-            .limit(1);
-
-          // Calculate grade
-          const percentage = attempt.percentage_score;
-          let grade;
-          if (percentage >= 90) grade = "A+";
-          else if (percentage >= 80) grade = "A";
-          else if (percentage >= 70) grade = "B+";
-          else if (percentage >= 60) grade = "B";
-          else if (percentage >= 50) grade = "C";
-          else grade = "F";
-
-          // Analyze performance by tags
-          const tagPerformance = {};
-
-          questionsWithAnswers.forEach((q) => {
-            if (q.tags && q.answerId) {
-              q.tags.forEach((tag) => {
-                if (!tagPerformance[tag]) {
-                  tagPerformance[tag] = {
-                    total: 0,
-                    correct: 0,
-                    marks: 0,
-                    earned: 0,
-                  };
-                }
-                tagPerformance[tag].total++;
-                tagPerformance[tag].marks += q.marks;
-
-                if (q.studentAnswer) {
-                  // ✅ FIXED: Use same comparison logic as submit endpoint
-                  const correctAnswerArray = Array.isArray(q.correctAnswer)
-                    ? q.correctAnswer.map(String)
-                    : [String(q.correctAnswer)];
-
-                  const studentAnswerArray = Array.isArray(q.studentAnswer)
-                    ? q.studentAnswer.map(String)
-                    : [String(q.studentAnswer)];
-
-                  const sortedCorrect = correctAnswerArray.sort();
-                  const sortedStudent = studentAnswerArray.sort();
-
-                  let isCorrect = false;
-                  if (sortedCorrect.length === sortedStudent.length) {
-                    isCorrect = sortedCorrect.every(
-                      (val, idx) => val === sortedStudent[idx]
-                    );
-                  }
-
-                  if (isCorrect) {
-                    tagPerformance[tag].correct++;
-                    tagPerformance[tag].earned += q.marks;
-                  }
-                }
-              });
-            }
-          });
-
-          // Identify strengths and weaknesses
-          const strengths = [];
-          const weaknesses = [];
-
-          Object.entries(tagPerformance).forEach(([tag, perf]) => {
-            const successRate = (perf.earned / perf.marks) * 100;
-            if (successRate >= 75) {
-              strengths.push(tag);
-            } else if (successRate < 50) {
-              weaknesses.push(tag);
-            }
-          });
-
-          const recommendations =
-            weaknesses.length > 0
-              ? `Focus on improving: ${weaknesses.join(
-                  ", "
-                )}. Practice more problems in these areas.`
-              : "Great performance! Continue practicing to maintain your level.";
-
-          // Insert report card
-          await db.insert(report_cards).values({
-            student_id: studentId,
-            attempt_id: attemptId,
-            assessment_id: assessmentId,
-            overall_score: attempt.total_score,
-            percentage_score: attempt.percentage_score,
-            grade,
-            strengths,
-            weaknesses,
-            recommendations,
-            detailed_analysis: tagPerformance,
-          });
-        } catch (error) {
-          console.error("Error generating report card:", error);
-        }
-      }
+      );
 
       res.json({
         ok: true,

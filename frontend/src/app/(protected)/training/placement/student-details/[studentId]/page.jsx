@@ -19,7 +19,7 @@ import {
   TableRow,
   Chip,
 } from "@mui/material";
-import { ArrowBack, Email, Phone } from "@mui/icons-material";
+import { ArrowBack, Email, Phone, TrendingUp } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
 export default function StudentDetails({ params: paramsPromise }) {
@@ -72,6 +72,20 @@ export default function StudentDetails({ params: paramsPromise }) {
   }
 
   const { profile, assessmentHistory } = studentData;
+
+  // Calculate useful metrics
+  const totalAssessments = assessmentHistory.length;
+  const completedAssessments = assessmentHistory.filter(
+    (a) => a.status === "completed"
+  ).length;
+  const avgScore =
+    assessmentHistory.length > 0
+      ? Math.round(
+          assessmentHistory.reduce((sum, a) => sum + a.percentage, 0) /
+            assessmentHistory.length
+        )
+      : 0;
+  const bestScore = Math.max(...assessmentHistory.map((a) => a.percentage), 0);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -288,14 +302,10 @@ export default function StudentDetails({ params: paramsPromise }) {
           </Box>
         </Box>
 
-        {/* Metrics Grid */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(2, 1fr)",
-              sm: "repeat(4, 1fr)",
-            },
+            gridTemplateColumns: "repeat(4, 1fr)",
             gap: 2,
             bgcolor: "#0f172a",
             p: 3,
@@ -309,6 +319,7 @@ export default function StudentDetails({ params: paramsPromise }) {
               bgcolor: "#1e293b",
               border: "1px solid #334155",
               borderRadius: 1,
+              height: "100%",
             }}
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
@@ -342,6 +353,7 @@ export default function StudentDetails({ params: paramsPromise }) {
               bgcolor: "#1e293b",
               border: "1px solid #334155",
               borderRadius: 1,
+              height: "100%",
             }}
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
@@ -375,6 +387,7 @@ export default function StudentDetails({ params: paramsPromise }) {
               bgcolor: "#1e293b",
               border: "1px solid #334155",
               borderRadius: 1,
+              height: "100%",
             }}
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
@@ -402,26 +415,33 @@ export default function StudentDetails({ params: paramsPromise }) {
             </CardContent>
           </Card>
 
-          {/* User ID (to show consistency) */}
+          {/* Average Assessment Score */}
           <Card
             sx={{
               bgcolor: "#1e293b",
               border: "1px solid #334155",
               borderRadius: 1,
+              height: "100%",
             }}
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
               <Typography
-                variant="body2"
+                variant="h6"
                 sx={{
-                  color: "#8b5cf6",
+                  color: "#ec4899",
                   fontWeight: "bold",
                   mb: 0.5,
-                  fontSize: "0.75rem",
-                  wordBreak: "break-all",
                 }}
               >
-                {profile.userId?.slice(0, 8)}...
+                {assessmentHistory.length > 0
+                  ? Math.round(
+                      assessmentHistory.reduce(
+                        (sum, a) => sum + a.percentage,
+                        0
+                      ) / assessmentHistory.length
+                    )
+                  : "N/A"}
+                %
               </Typography>
               <Typography
                 variant="caption"
@@ -432,7 +452,7 @@ export default function StudentDetails({ params: paramsPromise }) {
                   fontWeight: "600",
                 }}
               >
-                User ID
+                Avg Score
               </Typography>
             </CardContent>
           </Card>
