@@ -18,7 +18,7 @@ import { apiRequest } from "@/lib/api";
 
 export default function ReportCard({ params: paramsPromise }) {
   const router = useRouter();
-  const { attemptId } = use(params);
+  const [attemptId, setAttemptId] = useState(null);
   const [reportCard, setReportCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
