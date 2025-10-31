@@ -137,7 +137,7 @@ export default function Sidebar({
               return item.roles.includes(userRole);
             })
             .map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = pathname.startsWith(item.path);
               return (
                 <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton
