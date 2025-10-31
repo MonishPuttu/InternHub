@@ -26,7 +26,7 @@ export default function TakeAssessment({ params: paramsPromise }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { assessmentId } = use(params);
+  const [assessmentId, setAssessmentId] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
