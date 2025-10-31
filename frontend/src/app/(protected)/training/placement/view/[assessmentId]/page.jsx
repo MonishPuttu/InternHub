@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -20,29 +21,17 @@ import {
 import { ArrowBack, ExpandMore, CheckCircle } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
-export default function ViewAssessment({ params: paramsPromise }) {
+export default function ViewAssessment({ params }) {
   const router = useRouter();
-  const [assessmentId, setAssessmentId] = useState(null);
+  const { assessmentId } = use(params);
   const [assessmentData, setAssessmentData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const extractParams = async () => {
-      try {
-        const resolvedParams = await paramsPromise;
-        if (!resolvedParams?.assessmentId) {
-          setLoading(false);
-          return;
-        }
-        setAssessmentId(resolvedParams.assessmentId);
-        await fetchAssessmentDetails(resolvedParams.assessmentId);
-      } catch (error) {
-        console.error("Error:", error);
-        setLoading(false);
-      }
-    };
-    extractParams();
-  }, [paramsPromise]);
+    if (assessmentId) {
+      fetchAssessmentDetails(assessmentId);
+    }
+  }, [assessmentId]);
 
   const fetchAssessmentDetails = async (id) => {
     try {
@@ -138,7 +127,7 @@ export default function ViewAssessment({ params: paramsPromise }) {
 
         <Divider sx={{ my: 3, bgcolor: "#334155" }} />
 
-        {/* Metrics Grid - Responsive */}
+        {/* Metrics Grid */}
         <Box
           sx={{
             display: "grid",
@@ -419,7 +408,6 @@ export default function ViewAssessment({ params: paramsPromise }) {
               </AccordionSummary>
               <AccordionDetails sx={{ p: 3, bgcolor: "#0f172a" }}>
                 <Box>
-                  {/* Full Question Text */}
                   <Typography
                     variant="body1"
                     sx={{
@@ -432,7 +420,6 @@ export default function ViewAssessment({ params: paramsPromise }) {
                     {question.question_text}
                   </Typography>
 
-                  {/* Question Metadata */}
                   <Box
                     sx={{
                       display: "flex",
@@ -469,7 +456,6 @@ export default function ViewAssessment({ params: paramsPromise }) {
 
                   <Divider sx={{ my: 2, bgcolor: "#334155" }} />
 
-                  {/* Options */}
                   <Typography
                     variant="subtitle2"
                     sx={{
@@ -554,7 +540,6 @@ export default function ViewAssessment({ params: paramsPromise }) {
                     ))}
                   </Box>
 
-                  {/* Tags */}
                   {question.tags && question.tags.length > 0 && (
                     <Box mt={2}>
                       <Typography
