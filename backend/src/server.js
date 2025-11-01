@@ -11,7 +11,8 @@ import profileRoutes from "./routes/profile.js"; // Profile Page
 import dashboardRoutes from "./routes/Dashboard/Dashboard.js"; // Dashobard page
 import studentApplicationsRoutes from "./routes/Dashboard/student_application.js"; // Dashobard page [placementcell]
 import postsRoutes from "./routes/posts.js"; // Post management routes
-import placementAnalyticsRoutes from './routes/placement_analytics.js';
+import placementAnalyticsRoutes from './routes/placement_analytics.js';// Placement Analytics routes
+import studentBulkRouter from "./routes/studentBulk.js";// Student bulk upload routes
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/api", calendarRoutes);
 
 
 app.use('/api/placement-analytics', placementAnalyticsRoutes);
+app.use("/api/bulk-upload", studentBulkRouter);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

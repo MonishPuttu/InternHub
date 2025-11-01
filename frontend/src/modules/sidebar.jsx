@@ -69,6 +69,13 @@ const navigationItems = [
     roles: ["placement"],
   },
 
+  {
+    text: "Student Details",
+    icon: <PersonIcon />,
+    path: "/students-details",
+    roles: ["placement"],
+  },
+
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
 ];
 

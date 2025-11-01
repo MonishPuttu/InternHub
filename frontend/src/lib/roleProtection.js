@@ -22,6 +22,7 @@ const roleAccessMap = {
   "/analytics": ["student", "placement", "recruiter"],
   "/profile": ["student", "placement", "recruiter"],
   "/chat": ["student", "placement", "recruiter"],
+  "/students-details": ["placement"],
 };
 
 export const canAccessRoute = (route) => {
