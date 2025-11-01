@@ -31,6 +31,7 @@ import {
     People as PeopleIcon,
     CheckCircle as CheckCircleIcon,
     Close as CloseIcon,
+    VpnKey as VpnKeyIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -46,6 +47,7 @@ export default function StudentDetailsManagement() {
     const [students, setStudents] = useState([]);
     const [stats, setStats] = useState({ total: 0, active: 0 });
     const [loading, setLoading] = useState(false);
+    const [downloadingLogins, setDownloadingLogins] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
     const [errorMsg, setErrorMsg] = useState("");
 
@@ -188,6 +190,38 @@ export default function StudentDetailsManagement() {
         }
     };
 
+    const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false);
+
+    const handleDownloadLoginDetails = async () => {
+        try {
+            setDownloadingLogins(true);
+            setShowPasswordResetDialog(false);
+            const token = getToken();
+            const response = await axios.get(
+                `${BACKEND_URL}/api/bulk-upload/download-login-details`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: "blob",
+                }
+            );
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            const filename = `student_login_details_${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setSuccessMsg("Login details downloaded! All student passwords have been reset to 'student123'");
+        } catch (error) {
+            setErrorMsg(error.response?.data?.error || "Failed to download login details");
+        } finally {
+            setDownloadingLogins(false);
+        }
+    };
+
     return (
         <Box sx={{ p: 3 }}>
             {/* Header */}
@@ -256,7 +290,7 @@ export default function StudentDetailsManagement() {
             </Box>
 
             {/* Action Buttons */}
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, mb: 4 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, mb: 4 }}>
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -300,6 +334,22 @@ export default function StudentDetailsManagement() {
                     }}
                 >
                     Download Template
+                </Button>
+
+                <Button
+                    variant="outlined"
+                    startIcon={downloadingLogins ? <CircularProgress size={20} /> : <VpnKeyIcon />}
+                    onClick={handleDownloadLoginDetails}
+                    disabled={downloadingLogins}
+                    sx={{
+                        borderColor: "#334155",
+                        color: "#e2e8f0",
+                        "&:hover": { borderColor: "#10b981", bgcolor: "#10b98110" },
+                        textTransform: "none",
+                        py: 1.5,
+                    }}
+                >
+                    {downloadingLogins ? "Downloading..." : "Login Details"}
                 </Button>
             </Box>
 

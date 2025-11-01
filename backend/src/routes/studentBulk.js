@@ -268,6 +268,83 @@ router.get("/download-template", requireAuth, (req, res) => {
     }
 });
 
+// 🆕 Download Student Login Details (Excel)
+router.get("/download-login-details", requireAuth, async (req, res) => {
+    try {
+        if (req.user.role !== "placement") {
+            return res
+                .status(403)
+                .json({ ok: false, error: "Only placement cell can download login details" });
+        }
+
+        const defaultPassword = "student123";
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        // Fetch all students with their user accounts and user IDs
+        const studentsData = await db
+            .select({
+                full_name: student_profile.full_name,
+                email: user.email,
+                user_id: user.id,
+            })
+            .from(student_profile)
+            .leftJoin(user, eq(student_profile.user_id, user.id))
+            .where(eq(user.role, "student"));
+
+        // Reset all student passwords to the default password
+        for (const student of studentsData) {
+            if (student.user_id) {
+                await db
+                    .update(user)
+                    .set({ password: hashedPassword })
+                    .where(eq(user.id, student.user_id));
+            }
+        }
+
+        // Prepare data for Excel
+        const excelData = studentsData.map(student => ({
+            "Student Name": student.full_name || "N/A",
+            "Email ID": student.email || "N/A",
+            "Password": defaultPassword,
+        }));
+
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths
+        worksheet['!cols'] = [
+            { wch: 30 }, // Student Name
+            { wch: 35 }, // Email ID
+            { wch: 15 }, // Password
+        ];
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Student Login Details");
+
+        // Generate buffer
+        const excelBuffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+        // Set response headers
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename=student_login_details_${new Date().toISOString().split('T')[0]}.xlsx`
+        );
+
+        // Send the file
+        res.send(excelBuffer);
+
+        console.log(`✅ Reset passwords for ${studentsData.length} students and downloaded login details`);
+    } catch (error) {
+        console.error("Error downloading login details:", error);
+        res.status(500).json({ ok: false, error: String(error) });
+    }
+});
+
 // 👥 Get Students List
 router.get("/students", requireAuth, async (req, res) => {
     try {
@@ -326,7 +403,5 @@ router.get("/stats", requireAuth, async (req, res) => {
         res.status(500).json({ ok: false, error: String(error) });
     }
 });
-
-
 
 export default router;
