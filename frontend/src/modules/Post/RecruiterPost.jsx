@@ -511,24 +511,6 @@ export default function RecruiterPost() {
                       {app.company_name}
                     </Typography>
                   </Box>
-
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "#64748b",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    Posted{" "}
-                    {new Date(app.application_date).toLocaleDateString(
-                      "en-US",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      }
-                    )}
-                  </Typography>
                 </Box>
 
                 <Box
@@ -578,6 +560,15 @@ export default function RecruiterPost() {
                       >
                         Posted{" "}
                         {new Date(app.application_date).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                      >
+                        Deadline{" "}
+                        {new Date(app.application_deadline).toLocaleDateString()}
                       </Typography>
                     </Box>
                   </Box>
