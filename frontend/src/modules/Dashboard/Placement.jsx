@@ -82,7 +82,7 @@ export default function PlacementDashboard() {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${BACKEND_URL}/api/student-applications/all`,
+        `${BACKEND_URL}/api/student-applications/all-applications`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
