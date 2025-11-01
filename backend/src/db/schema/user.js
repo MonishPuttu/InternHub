@@ -7,6 +7,8 @@ export const user = pgTable("user", {
   role: text("role").notNull().default("student"),
   email_verified: timestamp("email_verified"),
   image: text("image"),
+  reset_token: text("reset_token"),
+  reset_token_expires: timestamp("reset_token_expires"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
