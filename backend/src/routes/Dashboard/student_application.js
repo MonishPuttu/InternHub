@@ -6,7 +6,7 @@ import {
   student_profile,
   user,
 } from "../../db/schema/index.js";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, count, countDistinct } from "drizzle-orm";
 import { requireAuth } from "../../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -239,6 +239,93 @@ router.get("/check-applied/:postId", requireAuth, async (req, res) => {
     res.json({ ok: true, hasApplied: application.length > 0 });
   } catch (e) {
     console.error("Error checking application:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get global stats for placement dashboard
+router.get("/global-stats", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    // Count total approved posts
+    const totalPostsResult = await db
+      .select({ count: count() })
+      .from(posts)
+      .where(eq(posts.approval_status, "approved"));
+
+    // Count unique students who have applied to any post
+    const uniqueStudentsResult = await db
+      .select({ count: countDistinct(student_applications.student_id) })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(posts.approval_status, "approved"));
+
+    // Count total interviewed applications
+    const interviewedResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          eq(student_applications.application_status, "interviewed")
+        )
+      );
+
+    // Count total applications
+    const totalApplicationsResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(posts.approval_status, "approved"));
+
+    // Count total applied applications
+    const appliedResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          eq(student_applications.application_status, "applied")
+        )
+      );
+
+    // Count total offers
+    const offersResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          eq(student_applications.application_status, "offer")
+        )
+      );
+
+    const totalPosts = parseInt(totalPostsResult[0]?.count || 0);
+    const totalAppliedStudents = parseInt(uniqueStudentsResult[0]?.count || 0);
+    const totalApplications = parseInt(totalApplicationsResult[0]?.count || 0);
+    const totalApplied = parseInt(appliedResult[0]?.count || 0);
+    const totalInterviewed = parseInt(interviewedResult[0]?.count || 0);
+    const totalOffers = parseInt(offersResult[0]?.count || 0);
+
+    res.json({
+      ok: true,
+      stats: {
+        totalPosts,
+        totalAppliedStudents,
+        totalApplications,
+        totalApplied,
+        totalInterviewed,
+        totalOffers,
+      }
+    });
+  } catch (e) {
+    console.error("Error fetching global stats:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });

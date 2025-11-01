@@ -97,19 +97,51 @@ export default function ApprovedPostsSection(props) {
   const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
 
+  // Stats state
+  const [overallStats, setOverallStats] = useState({
+    totalPosts: 0,
+    totalAppliedStudents: 0,
+    totalApplications: 0,
+    applied: 0,
+    interviewed: 0,
+    offers: 0,
+  });
+
   // Filter states
   const [filterStudentName, setFilterStudentName] = useState("");
   const [filterRollNumber, setFilterRollNumber] = useState("");
   const [filterBranch, setFilterBranch] = useState("");
   const [filterSemester, setFilterSemester] = useState("");
-  const [filterCgpa, setFilterCgpa] = useState("");
-  const [filterTenth, setFilterTenth] = useState("");
-  const [filterTwelfth, setFilterTwelfth] = useState("");
+  const [filterCgpaMin, setFilterCgpaMin] = useState("");
+  const [filterCgpaMax, setFilterCgpaMax] = useState("");
+  const [filterTenthMin, setFilterTenthMin] = useState("");
+  const [filterTenthMax, setFilterTenthMax] = useState("");
+  const [filterTwelfthMin, setFilterTwelfthMin] = useState("");
+  const [filterTwelfthMax, setFilterTwelfthMax] = useState("");
   const [filterAppliedDate, setFilterAppliedDate] = useState("");
 
   useEffect(() => {
     fetchApprovedPosts();
+    fetchGlobalStats();
   }, []);
+
+  // Calculate stats from all applications
+  const calculateStats = (applications) => {
+    console.log("Calculating stats from applications:", applications);
+    const totalApplications = applications.length;
+    const applied = applications.filter(app => app.application_status === 'applied').length;
+    const interviewed = applications.filter(app => app.application_status === 'interviewed').length;
+    const offers = applications.filter(app => app.application_status === 'offer').length;
+
+    console.log("Stats calculated:", { totalApplications, applied, interviewed, offers });
+
+    setOverallStats({
+      totalApplications,
+      applied,
+      interviewed,
+      offers,
+    });
+  };
 
   const fetchApprovedPosts = async () => {
     try {
@@ -135,6 +167,33 @@ export default function ApprovedPostsSection(props) {
     }
   };
 
+  const fetchGlobalStats = async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `${BACKEND_URL}/api/student-applications/global-stats`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok) {
+        const { totalPosts, totalAppliedStudents, totalApplications, totalApplied, totalInterviewed, totalOffers } = response.data.stats;
+        setOverallStats({
+          totalPosts,
+          totalAppliedStudents,
+          totalApplications: totalPosts, // Use total approved posts for Total Applications stat
+          applied: totalApplied,
+          interviewed: totalInterviewed,
+          offers: totalOffers,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching global stats:", error);
+      setErrorMsg("Failed to load global stats");
+    }
+  };
+
   const handleViewPostDetails = (post) => {
     setSelectedPost(post);
     setViewPostDialogOpen(true);
@@ -153,7 +212,10 @@ export default function ApprovedPostsSection(props) {
       );
 
       if (response.data.ok) {
+        console.log("Fetched applications:", response.data.applications);
         setPostApplications(response.data.applications);
+        // Calculate stats from the applications
+        calculateStats(response.data.applications);
         setViewApplicationsDialogOpen(true);
       }
     } catch (error) {
@@ -335,19 +397,17 @@ export default function ApprovedPostsSection(props) {
   };
 
   const filteredApplications = postApplications.filter((app) => {
-    // Apply all filters
-    const matchesStudentName = !filterStudentName || app.full_name.toLowerCase().includes(filterStudentName.toLowerCase());
-    const matchesRollNumber = !filterRollNumber || app.roll_number.toLowerCase().includes(filterRollNumber.toLowerCase());
-    const matchesBranch = !filterBranch || app.branch.toLowerCase().includes(filterBranch.toLowerCase());
-    const matchesSemester = !filterSemester || app.current_semester.toString().includes(filterSemester);
-    const matchesCgpa = !filterCgpa || app.cgpa.toString().includes(filterCgpa);
-    const matchesTenth = !filterTenth || app.tenth_score.toString().includes(filterTenth);
-    const matchesTwelfth = !filterTwelfth || app.twelfth_score.toString().includes(filterTwelfth);
-    const matchesAppliedDate = !filterAppliedDate || new Date(app.applied_at).toLocaleDateString().includes(filterAppliedDate);
-    const matchesStatus = filterStatus === "all" || app.application_status === filterStatus;
+    const matchesStudentName = !filterStudentName || (app?.full_name || "").toLowerCase().includes(filterStudentName.toLowerCase());
+    const matchesRollNumber = !filterRollNumber || (app?.roll_number || "").toLowerCase().includes(filterRollNumber.toLowerCase());
+    const matchesBranch = !filterBranch || (app?.branch || "").toLowerCase().includes(filterBranch.toLowerCase());
+    const matchesSemester = !filterSemester || (app?.current_semester || "").toString().includes(filterSemester);
+    const matchesCgpa = (!filterCgpaMin || app?.cgpa >= parseFloat(filterCgpaMin)) && (!filterCgpaMax || app?.cgpa <= parseFloat(filterCgpaMax));
+    const matchesTenth = (!filterTenthMin || app?.tenth_score >= parseFloat(filterTenthMin)) && (!filterTenthMax || app?.tenth_score <= parseFloat(filterTenthMax));
+    const matchesTwelfth = (!filterTwelfthMin || app?.twelfth_score >= parseFloat(filterTwelfthMin)) && (!filterTwelfthMax || app?.twelfth_score <= parseFloat(filterTwelfthMax));
+    const matchesAppliedDate = !filterAppliedDate || new Date(app?.applied_at).toDateString() === new Date(filterAppliedDate).toDateString();
+    const matchesStatus = filterStatus === "all" || app?.application_status === filterStatus;
 
-    return matchesStudentName && matchesRollNumber && matchesBranch && matchesSemester &&
-           matchesCgpa && matchesTenth && matchesTwelfth && matchesAppliedDate && matchesStatus;
+    return matchesStudentName && matchesRollNumber && matchesBranch && matchesSemester && matchesCgpa && matchesTenth && matchesTwelfth && matchesAppliedDate && matchesStatus;
   });
 
   if (loading) {
@@ -371,19 +431,23 @@ export default function ApprovedPostsSection(props) {
             border: "1px solid #334155",
             borderRadius: 2,
             flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 120,
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600 }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
           >
-            Total Applications
+            Applications
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#8b5cf6", fontWeight: 700 }}
+            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center" }}
           >
-            0
+            {overallStats.totalApplications}
           </Typography>
         </Paper>
         <Paper
@@ -393,19 +457,23 @@ export default function ApprovedPostsSection(props) {
             border: "1px solid #334155",
             borderRadius: 2,
             flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 120,
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600 }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
           >
             Applied
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#0ea5e9", fontWeight: 700 }}
+            sx={{ color: "#0ea5e9", fontWeight: 700, textAlign: "center" }}
           >
-            0
+            {overallStats.applied}
           </Typography>
         </Paper>
         <Paper
@@ -415,19 +483,23 @@ export default function ApprovedPostsSection(props) {
             border: "1px solid #334155",
             borderRadius: 2,
             flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 120,
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600 }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
           >
             Interviewed
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#8b5cf6", fontWeight: 700 }}
+            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center" }}
           >
-            0
+            {overallStats.interviewed}
           </Typography>
         </Paper>
         <Paper
@@ -437,19 +509,23 @@ export default function ApprovedPostsSection(props) {
             border: "1px solid #334155",
             borderRadius: 2,
             flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 120,
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600 }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
           >
             Offers
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#10b981", fontWeight: 700 }}
+            sx={{ color: "#10b981", fontWeight: 700, textAlign: "center" }}
           >
-            0
+            {overallStats.offers}
           </Typography>
         </Paper>
       </Box>
@@ -659,58 +735,113 @@ export default function ApprovedPostsSection(props) {
                   },
                 }}
               />
-              <TextField
-                size="small"
-                label="CGPA"
-                value={filterCgpa}
-                onChange={(e) => setFilterCgpa(e.target.value)}
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
-                  "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
-                    "& fieldset": { borderColor: "#334155" },
-                    "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  },
-                }}
-              />
-              <TextField
-                size="small"
-                label="10th Score"
-                value={filterTenth}
-                onChange={(e) => setFilterTenth(e.target.value)}
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
-                  "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
-                    "& fieldset": { borderColor: "#334155" },
-                    "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  },
-                }}
-              />
-              <TextField
-                size="small"
-                label="12th Score"
-                value={filterTwelfth}
-                onChange={(e) => setFilterTwelfth(e.target.value)}
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
-                  "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
-                    "& fieldset": { borderColor: "#334155" },
-                    "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  },
-                }}
-              />
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  size="small"
+                  label="CGPA Min"
+                  value={filterCgpaMin}
+                  onChange={(e) => setFilterCgpaMin(e.target.value)}
+                  sx={{
+                    "& .MuiInputLabel-root": { color: "#94a3b8" },
+                    "& .MuiOutlinedInput-root": {
+                      color: "#e2e8f0",
+                      bgcolor: "#0f172a",
+                      "& fieldset": { borderColor: "#334155" },
+                      "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    },
+                  }}
+                />
+                <TextField
+                  size="small"
+                  label="CGPA Max"
+                  value={filterCgpaMax}
+                  onChange={(e) => setFilterCgpaMax(e.target.value)}
+                  sx={{
+                    "& .MuiInputLabel-root": { color: "#94a3b8" },
+                    "& .MuiOutlinedInput-root": {
+                      color: "#e2e8f0",
+                      bgcolor: "#0f172a",
+                      "& fieldset": { borderColor: "#334155" },
+                      "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    },
+                  }}
+                />
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  size="small"
+                  label="10th Min"
+                  value={filterTenthMin}
+                  onChange={(e) => setFilterTenthMin(e.target.value)}
+                  sx={{
+                    "& .MuiInputLabel-root": { color: "#94a3b8" },
+                    "& .MuiOutlinedInput-root": {
+                      color: "#e2e8f0",
+                      bgcolor: "#0f172a",
+                      "& fieldset": { borderColor: "#334155" },
+                      "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    },
+                  }}
+                />
+                <TextField
+                  size="small"
+                  label="10th Max"
+                  value={filterTenthMax}
+                  onChange={(e) => setFilterTenthMax(e.target.value)}
+                  sx={{
+                    "& .MuiInputLabel-root": { color: "#94a3b8" },
+                    "& .MuiOutlinedInput-root": {
+                      color: "#e2e8f0",
+                      bgcolor: "#0f172a",
+                      "& fieldset": { borderColor: "#334155" },
+                      "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    },
+                  }}
+                />
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  size="small"
+                  label="12th Min"
+                  value={filterTwelfthMin}
+                  onChange={(e) => setFilterTwelfthMin(e.target.value)}
+                  sx={{
+                    "& .MuiInputLabel-root": { color: "#94a3b8" },
+                    "& .MuiOutlinedInput-root": {
+                      color: "#e2e8f0",
+                      bgcolor: "#0f172a",
+                      "& fieldset": { borderColor: "#334155" },
+                      "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    },
+                  }}
+                />
+                <TextField
+                  size="small"
+                  label="12th Max"
+                  value={filterTwelfthMax}
+                  onChange={(e) => setFilterTwelfthMax(e.target.value)}
+                  sx={{
+                    "& .MuiInputLabel-root": { color: "#94a3b8" },
+                    "& .MuiOutlinedInput-root": {
+                      color: "#e2e8f0",
+                      bgcolor: "#0f172a",
+                      "& fieldset": { borderColor: "#334155" },
+                      "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    },
+                  }}
+                />
+              </Stack>
               <TextField
                 size="small"
                 label="Applied Date"
+                type="date"
                 value={filterAppliedDate}
                 onChange={(e) => setFilterAppliedDate(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: { color: "#94a3b8" },
+                }}
                 sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
                   "& .MuiOutlinedInput-root": {
                     color: "#e2e8f0",
                     bgcolor: "#0f172a",
