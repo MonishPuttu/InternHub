@@ -31,7 +31,7 @@ import ApplyDialog from "@/components/post/ApplyDialog";
 import useApplyToPost from "@/hooks/useApplyToPost";
 import { getUser } from "@/lib/session";
 
-export default function PostDetails({ postId }) {
+export default function PostDetails({ postId, showApplyButtons = true }) {
   const router = useRouter();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -749,53 +749,55 @@ export default function PostDetails({ postId }) {
         </Alert>
       </Snackbar>
 
-      <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={handleBack}
-          sx={{
-            borderColor: "#334155",
-            color: "#94a3b8",
-            "&:hover": {
-              borderColor: "#8b5cf6",
-              bgcolor: "rgba(139, 92, 246, 0.1)",
-            },
-            textTransform: "none",
-            fontWeight: 600,
-            px: 4,
-          }}
-        >
-          Back to List
-        </Button>
-        {hasApplied ? (
+      {showApplyButtons && (
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
           <Button
-            variant="contained"
-            disabled
+            variant="outlined"
+            onClick={handleBack}
             sx={{
-              bgcolor: "#10b981",
+              borderColor: "#334155",
+              color: "#94a3b8",
+              "&:hover": {
+                borderColor: "#8b5cf6",
+                bgcolor: "rgba(139, 92, 246, 0.1)",
+              },
               textTransform: "none",
               fontWeight: 600,
               px: 4,
             }}
           >
-            Applied
+            Back to List
           </Button>
-        ) : (
-          <Button
-            variant="contained"
-            onClick={() => setApplyDialogOpen(true)}
-            sx={{
-              bgcolor: "#8b5cf6",
-              "&:hover": { bgcolor: "#7c3aed" },
-              textTransform: "none",
-              fontWeight: 600,
-              px: 4,
-            }}
-          >
-            Apply Now
-          </Button>
-        )}
-      </Box>
+          {hasApplied ? (
+            <Button
+              variant="contained"
+              disabled
+              sx={{
+                bgcolor: "#10b981",
+                textTransform: "none",
+                fontWeight: 600,
+                px: 4,
+              }}
+            >
+              Applied
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => setApplyDialogOpen(true)}
+              sx={{
+                bgcolor: "#8b5cf6",
+                "&:hover": { bgcolor: "#7c3aed" },
+                textTransform: "none",
+                fontWeight: 600,
+                px: 4,
+              }}
+            >
+              Apply Now
+            </Button>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }

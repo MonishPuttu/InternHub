@@ -243,4 +243,136 @@ router.get("/check-applied/:postId", requireAuth, async (req, res) => {
   }
 });
 
+// Bulk import applications from CSV (placement cell only)
+router.post("/bulk-import", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { applications, postId } = req.body;
+
+    if (!applications || !Array.isArray(applications) || applications.length === 0) {
+      return res.status(400).json({ ok: false, error: "No applications provided" });
+    }
+
+    if (!postId) {
+      return res.status(400).json({ ok: false, error: "Post ID is required" });
+    }
+
+    // Verify post exists and is approved
+    const post = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found" });
+    }
+
+    if (post[0].approval_status !== "approved") {
+      return res.status(403).json({ ok: false, error: "Post is not approved" });
+    }
+
+    const importedApplications = [];
+    const errors = [];
+
+    for (const app of applications) {
+      try {
+        // Check if student already exists or create a placeholder user
+        let studentUser = await db
+          .select()
+          .from(user)
+          .where(eq(user.email, app.email || `${app.roll_number}@placeholder.com`))
+          .limit(1);
+
+        let studentId;
+        if (studentUser.length === 0) {
+          // Create a placeholder user for external students
+          const newUser = await db
+            .insert(user)
+            .values({
+              email: app.email || `${app.roll_number}@placeholder.com`,
+              password: "placeholder", // This should be handled differently in production
+              role: "student",
+              is_verified: false,
+            })
+            .returning();
+          studentId = newUser[0].id;
+
+          // Create student profile
+          await db.insert(student_profile).values({
+            user_id: studentId,
+            full_name: app.full_name,
+            roll_number: app.roll_number,
+            branch: app.branch,
+            current_semester: app.current_semester,
+            cgpa: app.cgpa,
+            tenth_score: app.tenth_score,
+            twelfth_score: app.twelfth_score,
+            contact_number: app.contact_number || null,
+          });
+        } else {
+          studentId = studentUser[0].id;
+        }
+
+        // Check if already applied
+        const existingApplication = await db
+          .select()
+          .from(student_applications)
+          .where(
+            and(
+              eq(student_applications.post_id, postId),
+              eq(student_applications.student_id, studentId)
+            )
+          )
+          .limit(1);
+
+        if (existingApplication.length > 0) {
+          errors.push(`Student ${app.full_name} (${app.roll_number}) already applied`);
+          continue;
+        }
+
+        // Create application
+        const newApplication = await db
+          .insert(student_applications)
+          .values({
+            post_id: postId,
+            student_id: studentId,
+            full_name: app.full_name,
+            email: app.email || `${app.roll_number}@placeholder.com`,
+            roll_number: app.roll_number,
+            branch: app.branch,
+            current_semester: app.current_semester,
+            cgpa: app.cgpa,
+            tenth_score: app.tenth_score,
+            twelfth_score: app.twelfth_score,
+            contact_number: app.contact_number || null,
+            resume_link: app.resume_link || null,
+            cover_letter: app.cover_letter || null,
+            application_status: app.application_status || "applied",
+            applied_at: app.applied_at ? new Date(app.applied_at) : new Date(),
+          })
+          .returning();
+
+        importedApplications.push(newApplication[0]);
+      } catch (error) {
+        console.error("Error importing application:", error);
+        errors.push(`Failed to import ${app.full_name}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      ok: true,
+      imported: importedApplications.length,
+      errors: errors.length > 0 ? errors : undefined,
+      applications: importedApplications,
+    });
+  } catch (e) {
+    console.error("Error bulk importing applications:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 export default router;
