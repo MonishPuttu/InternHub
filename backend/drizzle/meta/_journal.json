@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1761411942616,
-      "tag": "0000_public_bloodstorm",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1761738860469,
-      "tag": "0001_kind_roland_deschain",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1762069535805,
-      "tag": "0002_stormy_captain_america",
+      "when": 1762092149471,
+      "tag": "0000_bored_liz_osborn",
       "breakpoints": true
     }
   ]
