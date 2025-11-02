@@ -472,6 +472,83 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+// Change password route (for authenticated users)
+router.post("/change-password", requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "Current password and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        ok: false,
+        error: "New password must be at least 6 characters long",
+      });
+    }
+
+    // Get user from auth middleware
+    const userId = req.user.id;
+
+    const users = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "User not found",
+      });
+    }
+
+    const foundUser = users[0];
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, foundUser.password);
+
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        ok: false,
+        error: "Current password is incorrect",
+      });
+    }
+
+    // Check if new password is different from current
+    const isSamePassword = await bcrypt.compare(newPassword, foundUser.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "New password must be different from current password",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await db
+      .update(user)
+      .set({
+        password: hashedPassword,
+      })
+      .where(eq(user.id, foundUser.id));
+
+    res.json({
+      ok: true,
+      message: "Password changed successfully",
+    });
+  } catch (e) {
+    console.error("Change password error:", e);
+    res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+});
+
 // Reset password route
 router.post("/reset-password", async (req, res) => {
   try {

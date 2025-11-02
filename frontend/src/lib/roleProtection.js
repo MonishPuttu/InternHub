@@ -30,6 +30,7 @@ const roleAccessMap = {
   "/my-applications": ["student"],
   "/analytics": ["student", "placement", "recruiter"],
   "/profile": ["student"],
+  "/settings": ["recruiter", "placement"],
   "/chat": ["student", "placement", "recruiter"],
 };
 
