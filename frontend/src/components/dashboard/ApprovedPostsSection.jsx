@@ -111,14 +111,6 @@ export default function ApprovedPostsSection(props) {
   const [filterStudentName, setFilterStudentName] = useState("");
   const [filterRollNumber, setFilterRollNumber] = useState("");
   const [filterBranch, setFilterBranch] = useState("");
-  const [filterSemester, setFilterSemester] = useState("");
-  const [filterCgpaMin, setFilterCgpaMin] = useState("");
-  const [filterCgpaMax, setFilterCgpaMax] = useState("");
-  const [filterTenthMin, setFilterTenthMin] = useState("");
-  const [filterTenthMax, setFilterTenthMax] = useState("");
-  const [filterTwelfthMin, setFilterTwelfthMin] = useState("");
-  const [filterTwelfthMax, setFilterTwelfthMax] = useState("");
-  const [filterAppliedDate, setFilterAppliedDate] = useState("");
 
   useEffect(() => {
     fetchApprovedPosts();
@@ -400,14 +392,14 @@ export default function ApprovedPostsSection(props) {
     const matchesStudentName = !filterStudentName || (app?.full_name || "").toLowerCase().includes(filterStudentName.toLowerCase());
     const matchesRollNumber = !filterRollNumber || (app?.roll_number || "").toLowerCase().includes(filterRollNumber.toLowerCase());
     const matchesBranch = !filterBranch || (app?.branch || "").toLowerCase().includes(filterBranch.toLowerCase());
-    const matchesSemester = !filterSemester || (app?.current_semester || "").toString().includes(filterSemester);
-    const matchesCgpa = (!filterCgpaMin || app?.cgpa >= parseFloat(filterCgpaMin)) && (!filterCgpaMax || app?.cgpa <= parseFloat(filterCgpaMax));
-    const matchesTenth = (!filterTenthMin || app?.tenth_score >= parseFloat(filterTenthMin)) && (!filterTenthMax || app?.tenth_score <= parseFloat(filterTenthMax));
-    const matchesTwelfth = (!filterTwelfthMin || app?.twelfth_score >= parseFloat(filterTwelfthMin)) && (!filterTwelfthMax || app?.twelfth_score <= parseFloat(filterTwelfthMax));
-    const matchesAppliedDate = !filterAppliedDate || new Date(app?.applied_at).toDateString() === new Date(filterAppliedDate).toDateString();
+    // const matchesSemester = !filterSemester || (app?.current_semester || "").toString().includes(filterSemester);
+    // const matchesCgpa = (!filterCgpaMin || app?.cgpa >= parseFloat(filterCgpaMin)) && (!filterCgpaMax || app?.cgpa <= parseFloat(filterCgpaMax));
+    // const matchesTenth = (!filterTenthMin || app?.tenth_score >= parseFloat(filterTenthMin)) && (!filterTenthMax || app?.tenth_score <= parseFloat(filterTenthMax));
+    // const matchesTwelfth = (!filterTwelfthMin || app?.twelfth_score >= parseFloat(filterTwelfthMin)) && (!filterTwelfthMax || app?.twelfth_score <= parseFloat(filterTwelfthMax));
+    // const matchesAppliedDate = !filterAppliedDate || new Date(app?.applied_at).toDateString() === new Date(filterAppliedDate).toDateString();
     const matchesStatus = filterStatus === "all" || app?.application_status === filterStatus;
 
-    return matchesStudentName && matchesRollNumber && matchesBranch && matchesSemester && matchesCgpa && matchesTenth && matchesTwelfth && matchesAppliedDate && matchesStatus;
+    return matchesStudentName && matchesRollNumber && matchesBranch && matchesStatus;
   });
 
   if (loading) {
@@ -720,136 +712,7 @@ export default function ApprovedPostsSection(props) {
                   },
                 }}
               />
-              <TextField
-                size="small"
-                label="Semester"
-                value={filterSemester}
-                onChange={(e) => setFilterSemester(e.target.value)}
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
-                  "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
-                    "& fieldset": { borderColor: "#334155" },
-                    "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  },
-                }}
-              />
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  size="small"
-                  label="CGPA Min"
-                  value={filterCgpaMin}
-                  onChange={(e) => setFilterCgpaMin(e.target.value)}
-                  sx={{
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
-                      bgcolor: "#0f172a",
-                      "& fieldset": { borderColor: "#334155" },
-                      "&:hover fieldset": { borderColor: "#8b5cf6" },
-                    },
-                  }}
-                />
-                <TextField
-                  size="small"
-                  label="CGPA Max"
-                  value={filterCgpaMax}
-                  onChange={(e) => setFilterCgpaMax(e.target.value)}
-                  sx={{
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
-                      bgcolor: "#0f172a",
-                      "& fieldset": { borderColor: "#334155" },
-                      "&:hover fieldset": { borderColor: "#8b5cf6" },
-                    },
-                  }}
-                />
-              </Stack>
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  size="small"
-                  label="10th Min"
-                  value={filterTenthMin}
-                  onChange={(e) => setFilterTenthMin(e.target.value)}
-                  sx={{
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
-                      bgcolor: "#0f172a",
-                      "& fieldset": { borderColor: "#334155" },
-                      "&:hover fieldset": { borderColor: "#8b5cf6" },
-                    },
-                  }}
-                />
-                <TextField
-                  size="small"
-                  label="10th Max"
-                  value={filterTenthMax}
-                  onChange={(e) => setFilterTenthMax(e.target.value)}
-                  sx={{
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
-                      bgcolor: "#0f172a",
-                      "& fieldset": { borderColor: "#334155" },
-                      "&:hover fieldset": { borderColor: "#8b5cf6" },
-                    },
-                  }}
-                />
-              </Stack>
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  size="small"
-                  label="12th Min"
-                  value={filterTwelfthMin}
-                  onChange={(e) => setFilterTwelfthMin(e.target.value)}
-                  sx={{
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
-                      bgcolor: "#0f172a",
-                      "& fieldset": { borderColor: "#334155" },
-                      "&:hover fieldset": { borderColor: "#8b5cf6" },
-                    },
-                  }}
-                />
-                <TextField
-                  size="small"
-                  label="12th Max"
-                  value={filterTwelfthMax}
-                  onChange={(e) => setFilterTwelfthMax(e.target.value)}
-                  sx={{
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
-                      bgcolor: "#0f172a",
-                      "& fieldset": { borderColor: "#334155" },
-                      "&:hover fieldset": { borderColor: "#8b5cf6" },
-                    },
-                  }}
-                />
-              </Stack>
-              <TextField
-                size="small"
-                label="Applied Date"
-                type="date"
-                value={filterAppliedDate}
-                onChange={(e) => setFilterAppliedDate(e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                  sx: { color: "#94a3b8" },
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
-                    "& fieldset": { borderColor: "#334155" },
-                    "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  },
-                }}
-              />
+
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <InputLabel sx={{ color: "#94a3b8" }}>Status</InputLabel>
                 <Select

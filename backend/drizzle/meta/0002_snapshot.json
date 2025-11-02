@@ -1,6 +1,6 @@
 {
-  "id": "ed6645d8-934d-4dc0-96ed-e5ac97995c7d",
-  "prevId": "2ce52890-385f-4eef-923d-d26f10c85453",
+  "id": "a5e5f75f-b0cf-4b97-b84b-ce80e679d2c2",
+  "prevId": "ed6645d8-934d-4dc0-96ed-e5ac97995c7d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -340,6 +340,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1267,6 +1273,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "reset_token": {
+          "name": "reset_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_token_expires": {
+          "name": "reset_token_expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1664,6 +1682,656 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.assessments": {
+      "name": "assessments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration": {
+          "name": "duration",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_marks": {
+          "name": "total_marks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "passing_marks": {
+          "name": "passing_marks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "assessments_created_by_user_id_fk": {
+          "name": "assessments_created_by_user_id_fk",
+          "tableFrom": "assessments",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.leaderboard": {
+      "name": "leaderboard",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "student_id": {
+          "name": "student_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assessment_id": {
+          "name": "assessment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_score": {
+          "name": "total_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percentage_score": {
+          "name": "percentage_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_taken": {
+          "name": "time_taken",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt_date": {
+          "name": "attempt_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "leaderboard_student_id_user_id_fk": {
+          "name": "leaderboard_student_id_user_id_fk",
+          "tableFrom": "leaderboard",
+          "tableTo": "user",
+          "columnsFrom": [
+            "student_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "leaderboard_assessment_id_assessments_id_fk": {
+          "name": "leaderboard_assessment_id_assessments_id_fk",
+          "tableFrom": "leaderboard",
+          "tableTo": "assessments",
+          "columnsFrom": [
+            "assessment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.questions": {
+      "name": "questions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "assessment_id": {
+          "name": "assessment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question_text": {
+          "name": "question_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question_type": {
+          "name": "question_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "options": {
+          "name": "options",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "correct_answer": {
+          "name": "correct_answer",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "marks": {
+          "name": "marks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order_index": {
+          "name": "order_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "questions_assessment_id_assessments_id_fk": {
+          "name": "questions_assessment_id_assessments_id_fk",
+          "tableFrom": "questions",
+          "tableTo": "assessments",
+          "columnsFrom": [
+            "assessment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.report_cards": {
+      "name": "report_cards",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "student_id": {
+          "name": "student_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_id": {
+          "name": "attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assessment_id": {
+          "name": "assessment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "overall_score": {
+          "name": "overall_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percentage_score": {
+          "name": "percentage_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade": {
+          "name": "grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strengths": {
+          "name": "strengths",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weaknesses": {
+          "name": "weaknesses",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommendations": {
+          "name": "recommendations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detailed_analysis": {
+          "name": "detailed_analysis",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "generated_at": {
+          "name": "generated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "report_cards_student_id_user_id_fk": {
+          "name": "report_cards_student_id_user_id_fk",
+          "tableFrom": "report_cards",
+          "tableTo": "user",
+          "columnsFrom": [
+            "student_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "report_cards_attempt_id_student_attempts_id_fk": {
+          "name": "report_cards_attempt_id_student_attempts_id_fk",
+          "tableFrom": "report_cards",
+          "tableTo": "student_attempts",
+          "columnsFrom": [
+            "attempt_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "report_cards_assessment_id_assessments_id_fk": {
+          "name": "report_cards_assessment_id_assessments_id_fk",
+          "tableFrom": "report_cards",
+          "tableTo": "assessments",
+          "columnsFrom": [
+            "assessment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.student_answers": {
+      "name": "student_answers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "attempt_id": {
+          "name": "attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question_id": {
+          "name": "question_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "answer": {
+          "name": "answer",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_correct": {
+          "name": "is_correct",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "marks_awarded": {
+          "name": "marks_awarded",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "time_taken": {
+          "name": "time_taken",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "student_answers_attempt_id_student_attempts_id_fk": {
+          "name": "student_answers_attempt_id_student_attempts_id_fk",
+          "tableFrom": "student_answers",
+          "tableTo": "student_attempts",
+          "columnsFrom": [
+            "attempt_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "student_answers_question_id_questions_id_fk": {
+          "name": "student_answers_question_id_questions_id_fk",
+          "tableFrom": "student_answers",
+          "tableTo": "questions",
+          "columnsFrom": [
+            "question_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.student_attempts": {
+      "name": "student_attempts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "student_id": {
+          "name": "student_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assessment_id": {
+          "name": "assessment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_time": {
+          "name": "start_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_time": {
+          "name": "end_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_score": {
+          "name": "total_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "percentage_score": {
+          "name": "percentage_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "time_taken": {
+          "name": "time_taken",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_evaluated": {
+          "name": "is_evaluated",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "student_attempts_student_id_user_id_fk": {
+          "name": "student_attempts_student_id_user_id_fk",
+          "tableFrom": "student_attempts",
+          "tableTo": "user",
+          "columnsFrom": [
+            "student_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "student_attempts_assessment_id_assessments_id_fk": {
+          "name": "student_attempts_assessment_id_assessments_id_fk",
+          "tableFrom": "student_attempts",
+          "tableTo": "assessments",
+          "columnsFrom": [
+            "assessment_id"
           ],
           "columnsTo": [
             "id"

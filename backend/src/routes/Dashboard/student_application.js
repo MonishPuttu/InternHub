@@ -330,6 +330,31 @@ router.get("/global-stats", requireAuth, async (req, res) => {
   }
 });
 
+// Delete application (placement cell only)
+router.delete("/application/:applicationId", requireAuth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const deleted = await db
+      .delete(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .returning();
+
+    if (deleted.length === 0) {
+      return res.status(404).json({ ok: false, error: "Application not found" });
+    }
+
+    res.json({ ok: true, message: "Application deleted successfully" });
+  } catch (e) {
+    console.error("Error deleting application:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 // Bulk import applications from CSV (placement cell only)
 router.post("/bulk-import", requireAuth, async (req, res) => {
   try {

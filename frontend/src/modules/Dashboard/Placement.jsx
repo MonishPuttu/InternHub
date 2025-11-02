@@ -26,6 +26,7 @@ import {
   Edit as EditIcon,
   Search as SearchIcon,
   FilterList as FilterListIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -61,6 +62,7 @@ export default function PlacementDashboard() {
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 
   // New filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,6 +101,28 @@ export default function PlacementDashboard() {
       setEditDialogOpen(false);
     } catch (error) {
       setErrorMsg("Failed to update application");
+    }
+  };
+
+  const handleRemoveStudent = () => {
+    setRemoveDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleConfirmRemove = async () => {
+    try {
+      const token = getToken();
+      await axios.delete(
+        `${BACKEND_URL}/api/student-applications/application/${selectedApp.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setSuccessMsg("Student removed successfully");
+      setRemoveDialogOpen(false);
+      // Trigger refresh by updating a key that causes ApprovedPostsSection to re-fetch
+      window.location.reload(); // Simple refresh for now
+    } catch (error) {
+      setErrorMsg("Failed to remove student");
     }
   };
 
@@ -243,6 +267,10 @@ export default function PlacementDashboard() {
           <EditIcon sx={{ mr: 1, fontSize: 20, color: "#10b981" }} />
           Update Status
         </MenuItem>
+        <MenuItem onClick={handleRemoveStudent}>
+          <DeleteIcon sx={{ mr: 1, fontSize: 20, color: "#ef4444" }} />
+          Remove Student
+        </MenuItem>
       </Menu>
 
       {/* Edit Status Dialog */}
@@ -312,6 +340,40 @@ export default function PlacementDashboard() {
             sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Remove Confirmation Dialog */}
+      <Dialog
+        open={removeDialogOpen}
+        onClose={() => setRemoveDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+        }}
+      >
+        <DialogTitle>Confirm Removal</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to remove {selectedApp?.full_name} from this application?
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setRemoveDialogOpen(false)}
+            sx={{ color: "#94a3b8" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmRemove}
+            sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" } }}
+          >
+            Remove
           </Button>
         </DialogActions>
       </Dialog>
