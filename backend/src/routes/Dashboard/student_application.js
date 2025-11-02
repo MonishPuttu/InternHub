@@ -5,6 +5,7 @@ import {
   posts,
   student_profile,
   user,
+  sent_lists,
 } from "../../db/schema/index.js";
 import { eq, desc, and, count, countDistinct } from "drizzle-orm";
 import { requireAuth } from "../../middleware/authmiddleware.js";
@@ -108,14 +109,33 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
   }
 });
 
-// Get all applications for a post (placement cell only)
+// Get all applications for a post (placement cell or post owner)
 router.get("/post/:postId/applications", requireAuth, async (req, res) => {
   try {
     const { postId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { download } = req.query; // Check if it's a download request
 
-    // Only placement cell can view applications
-    if (req.user.role !== "placement") {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
+    // Check if user is placement cell or owns the post
+    let post = null;
+    if (userRole !== "placement") {
+      post = await db
+        .select()
+        .from(posts)
+        .where(eq(posts.id, postId))
+        .limit(1);
+
+      if (post.length === 0 || post[0].user_id !== userId) {
+        return res.status(403).json({ ok: false, error: "Forbidden" });
+      }
+    } else {
+      // For placement cell, still fetch post details for CSV
+      post = await db
+        .select()
+        .from(posts)
+        .where(eq(posts.id, postId))
+        .limit(1);
     }
 
     const applications = await db
@@ -124,7 +144,53 @@ router.get("/post/:postId/applications", requireAuth, async (req, res) => {
       .where(eq(student_applications.post_id, postId))
       .orderBy(desc(student_applications.applied_at));
 
-    res.json({ ok: true, applications });
+    if (download === "true") {
+      // Return CSV for download
+      const csvHeaders = [
+        "Student Name",
+        "Roll Number",
+        "Branch",
+        "Semester",
+        "CGPA",
+        "10th",
+        "12th",
+        "Company",
+        "Position",
+        "Status",
+        "Applied Date"
+      ];
+
+      const csvRows = applications.map(app => [
+        app.full_name,
+        app.roll_number,
+        app.branch,
+        app.current_semester,
+        app.cgpa,
+        app.tenth_score,
+        app.twelfth_score,
+        post[0].company_name,
+        post[0].position,
+        app.application_status,
+        new Date(app.applied_at).toLocaleDateString()
+      ]);
+
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(field => `"${field}"`).join(","))
+        .join("\n");
+
+      const filename = post.length > 0
+        ? `${post[0].company_name}_${post[0].position}_applications.csv`
+        : `post_${postId}_applications.csv`;
+
+      // Set headers for CSV download
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+      res.send(csvContent);
+    } else {
+      // Return JSON for dialog display
+      res.json({ ok: true, applications });
+    }
   } catch (e) {
     console.error("Error fetching applications:", e);
     res.status(500).json({ ok: false, error: String(e) });
@@ -208,7 +274,7 @@ router.get("/my-applications", requireAuth, async (req, res) => {
       .where(eq(student_applications.student_id, studentId))
       .orderBy(desc(student_applications.applied_at));
 
-    res.json({ ok: true, applications });
+    res.json({ ok: true, applications: applications });
   } catch (e) {
     console.error("Error fetching student applications:", e);
     res.status(500).json({ ok: false, error: String(e) });
@@ -483,6 +549,189 @@ router.post("/bulk-import", requireAuth, async (req, res) => {
     });
   } catch (e) {
     console.error("Error bulk importing applications:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Send application list to recruiter (placement cell only)
+router.post("/send-list/:postId", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { postId } = req.params;
+    const { recruiterId } = req.body;
+
+    if (!recruiterId) {
+      return res.status(400).json({ ok: false, error: "Recruiter ID is required" });
+    }
+
+    // Verify post exists and belongs to the recruiter
+    const post = await db
+      .select()
+      .from(posts)
+      .where(and(eq(posts.id, postId), eq(posts.user_id, recruiterId)))
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found or doesn't belong to recruiter" });
+    }
+
+    // Get all applications for this post
+    const applications = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.post_id, postId))
+      .orderBy(desc(student_applications.applied_at));
+
+    if (applications.length === 0) {
+      return res.status(400).json({ ok: false, error: "No applications found for this post" });
+    }
+
+    // Create sent list record
+    const sentList = await db
+      .insert(sent_lists)
+      .values({
+        post_id: postId,
+        sent_by: req.user.id,
+        sent_to: recruiterId,
+        list_data: applications,
+      })
+      .returning();
+
+    res.json({
+      ok: true,
+      message: "Application list sent to recruiter successfully",
+      sentList: sentList[0],
+      applicationsCount: applications.length
+    });
+  } catch (e) {
+    console.error("Error sending application list:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get received lists for recruiter
+router.get("/received-lists", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const receivedLists = await db
+      .select({
+        sent_list: sent_lists,
+        post: posts,
+      })
+      .from(sent_lists)
+      .leftJoin(posts, eq(sent_lists.post_id, posts.id))
+      .where(eq(sent_lists.sent_to, req.user.id))
+      .orderBy(desc(sent_lists.sent_at));
+
+    res.json({ ok: true, lists: receivedLists });
+  } catch (e) {
+    console.error("Error fetching received lists:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get specific received list details
+router.get("/received-list/:listId", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { listId } = req.params;
+
+    const receivedList = await db
+      .select({
+        sent_list: sent_lists,
+        post: posts,
+      })
+      .from(sent_lists)
+      .leftJoin(posts, eq(sent_lists.post_id, posts.id))
+      .where(and(eq(sent_lists.id, listId), eq(sent_lists.sent_to, req.user.id)))
+      .limit(1);
+
+    if (receivedList.length === 0) {
+      return res.status(404).json({ ok: false, error: "Received list not found" });
+    }
+
+    res.json({ ok: true, list: receivedList[0] });
+  } catch (e) {
+    console.error("Error fetching received list details:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Download received list as CSV
+router.get("/received-list/:listId/download", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { listId } = req.params;
+
+    const receivedList = await db
+      .select({
+        sent_list: sent_lists,
+        post: posts,
+      })
+      .from(sent_lists)
+      .leftJoin(posts, eq(sent_lists.post_id, posts.id))
+      .where(and(eq(sent_lists.id, listId), eq(sent_lists.sent_to, req.user.id)))
+      .limit(1);
+
+    if (receivedList.length === 0) {
+      return res.status(404).json({ ok: false, error: "Received list not found" });
+    }
+
+    const listData = receivedList[0];
+    const applications = listData.sent_list.list_data;
+
+    // Create CSV content
+    const csvHeaders = [
+      "Student Name",
+      "Roll Number",
+      "Branch",
+      "Semester",
+      "CGPA",
+      "10th",
+      "12th",
+      "Company",
+      "Position",
+      "Status",
+      "Applied Date"
+    ];
+
+    const csvRows = applications.map(app => [
+      app.full_name,
+      app.roll_number,
+      app.branch,
+      app.current_semester,
+      app.cgpa,
+      app.tenth_score,
+      app.twelfth_score,
+      listData.post.company_name,
+      listData.post.position,
+      app.application_status,
+      new Date(app.applied_at).toLocaleDateString()
+    ]);
+
+    const csvContent = [csvHeaders, ...csvRows]
+      .map(row => row.map(field => `"${field}"`).join(","))
+      .join("\n");
+
+    // Set headers for CSV download
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${listData.post.company_name}_${listData.post.position}_applications.csv"`);
+
+    res.send(csvContent);
+  } catch (e) {
+    console.error("Error downloading received list:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });

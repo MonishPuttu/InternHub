@@ -216,44 +216,53 @@ export default function ApprovedPostsSection(props) {
     }
   };
 
-  const handleExportCSV = () => {
-    const csvContent = [
-      [
-        "Student Name",
-        "Roll Number",
-        "Branch",
-        "Semester",
-        "CGPA",
-        "10th",
-        "12th",
-        "Company",
-        "Position",
-        "Status",
-        "Applied Date",
-      ],
-      ...postApplications.map((app) => [
-        app.full_name,
-        app.roll_number,
-        app.branch,
-        app.current_semester,
-        app.cgpa,
-        app.tenth_score,
-        app.twelfth_score,
-        selectedPost?.company_name || "",
-        selectedPost?.position || "",
-        statusLabels[app.application_status],
-        new Date(app.applied_at).toLocaleDateString(),
-      ]),
-    ]
-      .map((row) => row.join(","))
-      .join("\n");
+  const handleSendList = async (post) => {
+    try {
+      const token = getToken();
+      const response = await axios.post(
+        `${BACKEND_URL}/api/student-applications/send-list/${post.id}`,
+        {
+          recruiterId: post.user_id, // Send the recruiter ID who owns the post
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `applications_${selectedPost?.company_name}_${selectedPost?.position}_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
+      if (response.data.ok) {
+        setSuccessMsg("Application list sent to recruiter successfully");
+      } else {
+        setErrorMsg("Failed to send application list");
+      }
+    } catch (error) {
+      console.error("Error sending list:", error);
+      setErrorMsg("Failed to send application list");
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `${BACKEND_URL}/api/student-applications/post/${selectedPost.id}/applications?download=true`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob', // Important for file download
+        }
+      );
+
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedPost.company_name}_${selectedPost.position}_applications.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+      setErrorMsg("Failed to download CSV");
+    }
   };
 
   const handleImportCSV = async (event) => {
@@ -635,6 +644,19 @@ export default function ApprovedPostsSection(props) {
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           Applications for {selectedPost?.company_name} - {selectedPost?.position}
           <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => handleSendList(selectedPost)}
+              sx={{
+                color: "#f59e0b",
+                borderColor: "#f59e0b",
+                "&:hover": { borderColor: "#d97706", bgcolor: "#f59e0b20" },
+                padding: { xs: "4px 8px", sm: "6px 16px" },
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              }}
+            >
+              Send List
+            </Button>
             <Button
               variant="contained"
               startIcon={<FileDownloadIcon />}
