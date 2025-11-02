@@ -376,6 +376,126 @@ router.get("/students", requireAuth, async (req, res) => {
     }
 });
 
+// 👤 Get Single Student Details
+router.get("/students/:id", requireAuth, async (req, res) => {
+    try {
+        if (req.user.role !== "placement") {
+            return res
+                .status(403)
+                .json({ ok: false, error: "Only placement cell can view student details" });
+        }
+
+        const studentId = req.params.id;
+        const student = await db
+            .select({
+                id: student_profile.id,
+                user_id: student_profile.user_id,
+                full_name: student_profile.full_name,
+                email: user.email,
+                roll_number: student_profile.roll_number,
+                student_id: student_profile.student_id,
+                branch: student_profile.branch,
+                current_semester: student_profile.current_semester,
+                cgpa: student_profile.cgpa,
+                tenth_score: student_profile.tenth_score,
+                twelfth_score: student_profile.twelfth_score,
+                contact_number: student_profile.contact_number,
+                date_of_birth: student_profile.date_of_birth,
+                gender: student_profile.gender,
+                linkedin: student_profile.linkedin,
+                skills: student_profile.skills,
+            })
+            .from(student_profile)
+            .leftJoin(user, eq(student_profile.user_id, user.id))
+            .where(eq(student_profile.id, studentId))
+            .limit(1);
+
+        if (student.length === 0) {
+            return res.status(404).json({ ok: false, error: "Student not found" });
+        }
+
+        res.json({ ok: true, student: student[0] });
+    } catch (error) {
+        console.error("Error fetching student details:", error);
+        res.status(500).json({ ok: false, error: String(error) });
+    }
+});
+
+// ✏️ Update Student Details
+router.put("/students/:id", requireAuth, async (req, res) => {
+    try {
+        if (req.user.role !== "placement") {
+            return res
+                .status(403)
+                .json({ ok: false, error: "Only placement cell can update student details" });
+        }
+
+        const studentId = req.params.id;
+        const updateData = req.body;
+
+        // Validate email if provided
+        if (updateData.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(updateData.email)) {
+                return res.status(400).json({ ok: false, error: "Invalid email format" });
+            }
+        }
+
+        // Get current student data to find user_id
+        const currentStudent = await db
+            .select({ user_id: student_profile.user_id })
+            .from(student_profile)
+            .where(eq(student_profile.id, studentId))
+            .limit(1);
+
+        if (currentStudent.length === 0) {
+            return res.status(404).json({ ok: false, error: "Student not found" });
+        }
+
+        const userId = currentStudent[0].user_id;
+
+        // Prepare update objects
+        const profileUpdate = {};
+        const userUpdate = {};
+
+        // Separate user and profile fields
+        const userFields = ['email'];
+        const profileFields = [
+            'full_name', 'roll_number', 'student_id', 'branch', 'current_semester',
+            'cgpa', 'tenth_score', 'twelfth_score', 'contact_number', 'date_of_birth',
+            'gender', 'linkedin', 'skills'
+        ];
+
+        Object.keys(updateData).forEach(key => {
+            if (userFields.includes(key)) {
+                userUpdate[key] = updateData[key];
+            } else if (profileFields.includes(key)) {
+                if (key === 'date_of_birth' && updateData[key]) {
+                    profileUpdate[key] = new Date(updateData[key]);
+                } else {
+                    profileUpdate[key] = updateData[key];
+                }
+            }
+        });
+
+        // Update user table if email changed
+        if (Object.keys(userUpdate).length > 0) {
+            await db.update(user).set(userUpdate).where(eq(user.id, userId));
+        }
+
+        // Update student_profile table
+        if (Object.keys(profileUpdate).length > 0) {
+            profileUpdate.updated_at = new Date();
+            await db.update(student_profile).set(profileUpdate).where(eq(student_profile.id, studentId));
+        }
+
+        res.json({ ok: true, message: "Student details updated successfully" });
+    } catch (error) {
+        console.error("Error updating student:", error);
+        res.status(500).json({ ok: false, error: String(error) });
+    }
+});
+
 // 📊 Get Stats
 router.get("/stats", requireAuth, async (req, res) => {
     try {

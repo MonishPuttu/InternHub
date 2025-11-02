@@ -22,6 +22,7 @@ import {
     TableRow,
     Paper,
     CircularProgress,
+    TextField,
 } from "@mui/material";
 import {
     Add as AddIcon,
@@ -32,6 +33,7 @@ import {
     CheckCircle as CheckCircleIcon,
     Close as CloseIcon,
     VpnKey as VpnKeyIcon,
+    MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -50,6 +52,9 @@ export default function StudentDetailsManagement() {
     const [downloadingLogins, setDownloadingLogins] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
     const [errorMsg, setErrorMsg] = useState("");
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [editingStudent, setEditingStudent] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
 
     useEffect(() => {
         fetchStats();
@@ -109,6 +114,12 @@ export default function StudentDetailsManagement() {
     const handleCopyUrl = () => {
         navigator.clipboard.writeText(formUrl);
         setSuccessMsg("Form URL copied to clipboard!");
+    };
+
+    const handleCopyAdditionalForm = () => {
+        const additionalFormUrl = "https://docs.google.com/forms/d/18mEIULw5mpvS95FrBv4cVF3pBHbkd6IfP1dqNi0b1Bg";
+        navigator.clipboard.writeText(additionalFormUrl);
+        setSuccessMsg("Additional form URL copied to clipboard!");
     };
 
     const handleFileSelect = (event) => {
@@ -222,6 +233,63 @@ export default function StudentDetailsManagement() {
         }
     };
 
+    const handleEditStudent = async (student) => {
+        try {
+            const token = getToken();
+            const response = await axios.get(
+                `${BACKEND_URL}/api/bulk-upload/students/${student.id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.ok) {
+                setEditingStudent(response.data.student);
+                setEditFormData({
+                    full_name: response.data.student.full_name || "",
+                    email: response.data.student.email || "",
+                    roll_number: response.data.student.roll_number || "",
+                    student_id: response.data.student.student_id || "",
+                    branch: response.data.student.branch || "",
+                    current_semester: response.data.student.current_semester || "",
+                    cgpa: response.data.student.cgpa || "",
+                    tenth_score: response.data.student.tenth_score || "",
+                    twelfth_score: response.data.student.twelfth_score || "",
+                    contact_number: response.data.student.contact_number || "",
+                    date_of_birth: response.data.student.date_of_birth ? new Date(response.data.student.date_of_birth).toISOString().split('T')[0] : "",
+                    gender: response.data.student.gender || "",
+                    linkedin: response.data.student.linkedin || "",
+                    skills: response.data.student.skills || "",
+                });
+                setShowEditDialog(true);
+            }
+        } catch (error) {
+            setErrorMsg("Failed to fetch student details");
+        }
+    };
+
+    const handleSaveStudent = async () => {
+        try {
+            setLoading(true);
+            const token = getToken();
+            const response = await axios.put(
+                `${BACKEND_URL}/api/bulk-upload/students/${editingStudent.id}`,
+                editFormData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.ok) {
+                setSuccessMsg("Student details updated successfully!");
+                setShowEditDialog(false);
+                setEditingStudent(null);
+                setEditFormData({});
+                fetchStudents();
+            }
+        } catch (error) {
+            setErrorMsg(error.response?.data?.error || "Failed to update student details");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Box sx={{ p: 3 }}>
             {/* Header */}
@@ -306,7 +374,20 @@ export default function StudentDetailsManagement() {
                     Copy Form link
                 </Button>
 
-
+                <Button
+                    variant="outlined"
+                    startIcon={<ContentCopyIcon />}
+                    onClick={handleCopyAdditionalForm}
+                    sx={{
+                        borderColor: "#334155",
+                        color: "#e2e8f0",
+                        "&:hover": { borderColor: "#8b5cf6", bgcolor: "#8b5cf610" },
+                        textTransform: "none",
+                        py: 1.5,
+                    }}
+                >
+                    Additional Form
+                </Button>
 
                 <Button
                     variant="outlined"
@@ -322,21 +403,6 @@ export default function StudentDetailsManagement() {
                 >
                     Bulk Upload
                 </Button>
-
-                {/* <Button
-                    variant="outlined"
-                    startIcon={<DownloadIcon />}
-                    onClick={handleDownloadTemplate}
-                    sx={{
-                        borderColor: "#334155",
-                        color: "#e2e8f0",
-                        "&:hover": { borderColor: "#8b5cf6", bgcolor: "#8b5cf610" },
-                        textTransform: "none",
-                        py: 1.5,
-                    }}
-                >
-                    Download Template
-                </Button> */}
 
                 <Button
                     variant="outlined"
@@ -399,6 +465,7 @@ export default function StudentDetailsManagement() {
                                 <TableCell sx={{ color: "#94a3b8", borderColor: "#334155" }}>Roll No</TableCell>
                                 <TableCell sx={{ color: "#94a3b8", borderColor: "#334155" }}>Branch</TableCell>
                                 <TableCell sx={{ color: "#94a3b8", borderColor: "#334155" }}>CGPA</TableCell>
+                                <TableCell sx={{ color: "#94a3b8", borderColor: "#334155" }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -418,6 +485,14 @@ export default function StudentDetailsManagement() {
                                     </TableCell>
                                     <TableCell sx={{ color: "#94a3b8", borderColor: "#334155" }}>
                                         {student.cgpa}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "#94a3b8", borderColor: "#334155" }}>
+                                        <IconButton
+                                            onClick={() => handleEditStudent(student)}
+                                            sx={{ color: "#8b5cf6" }}
+                                        >
+                                            <MoreVertIcon />
+                                        </IconButton>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -554,6 +629,239 @@ export default function StudentDetailsManagement() {
                         sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
                     >
                         {loading ? <CircularProgress size={24} /> : "Upload"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Student Dialog */}
+            <Dialog
+                open={showEditDialog}
+                onClose={() => setShowEditDialog(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{ sx: { bgcolor: "#1e293b", color: "#e2e8f0" } }}
+            >
+                <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    Edit Student Details
+                    <IconButton onClick={() => setShowEditDialog(false)} sx={{ color: "#94a3b8" }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2, mt: 2 }}>
+                        <TextField
+                            label="Full Name"
+                            value={editFormData.full_name || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Email"
+                            value={editFormData.email || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Roll Number"
+                            value={editFormData.roll_number || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, roll_number: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Student ID"
+                            value={editFormData.student_id || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, student_id: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Branch"
+                            value={editFormData.branch || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, branch: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Current Semester"
+                            value={editFormData.current_semester || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, current_semester: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="CGPA"
+                            value={editFormData.cgpa || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, cgpa: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="10th Score"
+                            value={editFormData.tenth_score || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, tenth_score: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="12th Score"
+                            value={editFormData.twelfth_score || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, twelfth_score: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Contact Number"
+                            value={editFormData.contact_number || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, contact_number: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Date of Birth"
+                            type="date"
+                            value={editFormData.date_of_birth || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, date_of_birth: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <TextField
+                            label="Gender"
+                            value={editFormData.gender || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="LinkedIn"
+                            value={editFormData.linkedin || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, linkedin: e.target.value })}
+                            sx={{
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                        <TextField
+                            label="Skills"
+                            value={editFormData.skills || ""}
+                            onChange={(e) => setEditFormData({ ...editFormData, skills: e.target.value })}
+                            fullWidth
+                            sx={{
+                                gridColumn: "span 2",
+                                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#e2e8f0",
+                                    "& fieldset": { borderColor: "#334155" },
+                                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                                },
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 3, borderTop: "1px solid #334155" }}>
+                    <Button onClick={() => setShowEditDialog(false)} sx={{ color: "#94a3b8" }}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleSaveStudent}
+                        disabled={loading}
+                        sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
+                    >
+                        {loading ? <CircularProgress size={24} /> : "Save Changes"}
                     </Button>
                 </DialogActions>
             </Dialog>
