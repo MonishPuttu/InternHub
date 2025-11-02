@@ -34,13 +34,13 @@ import { text } from "drizzle-orm/gel-core";
 
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
-  { text: "Posts", icon: <DescriptionIcon />, path: "/post", roles: null },
-//   {
-//     text: "My Applications",
-//     icon: <WorkOutlineIcon />,
-//     path: "/my-applications",
-//     roles: ["student"],
-//   },
+  { text: "Posts", icon: <DescriptionIcon />, path: "/Post", roles: null },
+  //   {
+  //     text: "My Applications",
+  //     icon: <WorkOutlineIcon />,
+  //     path: "/my-applications",
+  //     roles: ["student"],
+  //   },
   {
     text: "Training",
     icon: <SchoolIcon />,
@@ -89,7 +89,7 @@ const navigationItems = [
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => { },
+  onClose = () => {},
 }) {
   const router = useRouter();
   const pathname = usePathname();
