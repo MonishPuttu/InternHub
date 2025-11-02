@@ -24,6 +24,7 @@ import {
   ArrowForward as ArrowForwardIcon,
   CalendarToday as CalenderIcon,
   WorkOutline as WorkOutlineIcon,
+  AccountBox as studentIcon,
 } from "@mui/icons-material";
 
 const drawerWidth = 240;
@@ -71,7 +72,7 @@ const navigationItems = [
 
   {
     text: "Student Details",
-    icon: <PersonIcon />,
+    icon: <studentIcon />,
     path: "/students-details",
     roles: ["placement"],
   },
