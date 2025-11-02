@@ -206,8 +206,6 @@ export default function ApprovedPostsSection(props) {
       if (response.data.ok) {
         console.log("Fetched applications:", response.data.applications);
         setPostApplications(response.data.applications);
-        // Calculate stats from the applications
-        calculateStats(response.data.applications);
         setViewApplicationsDialogOpen(true);
       }
     } catch (error) {
@@ -415,107 +413,111 @@ export default function ApprovedPostsSection(props) {
   return (
     <Box>
       {/* Stats Cards */}
-      <Box sx={{ display: "flex", gap: 3, mb: 4 }}>
+      <Box sx={{ display: "flex", gap: { xs: 1, sm: 2, md: 3 }, mb: 4, flexWrap: "wrap" }}>
         <Paper
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             bgcolor: "#1e293b",
             border: "1px solid #334155",
             borderRadius: 2,
-            flex: 1,
+            flex: { xs: "1 1 100%", sm: "1 1 calc(25% - 16px)", md: 1 },
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            height: 120,
+            height: { xs: 100, sm: 120 },
+            minWidth: { xs: "100%", sm: 0 },
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
           >
             Applications
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center" }}
+            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
           >
             {overallStats.totalApplications}
           </Typography>
         </Paper>
         <Paper
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             bgcolor: "#1e293b",
             border: "1px solid #334155",
             borderRadius: 2,
-            flex: 1,
+            flex: { xs: "1 1 calc(50% - 8px)", sm: "1 1 calc(25% - 16px)", md: 1 },
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            height: 120,
+            height: { xs: 100, sm: 120 },
+            minWidth: { xs: "calc(50% - 8px)", sm: 0 },
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
           >
             Applied
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#0ea5e9", fontWeight: 700, textAlign: "center" }}
+            sx={{ color: "#0ea5e9", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
           >
             {overallStats.applied}
           </Typography>
         </Paper>
         <Paper
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             bgcolor: "#1e293b",
             border: "1px solid #334155",
             borderRadius: 2,
-            flex: 1,
+            flex: { xs: "1 1 calc(50% - 8px)", sm: "1 1 calc(25% - 16px)", md: 1 },
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            height: 120,
+            height: { xs: 100, sm: 120 },
+            minWidth: { xs: "calc(50% - 8px)", sm: 0 },
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
           >
             Interviewed
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center" }}
+            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
           >
             {overallStats.interviewed}
           </Typography>
         </Paper>
         <Paper
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             bgcolor: "#1e293b",
             border: "1px solid #334155",
             borderRadius: 2,
-            flex: 1,
+            flex: { xs: "1 1 100%", sm: "1 1 calc(25% - 16px)", md: 1 },
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            height: 120,
+            height: { xs: 100, sm: 120 },
+            minWidth: { xs: "100%", sm: 0 },
           }}
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center" }}
+            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
           >
             Offers
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#10b981", fontWeight: 700, textAlign: "center" }}
+            sx={{ color: "#10b981", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
           >
             {overallStats.offers}
           </Typography>
@@ -533,8 +535,11 @@ export default function ApprovedPostsSection(props) {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 3,
+            gridTemplateColumns: {
+              xs: "repeat(auto-fill, minmax(280px, 1fr))",
+              sm: "repeat(auto-fill, minmax(300px, 1fr))"
+            },
+            gap: { xs: 2, sm: 3 },
           }}
         >
           {approvedPosts
@@ -637,6 +642,8 @@ export default function ApprovedPostsSection(props) {
               sx={{
                 bgcolor: "#10b981",
                 "&:hover": { bgcolor: "#059669" },
+                padding: { xs: "4px 8px", sm: "6px 16px" },
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
               }}
             >
               Export CSV
@@ -648,6 +655,8 @@ export default function ApprovedPostsSection(props) {
                 color: "#8b5cf6",
                 borderColor: "#8b5cf6",
                 "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf620" },
+                padding: { xs: "4px 8px", sm: "6px 16px" },
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
               }}
             >
               Import CSV
@@ -746,6 +755,7 @@ export default function ApprovedPostsSection(props) {
               bgcolor: "#0f172a",
               border: "1px solid #334155",
               borderRadius: 2,
+              overflowX: "auto",
             }}
           >
             <Table stickyHeader>

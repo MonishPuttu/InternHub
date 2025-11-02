@@ -152,7 +152,7 @@ export default function PlacementDashboard() {
         </Box>
 
         {/* Search and Filters */}
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 }, alignItems: "center", flexWrap: "wrap" }}>
           <TextField
             size="small"
             placeholder="Search by post name..."
@@ -166,7 +166,8 @@ export default function PlacementDashboard() {
               ),
             }}
             sx={{
-              minWidth: 300,
+              minWidth: { xs: 250, sm: 300 },
+              width: { xs: "100%", sm: "auto" },
               "& .MuiOutlinedInput-root": {
                 color: "#e2e8f0",
                 bgcolor: "#0f172a",
@@ -185,7 +186,8 @@ export default function PlacementDashboard() {
             onChange={(e) => setFilterPostedDate(e.target.value)}
             InputLabelProps={{ shrink: true, sx: { color: "#94a3b8" } }}
             sx={{
-              minWidth: 200,
+              minWidth: { xs: 150, sm: 200 },
+              width: { xs: "48%", sm: "auto" },
               "& .MuiOutlinedInput-root": {
                 color: "#e2e8f0",
                 bgcolor: "#0f172a",
@@ -195,7 +197,7 @@ export default function PlacementDashboard() {
             }}
           />
 
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: 150, sm: 200 }, width: { xs: "48%", sm: "auto" } }}>
             <InputLabel sx={{ color: "#94a3b8" }}>Industry</InputLabel>
             <Select
               value={filterIndustry}
