@@ -29,7 +29,7 @@ const roleAccessMap = {
   // Other routes
   "/my-applications": ["student"],
   "/analytics": ["student", "placement", "recruiter"],
-  "/profile": ["student", "placement", "recruiter"],
+  "/profile": ["student"],
   "/chat": ["student", "placement", "recruiter"],
 };
 

@@ -51,7 +51,7 @@ const navigationItems = [
     text: "Profile & Resume",
     icon: <PersonIcon />,
     path: "/profile",
-    roles: null,
+    roles: ["student"],
   },
   { text: "Calendar", icon: <CalenderIcon />, path: "/calendar", roles: null },
 
