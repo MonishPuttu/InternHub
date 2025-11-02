@@ -167,28 +167,28 @@ export default function StudentDetailsManagement() {
         }
     };
 
-    const handleDownloadTemplate = async () => {
-        try {
-            const token = getToken();
-            const response = await axios.get(
-                `${BACKEND_URL}/api/bulk-upload/download-template`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                    responseType: "blob",
-                }
-            );
+    // const handleDownloadTemplate = async () => {
+    //     try {
+    //         const token = getToken();
+    //         const response = await axios.get(
+    //             `${BACKEND_URL}/api/bulk-upload/download-template`,
+    //             {
+    //                 headers: { Authorization: `Bearer ${token}` },
+    //                 responseType: "blob",
+    //             }
+    //         );
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", "student_details_template.csv");
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (error) {
-            setErrorMsg("Failed to download template");
-        }
-    };
+    //         const url = window.URL.createObjectURL(new Blob([response.data]));
+    //         const link = document.createElement("a");
+    //         link.href = url;
+    //         link.setAttribute("download", "student_details_template.csv");
+    //         document.body.appendChild(link);
+    //         link.click();
+    //         link.remove();
+    //     } catch (error) {
+    //         setErrorMsg("Failed to download template");
+    //     }
+    // };
 
     const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false);
 
@@ -303,8 +303,10 @@ export default function StudentDetailsManagement() {
                         py: 1.5,
                     }}
                 >
-                    Create Google Form
+                    Copy Form link
                 </Button>
+
+
 
                 <Button
                     variant="outlined"
@@ -321,7 +323,7 @@ export default function StudentDetailsManagement() {
                     Bulk Upload
                 </Button>
 
-                <Button
+                {/* <Button
                     variant="outlined"
                     startIcon={<DownloadIcon />}
                     onClick={handleDownloadTemplate}
@@ -334,7 +336,7 @@ export default function StudentDetailsManagement() {
                     }}
                 >
                     Download Template
-                </Button>
+                </Button> */}
 
                 <Button
                     variant="outlined"
@@ -471,10 +473,10 @@ export default function StudentDetailsManagement() {
                     </Box>
 
                     <Typography variant="body2" sx={{ color: "#94a3b8", mb: 1 }}>
-                        <strong>Step 2:</strong> Share this link with students via WhatsApp
+                        <strong>Step 2:</strong> Paste this link in a new browser tab to open the Google Form
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#94a3b8", mb: 1 }}>
-                        <strong>Step 3:</strong> After students fill the form, download responses from Google Forms
+                        <strong>Step 3:</strong> Copy the responders link and share it with students to collect their details
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#94a3b8", mb: 1 }}>
                         <strong>Step 4:</strong> Upload the downloaded Excel/CSV file using "Bulk Upload"
