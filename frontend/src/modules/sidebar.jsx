@@ -30,16 +30,17 @@ import SchoolIcon from "@mui/icons-material/School";
 const drawerWidth = 240;
 
 import { getUser } from "@/lib/session";
+import { text } from "drizzle-orm/gel-core";
 
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
   { text: "Posts", icon: <DescriptionIcon />, path: "/Post", roles: null },
-  {
-    text: "My Applications",
-    icon: <WorkOutlineIcon />,
-    path: "/my-applications",
-    roles: ["student"],
-  },
+//   {
+//     text: "My Applications",
+//     icon: <WorkOutlineIcon />,
+//     path: "/my-applications",
+//     roles: ["student"],
+//   },
   {
     text: "Training",
     icon: <SchoolIcon />,
@@ -60,25 +61,28 @@ const navigationItems = [
     path: "/analytics_rec",
     roles: ["recruiter"],
   },
-  {
-    text: "Analytics",
-    icon: <BarChartIcon />,
-    path: "/analytics/placementanalytics",
-    roles: ["placement"],
-  },
+
   {
     text: "Analytics",
     icon: <BarChartIcon />,
     path: "/analytics",
     roles: ["student"],
   },
+
+  {
+    text: "Analytics",
+    path: "/placement-analytics",
+    icon: <BarChartIcon />,
+    roles: ["placement"],
+  },
+
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
 ];
 
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -140,7 +144,7 @@ export default function Sidebar({
               return item.roles.includes(userRole);
             })
             .map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = pathname.startsWith(item.path);
               return (
                 <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton

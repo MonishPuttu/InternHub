@@ -11,6 +11,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
+import nodemailer from "nodemailer";
 
 const router = express.Router();
 
@@ -51,6 +52,52 @@ const SESSION_DURATIONS = {
   placement: 3 * 24 * 60 * 60 * 1000, // 3 days
   recruiter: 1 * 24 * 60 * 60 * 1000, // 1 day
 };
+
+// Email transporter configuration
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: process.env.SMTP_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+// Helper function to send reset email or log for development
+async function sendResetEmail(email, resetUrl) {
+  const mailOptions = {
+    from: process.env.SMTP_USER || "noreply@internhub.com",
+    to: email,
+    subject: "Password Reset Request - InternHub",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #8b5cf6;">Password Reset Request</h2>
+        <p>You requested a password reset for your InternHub account.</p>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}" style="background-color: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 16px 0;">Reset Password</a>
+        <p>This link will expire in 15 minutes.</p>
+        <p>If you didn't request this reset, please ignore this email.</p>
+        <p>Best regards,<br>InternHub Team</p>
+      </div>
+    `,
+  };
+
+  // Check if SMTP credentials are configured
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log("SMTP credentials not configured. Reset link:", resetUrl);
+    console.log("For production, set SMTP_USER and SMTP_PASS environment variables");
+    return true; // Return success for development
+  }
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    throw error;
+  }
+}
 
 router.post("/signup", async (req, res) => {
   try {
@@ -366,6 +413,127 @@ router.post("/sessions", async (req, res) => {
     res.status(201).json({ ok: true });
   } catch (e) {
     res.status(400).json({ ok: false, error: String(e) });
+  }
+});
+
+// Forgot password route
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        ok: false,
+        error: "Email is required",
+      });
+    }
+
+    const users = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, email))
+      .limit(1);
+
+    if (users.length === 0) {
+      // Don't reveal if email exists or not for security
+      return res.json({
+        ok: true,
+        message: "If an account with that email exists, a reset link has been sent.",
+      });
+    }
+
+    const foundUser = users[0];
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Update user with reset token
+    await db
+      .update(user)
+      .set({
+        reset_token: resetToken,
+        reset_token_expires: resetTokenExpires,
+      })
+      .where(eq(user.id, foundUser.id));
+
+    // Send reset email
+    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
+
+    await sendResetEmail(email, resetUrl);
+
+    res.json({
+      ok: true,
+      message: "If an account with that email exists, a reset link has been sent.",
+    });
+  } catch (e) {
+    console.error("Forgot password error:", e);
+    res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+});
+
+// Reset password route
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "Token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        ok: false,
+        error: "Password must be at least 6 characters long",
+      });
+    }
+
+    const users = await db
+      .select()
+      .from(user)
+      .where(eq(user.reset_token, token))
+      .limit(1);
+
+    if (users.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid or expired reset token",
+      });
+    }
+
+    const foundUser = users[0];
+
+    // Check if token is expired
+    if (!foundUser.reset_token_expires || foundUser.reset_token_expires < new Date()) {
+      return res.status(400).json({
+        ok: false,
+        error: "Reset token has expired",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear reset token
+    await db
+      .update(user)
+      .set({
+        password: hashedPassword,
+        reset_token: null,
+        reset_token_expires: null,
+      })
+      .where(eq(user.id, foundUser.id));
+
+    res.json({
+      ok: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (e) {
+    console.error("Reset password error:", e);
+    res.status(500).json({ ok: false, error: "Internal server error" });
   }
 });
 

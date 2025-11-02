@@ -6,9 +6,6 @@ import {
   Typography,
   Stack,
   Button,
-  MenuItem,
-  Select,
-  FormControl,
   Paper,
 } from "@mui/material";
 import {
@@ -23,7 +20,7 @@ import axios from "axios";
 import { getToken, getUser } from "@/lib/session";
 import RecentApplicationsCard from "@/components/dashboard/RecentApplicationsCard";
 import UpcomingEventsCard from "@/components/dashboard/UpcomingEventsCard";
-import RecommendedCard from "@/components/dashboard/RecommendedCard";
+
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -31,7 +28,7 @@ const BACKEND_URL =
 export default function StudentDashboard() {
   const router = useRouter();
   const user = getUser();
-  const [timeFilter, setTimeFilter] = useState("year");
+
   const [applications, setApplications] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -156,32 +153,7 @@ export default function StudentDashboard() {
 
   const upcomingEvents = events.slice(0, 4);
 
-  const recommendedOpportunities = [
-    {
-      company: "Microsoft",
-      position: "Software Engineer Intern",
-      type: "Internship",
-      salary: "₹50,000",
-      match: 95,
-      deadline: "3 days left",
-    },
-    {
-      company: "Google",
-      position: "Product Manager",
-      type: "Full-time",
-      salary: "₹25,00,000",
-      match: 88,
-      deadline: "1 week left",
-    },
-    {
-      company: "Amazon",
-      position: "Data Scientist",
-      type: "Full-time",
-      salary: "₹18,00,000",
-      match: 82,
-      deadline: "2 weeks left",
-    },
-  ];
+
 
   if (loading) {
     return (
@@ -210,25 +182,7 @@ export default function StudentDashboard() {
             Track your placement journey and discover new opportunities
           </Typography>
         </Box>
-        <FormControl size="small">
-          <Select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-            sx={{
-              color: "#e2e8f0",
-              bgcolor: "#1e293b",
-              border: "1px solid #334155",
-              "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-              "&:hover": { borderColor: "#8b5cf6" },
-              minWidth: 120,
-            }}
-          >
-            {/* TODO:Monish need to add filter functionality */}
-            <MenuItem value="month">This Month</MenuItem>
-            <MenuItem value="year">This Year</MenuItem>
-            <MenuItem value="all">All Time</MenuItem>
-          </Select>
-        </FormControl>
+
       </Stack>
 
       <Box
@@ -306,7 +260,7 @@ export default function StudentDashboard() {
         <UpcomingEventsCard events={upcomingEvents} />
       </Box>
 
-      <RecommendedCard opportunities={recommendedOpportunities} />
+
     </Box>
   );
 }

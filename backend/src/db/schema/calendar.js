@@ -1,7 +1,6 @@
 import { pgTable, serial, text, timestamp, uuid, date, time } from "drizzle-orm/pg-core";
 
 // Events Table schema
-
 export const calevents = pgTable("calevents", {
     id: uuid("id").primaryKey().defaultRandom(),
     title: text("title").notNull(),
@@ -12,6 +11,6 @@ export const calevents = pgTable("calevents", {
     location: text("location"),
     eligibleStudents: text("eligible_students"),
     description: text("description"),
+    userId: text("user_id").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-
 });

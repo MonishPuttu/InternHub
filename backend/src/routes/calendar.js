@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { db } from "../db/index.js";
 import { calevents } from "../db/schema/calendar.js";
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = Router();
 
-// Helper function to find duplicates
-const findDuplicates = async (eventData) => {
+// Helper function to find duplicates for a specific user
+const findDuplicates = async (eventData, userId) => {
     const { title, eventDate, eventTime, eventType, location, eligibleStudents } = eventData;
 
     return await db
@@ -14,6 +15,7 @@ const findDuplicates = async (eventData) => {
         .from(calevents)
         .where(
             and(
+                eq(calevents.userId, userId),
                 eq(calevents.title, title),
                 eq(calevents.eventDate, eventDate),
                 eq(calevents.eventTime, eventTime),
@@ -24,31 +26,37 @@ const findDuplicates = async (eventData) => {
         );
 };
 
-// Helper function to remove duplicate events
-const removeDuplicates = async () => {
+// Helper function to remove duplicate events for a user
+const removeDuplicates = async (userId) => {
     try {
-        const allEvents = await db.select().from(calevents);
+        const allEvents = await db
+            .select()
+            .from(calevents)
+            .where(eq(calevents.userId, userId));
+
         const seen = new Map();
         const duplicateIds = [];
 
         allEvents.forEach(event => {
-            // Create a unique key based on all important fields
             const key = `${event.title}|${event.eventDate}|${event.eventTime}|${event.eventType}|${event.location}|${event.eligibleStudents}`;
 
             if (seen.has(key)) {
-                // This is a duplicate, mark for deletion (keep the first one)
                 duplicateIds.push(event.id);
             } else {
                 seen.set(key, event.id);
             }
         });
 
-        // Delete duplicates
         if (duplicateIds.length > 0) {
             for (const id of duplicateIds) {
-                await db.delete(calevents).where(eq(calevents.id, id));
+                await db.delete(calevents).where(
+                    and(
+                        eq(calevents.id, id),
+                        eq(calevents.userId, userId)
+                    )
+                );
             }
-            console.log(`Removed ${duplicateIds.length} duplicate events`);
+            console.log(`Removed ${duplicateIds.length} duplicate events for user ${userId}`);
         }
 
         return duplicateIds.length;
@@ -58,16 +66,18 @@ const removeDuplicates = async () => {
     }
 };
 
-// Helper function to delete old events based on date only
-const deleteOldEvents = async () => {
+// Helper function to delete old events for a user
+const deleteOldEvents = async (userId) => {
     try {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to start of today
+        today.setHours(0, 0, 0, 0);
+        const todayString = today.toISOString().split('T')[0];
 
-        const todayString = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        const allEvents = await db
+            .select()
+            .from(calevents)
+            .where(eq(calevents.userId, userId));
 
-        // Get all events with dates before today
-        const allEvents = await db.select().from(calevents);
         const oldEventIds = [];
 
         allEvents.forEach(event => {
@@ -76,12 +86,16 @@ const deleteOldEvents = async () => {
             }
         });
 
-        // Delete old events from database
         if (oldEventIds.length > 0) {
             for (const id of oldEventIds) {
-                await db.delete(calevents).where(eq(calevents.id, id));
+                await db.delete(calevents).where(
+                    and(
+                        eq(calevents.id, id),
+                        eq(calevents.userId, userId)
+                    )
+                );
             }
-            console.log(`Auto-deleted ${oldEventIds.length} old events (before ${todayString})`);
+            console.log(`Auto-deleted ${oldEventIds.length} old events for user ${userId}`);
         }
 
         return oldEventIds.length;
@@ -91,23 +105,26 @@ const deleteOldEvents = async () => {
     }
 };
 
-// Auto-cleanup function
-const autoCleanup = async () => {
-    const duplicatesRemoved = await removeDuplicates();
-    const oldEventsRemoved = await deleteOldEvents();
+// Auto-cleanup function for specific user
+const autoCleanup = async (userId) => {
+    const duplicatesRemoved = await removeDuplicates(userId);
+    const oldEventsRemoved = await deleteOldEvents(userId);
     return { duplicatesRemoved, oldEventsRemoved };
 };
 
-// Get all events (with auto-cleanup)
-router.get("/calendar", async (req, res) => {
+// Get user's events (with auto-cleanup) - Protected route
+router.get("/calendar", requireAuth, async (req, res) => {
     try {
-        // Auto-cleanup old events and duplicates
-        const { duplicatesRemoved, oldEventsRemoved } = await autoCleanup();
+        const userId = req.user.id;
 
-        // Get all remaining events
+        // Auto-cleanup old events and duplicates for this user
+        const { duplicatesRemoved, oldEventsRemoved } = await autoCleanup(userId);
+
+        // Get all remaining events for this user
         const activeEvents = await db
             .select()
             .from(calevents)
+            .where(eq(calevents.userId, userId))
             .orderBy(calevents.eventDate, calevents.eventTime);
 
         res.json({
@@ -122,9 +139,11 @@ router.get("/calendar", async (req, res) => {
     }
 });
 
-// Create event (with duplicate prevention)
-router.post("/calendar", async (req, res) => {
+// Create event (with duplicate prevention) - Protected route
+router.post("/calendar", requireAuth, async (req, res) => {
     try {
+        const userId = req.user.id;
+
         const {
             title,
             eventDate,
@@ -156,7 +175,7 @@ router.post("/calendar", async (req, res) => {
             });
         }
 
-        // Check for duplicates before creating
+        // Check for duplicates for this user
         const existingDuplicates = await findDuplicates({
             title,
             eventDate,
@@ -164,7 +183,7 @@ router.post("/calendar", async (req, res) => {
             eventType,
             location,
             eligibleStudents
-        });
+        }, userId);
 
         if (existingDuplicates.length > 0) {
             return res.status(409).json({
@@ -175,7 +194,7 @@ router.post("/calendar", async (req, res) => {
             });
         }
 
-        console.log("Creating event:", { title, eventDate, eventTime, eventType });
+        console.log("Creating event for user:", userId, { title, eventDate, eventTime, eventType });
 
         const newEvent = await db
             .insert(calevents)
@@ -187,7 +206,8 @@ router.post("/calendar", async (req, res) => {
                 eventType: eventType || "events",
                 location: location || null,
                 eligibleStudents: eligibleStudents || null,
-                description: description || null
+                description: description || null,
+                userId: userId
             })
             .returning();
 
@@ -202,9 +222,10 @@ router.post("/calendar", async (req, res) => {
     }
 });
 
-// Update event
-router.put("/calendar/:id", async (req, res) => {
+// Update event (only if user owns it) - Protected route
+router.put("/calendar/:id", requireAuth, async (req, res) => {
     try {
+        const userId = req.user.id;
         const { id } = req.params;
         const {
             title,
@@ -237,6 +258,7 @@ router.put("/calendar/:id", async (req, res) => {
             });
         }
 
+        // Update only if user owns this event
         const updatedEvent = await db
             .update(calevents)
             .set({
@@ -249,13 +271,18 @@ router.put("/calendar/:id", async (req, res) => {
                 eligibleStudents: eligibleStudents || null,
                 description: description || null
             })
-            .where(eq(calevents.id, id))
+            .where(
+                and(
+                    eq(calevents.id, id),
+                    eq(calevents.userId, userId)
+                )
+            )
             .returning();
 
         if (updatedEvent.length === 0) {
             return res.status(404).json({
                 ok: false,
-                error: "Event not found"
+                error: "Event not found or you don't have permission to update it"
             });
         }
 
@@ -270,20 +297,27 @@ router.put("/calendar/:id", async (req, res) => {
     }
 });
 
-// Delete event
-router.delete("/calendar/:id", async (req, res) => {
+// Delete event (only if user owns it) - Protected route
+router.delete("/calendar/:id", requireAuth, async (req, res) => {
     try {
+        const userId = req.user.id;
         const { id } = req.params;
 
+        // Delete only if user owns this event
         const deletedEvent = await db
             .delete(calevents)
-            .where(eq(calevents.id, id))
+            .where(
+                and(
+                    eq(calevents.id, id),
+                    eq(calevents.userId, userId)
+                )
+            )
             .returning();
 
         if (deletedEvent.length === 0) {
             return res.status(404).json({
                 ok: false,
-                error: "Event not found"
+                error: "Event not found or you don't have permission to delete it"
             });
         }
 
@@ -297,10 +331,11 @@ router.delete("/calendar/:id", async (req, res) => {
     }
 });
 
-// Manual cleanup endpoint (optional - for admin use)
-router.post("/calendar/cleanup", async (req, res) => {
+// Manual cleanup endpoint (for current user only) - Protected route
+router.post("/calendar/cleanup", requireAuth, async (req, res) => {
     try {
-        const { duplicatesRemoved, oldEventsRemoved } = await autoCleanup();
+        const userId = req.user.id;
+        const { duplicatesRemoved, oldEventsRemoved } = await autoCleanup(userId);
 
         res.json({
             ok: true,

@@ -72,8 +72,11 @@ export default function RecruiterPost() {
     total: applications.length,
     approved: applications.filter((app) => app.approval_status === "approved")
       .length,
-    pending: applications.filter((app) => app.approval_status !== "approved")
+    pending: applications.filter((app) => app.approval_status === "pending")
       .length,
+    disapproved: applications.filter(
+      (app) => app.approval_status === "disapproved"
+    ).length,
   };
 
   const fetchApplications = async () => {
@@ -131,7 +134,7 @@ export default function RecruiterPost() {
   };
 
   const handleViewDetails = (app) => {
-    router.push(`/Post/postdetails/${app.id}`);
+    router.push(`/post/postdetails/${app.id}`);
   };
 
   const handleOpenEditDialog = () => {
@@ -224,7 +227,9 @@ export default function RecruiterPost() {
   const filteredApplications = applications.filter((app) => {
     if (filterStatus === "all") return true;
     if (filterStatus === "approved") return app.approval_status === "approved";
-    if (filterStatus === "pending") return app.approval_status !== "approved";
+    if (filterStatus === "pending") return app.approval_status === "pending";
+    if (filterStatus === "disapproved")
+      return app.approval_status === "disapproved";
     return true;
   });
 
@@ -241,134 +246,138 @@ export default function RecruiterPost() {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+      <Box sx={{ mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+            >
+              Post Opportunities
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Manage your internship and job applications
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenModal(true)}
+            sx={{
+              bgcolor: "#8b5cf6",
+              "&:hover": { bgcolor: "#7c3aed" },
+              fontWeight: 600,
+              textTransform: "none",
+              px: 3,
+              py: 1.5,
+            }}
           >
-            Post Opportunities
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            Manage your internship and job applications
-          </Typography>
+            Create Post
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenModal(true)}
-          sx={{
-            bgcolor: "#8b5cf6",
-            "&:hover": { bgcolor: "#7c3aed" },
-            fontWeight: 600,
-            textTransform: "none",
-            px: 3,
-            py: 1.5,
-          }}
-        >
-          Create Post
-        </Button>
-      </Box>
 
-      {/* Statistics Section */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
-          gap: 2,
-          mb: 4,
-        }}
-      >
-        <Card
-          onClick={() => setFilterStatus("all")}
-          sx={{
-            bgcolor: filterStatus === "all" ? "#8b5cf620" : "#1e293b",
-            border: `2px solid ${
-              filterStatus === "all" ? "#8b5cf6" : "#334155"
-            }`,
-            borderRadius: 2,
-            p: 1.5,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            "&:hover": {
-              borderColor: "#8b5cf6",
-              transform: "translateY(-2px)",
-            },
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}
+        {/* Statistics Section - Similar to PlacementPosts */}
+        <Box sx={{ mt: 2, display: "flex", gap: 3, flexWrap: "wrap" }}>
+          <Box
+            onClick={() => setFilterStatus("all")}
+            sx={{
+              cursor: "pointer",
+              p: 1,
+              borderRadius: 1,
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: "rgba(139, 92, 246, 0.1)",
+              },
+              border:
+                filterStatus === "all"
+                  ? "2px solid #8b5cf6"
+                  : "2px solid transparent",
+            }}
           >
-            Total Opportunities
-          </Typography>
-          <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 600 }}>
-            {stats.total}
-          </Typography>
-        </Card>
-
-        <Card
-          onClick={() => setFilterStatus("approved")}
-          sx={{
-            bgcolor: filterStatus === "approved" ? "#10b98120" : "#1e293b",
-            border: `2px solid ${
-              filterStatus === "approved" ? "#10b981" : "#334155"
-            }`,
-            borderRadius: 2,
-            p: 1.5,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            "&:hover": {
-              borderColor: "#10b981",
-              transform: "translateY(-2px)",
-            },
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Total Opportunities
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+              {stats.total}
+            </Typography>
+          </Box>
+          <Box
+            onClick={() => setFilterStatus("approved")}
+            sx={{
+              cursor: "pointer",
+              p: 1,
+              borderRadius: 1,
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: "rgba(16, 185, 129, 0.1)",
+              },
+              border:
+                filterStatus === "approved"
+                  ? "2px solid #10b981"
+                  : "2px solid transparent",
+            }}
           >
-            Approved Posts
-          </Typography>
-          <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 600 }}>
-            {stats.approved}
-          </Typography>
-        </Card>
-
-        <Card
-          onClick={() => setFilterStatus("pending")}
-          sx={{
-            bgcolor: filterStatus === "pending" ? "#fbbf2420" : "#1e293b",
-            border: `2px solid ${
-              filterStatus === "pending" ? "#fbbf24" : "#334155"
-            }`,
-            borderRadius: 2,
-            p: 1.5,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            "&:hover": {
-              borderColor: "#fbbf24",
-              transform: "translateY(-2px)",
-            },
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: "#94a3b8", mb: 0.5, fontSize: "0.8rem" }}
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Approved Posts
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
+              {stats.approved}
+            </Typography>
+          </Box>
+          <Box
+            onClick={() => setFilterStatus("pending")}
+            sx={{
+              cursor: "pointer",
+              p: 1,
+              borderRadius: 1,
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: "rgba(251, 191, 36, 0.1)",
+              },
+              border:
+                filterStatus === "pending"
+                  ? "2px solid #fbbf24"
+                  : "2px solid transparent",
+            }}
           >
-            Pending Approval
-          </Typography>
-          <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 600 }}>
-            {stats.pending}
-          </Typography>
-        </Card>
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Pending Review
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 700 }}>
+              {stats.pending}
+            </Typography>
+          </Box>
+          <Box
+            onClick={() => setFilterStatus("disapproved")}
+            sx={{
+              cursor: "pointer",
+              p: 1,
+              borderRadius: 1,
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: "rgba(239, 68, 68, 0.1)",
+              },
+              border:
+                filterStatus === "disapproved"
+                  ? "2px solid #ef4444"
+                  : "2px solid transparent",
+            }}
+          >
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Disapproved Posts
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#ef4444", fontWeight: 700 }}>
+              {stats.disapproved}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
 
       {/* Applications List */}
@@ -502,24 +511,6 @@ export default function RecruiterPost() {
                       {app.company_name}
                     </Typography>
                   </Box>
-
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "#64748b",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    Posted{" "}
-                    {new Date(app.application_date).toLocaleDateString(
-                      "en-US",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      }
-                    )}
-                  </Typography>
                 </Box>
 
                 <Box
@@ -569,6 +560,15 @@ export default function RecruiterPost() {
                       >
                         Posted{" "}
                         {new Date(app.application_date).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                      >
+                        Deadline{" "}
+                        {new Date(app.application_deadline).toLocaleDateString()}
                       </Typography>
                     </Box>
                   </Box>

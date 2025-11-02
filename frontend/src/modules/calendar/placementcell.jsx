@@ -106,9 +106,11 @@ export default function AdminCalendar() {
                 console.warn("No token found, some features may be limited");
             }
 
-            // Fetch calendar events
-            const calResponse = await fetch(CAL_API);
-            const calData = await calResponse.json();
+            // Fetch calendar events - FIXED: removed duplicate token declaration and fixed variable name
+            const response = await fetch(CAL_API, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const calData = await response.json();
 
             // Fetch posts (only approved ones, excluding rejected)
             const postsResponse = await axios.get(`${POSTS_API}?limit=1000`, {
@@ -187,6 +189,7 @@ export default function AdminCalendar() {
         }
 
         try {
+            const token = localStorage.getItem("token");
             console.log("Creating calendar event:", formData);
 
             const eventData = {
@@ -207,7 +210,8 @@ export default function AdminCalendar() {
                 eventData,
                 {
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     }
                 }
             );
@@ -269,11 +273,26 @@ export default function AdminCalendar() {
         if (!activeEvent || activeEvent.source === 'post') return;
 
         try {
-            // For calendar events, we would need an update endpoint
-            // For now, just close the modal
-            setErrorMsg("Edit functionality not yet implemented for calendar events");
-            setShowEditModal(false);
-            setActiveEvent(null);
+            const token = localStorage.getItem("token");
+            const response = await axios.put(
+                `${CAL_API}/${activeEvent.id}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (response.data.ok) {
+                setSuccessMsg("Event updated successfully!");
+                setShowEditModal(false);
+                setActiveEvent(null);
+                fetchAllEvents();
+            } else {
+                setErrorMsg(response.data.error || "Failed to update event");
+            }
         } catch (error) {
             console.error("Error:", error);
             setErrorMsg("Failed to update event");
@@ -287,7 +306,12 @@ export default function AdminCalendar() {
                 return;
             }
 
-            const response = await axios.delete(`${CAL_API}/${eventId}`);
+            const token = localStorage.getItem("token");
+            const response = await axios.delete(`${CAL_API}/${eventId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
             if (response.data.ok) {
                 setSuccessMsg("Event deleted successfully!");
@@ -537,7 +561,7 @@ export default function AdminCalendar() {
                                     sx={{
                                         minWidth: { xs: "100%", sm: 80 },
                                         textAlign: "center",
-                                        bgcolor: data.isNearing ? "#ef4444" : data.isWithinWeek ? "#f97316" : "primary.main",
+                                        bgcolor: "primary.main",
                                         color: "white",
                                         borderRadius: 2,
                                         p: 1.5,
@@ -600,8 +624,9 @@ export default function AdminCalendar() {
                                                                     size="small"
                                                                     sx={{
                                                                         fontWeight: "bold",
+                                                                        bgcolor: "#8b5cf620",
                                                                         color: "white",
-                                                                        bgcolor: "#ef4444"
+                                                                        border: data.isNearing ? "2px solid #ef4444" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}
@@ -610,9 +635,9 @@ export default function AdminCalendar() {
                                                                     label="THIS WEEK"
                                                                     size="small"
                                                                     sx={{
-                                                                        fontWeight: "bold",
+                                                                        bgcolor: "#8b5cf620",
                                                                         color: "white",
-                                                                        bgcolor: "#f97316"
+                                                                        border: data.isNearing ? "2px solid #efcd44ff" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}

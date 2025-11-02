@@ -6,7 +6,7 @@ import {
   student_profile,
   user,
 } from "../../db/schema/index.js";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, count, countDistinct } from "drizzle-orm";
 import { requireAuth } from "../../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -239,6 +239,225 @@ router.get("/check-applied/:postId", requireAuth, async (req, res) => {
     res.json({ ok: true, hasApplied: application.length > 0 });
   } catch (e) {
     console.error("Error checking application:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get global stats for placement dashboard
+router.get("/global-stats", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    // Count total approved posts
+    const totalPostsResult = await db
+      .select({ count: count() })
+      .from(posts)
+      .where(eq(posts.approval_status, "approved"));
+
+    // Count unique students who have applied to any post
+    const uniqueStudentsResult = await db
+      .select({ count: countDistinct(student_applications.student_id) })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(posts.approval_status, "approved"));
+
+    // Count total interviewed applications
+    const interviewedResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          eq(student_applications.application_status, "interviewed")
+        )
+      );
+
+    // Count total applications
+    const totalApplicationsResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(posts.approval_status, "approved"));
+
+    // Count total applied applications
+    const appliedResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          eq(student_applications.application_status, "applied")
+        )
+      );
+
+    // Count total offers
+    const offersResult = await db
+      .select({ count: count() })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          eq(student_applications.application_status, "offer")
+        )
+      );
+
+    const totalPosts = parseInt(totalPostsResult[0]?.count || 0);
+    const totalAppliedStudents = parseInt(uniqueStudentsResult[0]?.count || 0);
+    const totalApplications = parseInt(totalApplicationsResult[0]?.count || 0);
+    const totalApplied = parseInt(appliedResult[0]?.count || 0);
+    const totalInterviewed = parseInt(interviewedResult[0]?.count || 0);
+    const totalOffers = parseInt(offersResult[0]?.count || 0);
+
+    res.json({
+      ok: true,
+      stats: {
+        totalPosts,
+        totalAppliedStudents,
+        totalApplications,
+        totalApplied,
+        totalInterviewed,
+        totalOffers,
+      }
+    });
+  } catch (e) {
+    console.error("Error fetching global stats:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Bulk import applications from CSV (placement cell only)
+router.post("/bulk-import", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { applications, postId } = req.body;
+
+    if (!applications || !Array.isArray(applications) || applications.length === 0) {
+      return res.status(400).json({ ok: false, error: "No applications provided" });
+    }
+
+    if (!postId) {
+      return res.status(400).json({ ok: false, error: "Post ID is required" });
+    }
+
+    // Verify post exists and is approved
+    const post = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found" });
+    }
+
+    if (post[0].approval_status !== "approved") {
+      return res.status(403).json({ ok: false, error: "Post is not approved" });
+    }
+
+    const importedApplications = [];
+    const errors = [];
+
+    for (const app of applications) {
+      try {
+        // Check if student already exists or create a placeholder user
+        let studentUser = await db
+          .select()
+          .from(user)
+          .where(eq(user.email, app.email || `${app.roll_number}@placeholder.com`))
+          .limit(1);
+
+        let studentId;
+        if (studentUser.length === 0) {
+          // Create a placeholder user for external students
+          const newUser = await db
+            .insert(user)
+            .values({
+              email: app.email || `${app.roll_number}@placeholder.com`,
+              password: "placeholder", // This should be handled differently in production
+              role: "student",
+              is_verified: false,
+            })
+            .returning();
+          studentId = newUser[0].id;
+
+          // Create student profile
+          await db.insert(student_profile).values({
+            user_id: studentId,
+            full_name: app.full_name,
+            roll_number: app.roll_number,
+            branch: app.branch,
+            current_semester: app.current_semester,
+            cgpa: app.cgpa,
+            tenth_score: app.tenth_score,
+            twelfth_score: app.twelfth_score,
+            contact_number: app.contact_number || null,
+          });
+        } else {
+          studentId = studentUser[0].id;
+        }
+
+        // Check if already applied
+        const existingApplication = await db
+          .select()
+          .from(student_applications)
+          .where(
+            and(
+              eq(student_applications.post_id, postId),
+              eq(student_applications.student_id, studentId)
+            )
+          )
+          .limit(1);
+
+        if (existingApplication.length > 0) {
+          errors.push(`Student ${app.full_name} (${app.roll_number}) already applied`);
+          continue;
+        }
+
+        // Create application
+        const newApplication = await db
+          .insert(student_applications)
+          .values({
+            post_id: postId,
+            student_id: studentId,
+            full_name: app.full_name,
+            email: app.email || `${app.roll_number}@placeholder.com`,
+            roll_number: app.roll_number,
+            branch: app.branch,
+            current_semester: app.current_semester,
+            cgpa: app.cgpa,
+            tenth_score: app.tenth_score,
+            twelfth_score: app.twelfth_score,
+            contact_number: app.contact_number || null,
+            resume_link: app.resume_link || null,
+            cover_letter: app.cover_letter || null,
+            application_status: app.application_status || "applied",
+            applied_at: app.applied_at ? new Date(app.applied_at) : new Date(),
+          })
+          .returning();
+
+        importedApplications.push(newApplication[0]);
+      } catch (error) {
+        console.error("Error importing application:", error);
+        errors.push(`Failed to import ${app.full_name}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      ok: true,
+      imported: importedApplications.length,
+      errors: errors.length > 0 ? errors : undefined,
+      applications: importedApplications,
+    });
+  } catch (e) {
+    console.error("Error bulk importing applications:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });

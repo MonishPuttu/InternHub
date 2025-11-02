@@ -11,6 +11,7 @@ export const posts = pgTable("posts", {
   position: text("position").notNull(),
   industry: text("industry").notNull(),
   application_date: timestamp("application_date").notNull(),
+  application_deadline: timestamp("application_deadline"),// deadline date for auto deletion
   status: text("status").notNull().default("applied"),
   package_offered: decimal("package_offered", { precision: 10, scale: 2 }),
   notes: text("notes"),

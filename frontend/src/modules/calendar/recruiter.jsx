@@ -51,7 +51,6 @@ export default function EventCalendar() {
 
     const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
     const BACKEND_URL = `${BASE_URL}/api/calendar`;
-    // console.log("BACKEND_URL:", BACKEND_URL);
 
     useEffect(() => {
         setCurrentDate(new Date());
@@ -102,7 +101,20 @@ export default function EventCalendar() {
     const fetchEvents = async () => {
         setLoading(true);
         try {
-            const response = await fetch(BACKEND_URL);
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                setErrorMsg("Please log in to view events");
+                setLoading(false);
+                return;
+            }
+
+            const response = await fetch(BACKEND_URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
             const data = await response.json();
 
             if (data.ok) {
@@ -113,7 +125,7 @@ export default function EventCalendar() {
                     setSuccessMsg(`Cleaned up ${data.duplicatesRemoved} duplicate event(s)`);
                 }
 
-                // Backend already filters out ended events, just apply UI filters
+                // Filter by current month
                 if (currentDate) {
                     const year = currentDate.getFullYear();
                     const month = currentDate.getMonth();
@@ -129,6 +141,8 @@ export default function EventCalendar() {
                 }
 
                 setEvents(filteredEvents);
+            } else {
+                setErrorMsg(data.error || "Failed to load events");
             }
         } catch (error) {
             console.error("Error:", error);
@@ -140,8 +154,18 @@ export default function EventCalendar() {
 
     const handleDeleteEvent = async (eventId) => {
         try {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                setErrorMsg("Please log in to delete events");
+                return;
+            }
+
             const response = await fetch(`${BACKEND_URL}/${eventId}`, {
                 method: "DELETE",
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             const data = await response.json();
@@ -274,10 +298,18 @@ export default function EventCalendar() {
         }
 
         try {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                setErrorMsg("Please log in to create events");
+                return;
+            }
+
             const response = await fetch(BACKEND_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify(formData),
             });
@@ -430,7 +462,7 @@ export default function EventCalendar() {
                                     sx={{
                                         minWidth: { xs: "100%", sm: 80 },
                                         textAlign: "center",
-                                        bgcolor: data.isNearing ? "#ef4444" : data.isWithinWeek ? "#f97316" : "primary.main",
+                                        bgcolor: "primary.main",
                                         color: "white",
                                         borderRadius: 2,
                                         p: 1.5,
@@ -491,7 +523,9 @@ export default function EventCalendar() {
                                                                     size="small"
                                                                     sx={{
                                                                         fontWeight: "bold",
-                                                                        color: "white"
+                                                                        bgcolor: "#8b5cf620",
+                                                                        color: "white",
+                                                                        border: data.isNearing ? "2px solid #ef4444" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}
@@ -500,8 +534,9 @@ export default function EventCalendar() {
                                                                     label="THIS WEEK"
                                                                     size="small"
                                                                     sx={{
-                                                                        fontWeight: "bold",
-                                                                        color: "white"
+                                                                        bgcolor: "#8b5cf620",
+                                                                        color: "white",
+                                                                        border: data.isNearing ? "2px solid #efcd44ff" : "primary.main",
                                                                     }}
                                                                 />
                                                             )}

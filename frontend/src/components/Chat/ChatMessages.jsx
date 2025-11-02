@@ -275,9 +275,7 @@ export default function ChatMessages({
 
         {messages.map((msg, index) => {
           const isSender = msg.senderId === user?.id;
-          const senderName = getUserName
-            ? getUserName(msg.senderId)
-            : "Unknown";
+          const senderName = msg.senderName || (getUserName ? getUserName(msg.senderId) : "Unknown");
 
           return (
             <Box
@@ -289,6 +287,7 @@ export default function ChatMessages({
                 gap: 1,
               }}
             >
+
               {!isSender && (
                 <Avatar sx={{ width: 32, height: 32, bgcolor: "#8b5cf6" }}>
                   {initials(senderName)}
@@ -335,21 +334,21 @@ export default function ChatMessages({
                 >
                   {msg.timestamp
                     ? new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                     : msg.createdAt
-                    ? new Date(msg.createdAt).toLocaleTimeString([], {
+                      ? new Date(msg.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                    : ""}
+                      : ""}
                 </Typography>
               </Paper>
 
               {isSender && (
                 <Avatar sx={{ width: 32, height: 32, bgcolor: "#8b5cf6" }}>
-                  {initials(user?.name)}
+                  {initials(senderName)}
                 </Avatar>
               )}
             </Box>

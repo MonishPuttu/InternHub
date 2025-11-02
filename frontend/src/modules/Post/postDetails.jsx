@@ -10,6 +10,8 @@ import {
   Grid,
   Divider,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -25,16 +27,32 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
+import ApplyDialog from "@/components/post/ApplyDialog";
+import useApplyToPost from "@/hooks/useApplyToPost";
+import { getUser } from "@/lib/session";
 
-export default function PostDetails({ postId }) {
+export default function PostDetails({ postId, showApplyButtons = true }) {
   const router = useRouter();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const user = getUser();
+
+  const {
+    applyDialogOpen,
+    setApplyDialogOpen,
+    hasApplied,
+    applying,
+    snackbar,
+    checkApplicationStatus,
+    handleApply,
+    handleCloseSnackbar,
+  } = useApplyToPost(postId);
 
   useEffect(() => {
     if (postId) {
       fetchPostDetails();
+      checkApplicationStatus();
     }
   }, [postId]);
 
@@ -172,39 +190,41 @@ export default function PostDetails({ postId }) {
                 </Typography>
               </Box>
 
-              <Box>
-                <Chip
-                  label={
-                    post.approval_status === "approved"
-                      ? "Approved"
-                      : post.approval_status === "disapproved"
-                      ? "Disapproved"
-                      : "Pending Approval"
-                  }
-                  sx={{
-                    bgcolor:
+              {user && user.role !== "student" && (
+                <Box>
+                  <Chip
+                    label={
                       post.approval_status === "approved"
-                        ? "rgba(16, 185, 129, 0.1)"
+                        ? "Approved"
                         : post.approval_status === "disapproved"
-                        ? "rgba(239, 68, 68, 0.1)"
-                        : "rgba(251, 191, 36, 0.1)",
-                    color:
-                      post.approval_status === "approved"
-                        ? "#10b981"
-                        : post.approval_status === "disapproved"
-                        ? "#ef4444"
-                        : "#fbbf24",
-                    fontWeight: 600,
-                    border: `1px solid ${
-                      post.approval_status === "approved"
-                        ? "rgba(16, 185, 129, 0.3)"
-                        : post.approval_status === "disapproved"
-                        ? "rgba(239, 68, 68, 0.3)"
-                        : "rgba(251, 191, 36, 0.3)"
-                    }`,
-                  }}
-                />
-              </Box>
+                        ? "Disapproved"
+                        : "Pending Approval"
+                    }
+                    sx={{
+                      bgcolor:
+                        post.approval_status === "approved"
+                          ? "rgba(16, 185, 129, 0.1)"
+                          : post.approval_status === "disapproved"
+                          ? "rgba(239, 68, 68, 0.1)"
+                          : "rgba(251, 191, 36, 0.1)",
+                      color:
+                        post.approval_status === "approved"
+                          ? "#10b981"
+                          : post.approval_status === "disapproved"
+                          ? "#ef4444"
+                          : "#fbbf24",
+                      fontWeight: 600,
+                      border: `1px solid ${
+                        post.approval_status === "approved"
+                          ? "rgba(16, 185, 129, 0.3)"
+                          : post.approval_status === "disapproved"
+                          ? "rgba(239, 68, 68, 0.3)"
+                          : "rgba(251, 191, 36, 0.3)"
+                      }`,
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
           </Box>
 
@@ -707,42 +727,77 @@ export default function PostDetails({ postId }) {
         </Box>
       </Card>
 
-      <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={handleBack}
-          sx={{
-            borderColor: "#334155",
-            color: "#94a3b8",
-            "&:hover": {
-              borderColor: "#8b5cf6",
-              bgcolor: "rgba(139, 92, 246, 0.1)",
-            },
-            textTransform: "none",
-            fontWeight: 600,
-            px: 4,
-          }}
+      <ApplyDialog
+        open={applyDialogOpen}
+        post={post}
+        onClose={() => setApplyDialogOpen(false)}
+        onSubmit={handleApply}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
         >
-          Back to List
-        </Button>
-        {post.job_link && (
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {showApplyButtons && (
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
           <Button
-            variant="contained"
-            href={post.job_link}
-            target="_blank"
-            rel="noopener noreferrer"
+            variant="outlined"
+            onClick={handleBack}
             sx={{
-              bgcolor: "#8b5cf6",
-              "&:hover": { bgcolor: "#7c3aed" },
+              borderColor: "#334155",
+              color: "#94a3b8",
+              "&:hover": {
+                borderColor: "#8b5cf6",
+                bgcolor: "rgba(139, 92, 246, 0.1)",
+              },
               textTransform: "none",
               fontWeight: 600,
               px: 4,
             }}
           >
-            Apply Now
+            Back to List
           </Button>
-        )}
-      </Box>
+          {hasApplied ? (
+            <Button
+              variant="contained"
+              disabled
+              sx={{
+                bgcolor: "#10b981",
+                textTransform: "none",
+                fontWeight: 600,
+                px: 4,
+              }}
+            >
+              Applied
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => setApplyDialogOpen(true)}
+              sx={{
+                bgcolor: "#8b5cf6",
+                "&:hover": { bgcolor: "#7c3aed" },
+                textTransform: "none",
+                fontWeight: 600,
+                px: 4,
+              }}
+            >
+              Apply Now
+            </Button>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }

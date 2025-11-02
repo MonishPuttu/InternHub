@@ -18,16 +18,16 @@ export default function PostPage() {
     // Role-based routing for Post section
     switch (user.role) {
       case "student":
-        router.push("/Post/student");
+        router.push("/post/student");
         break;
       case "placement":
-        router.push("/Post/placement");
+        router.push("/post/placement");
         break;
       case "recruiter":
-        router.push("/Post/recruiter");
+        router.push("/post/recruiter");
         break;
       default:
-        router.push("/Post/student");
+        router.push("/post/student");
     }
   }, [user, router]);
 

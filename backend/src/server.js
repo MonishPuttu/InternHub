@@ -12,6 +12,7 @@ import dashboardRoutes from "./routes/Dashboard/Dashboard.js"; // Dashobard page
 import studentApplicationsRoutes from "./routes/Dashboard/student_application.js"; // Dashobard page [placementcell]
 import postsRoutes from "./routes/posts.js"; // Post management routes
 import trainingRoutes from "./routes/training.js"; // Training part routes
+import placementAnalyticsRoutes from './routes/placement_analytics.js';
 
 const app = express();
 
@@ -38,6 +39,9 @@ app.use("/api/posts", postsRoutes);
 app.use("/api/student-applications", studentApplicationsRoutes);
 app.use("/api", calendarRoutes);
 app.use("/api/training", trainingRoutes);
+
+
+app.use('/api/placement-analytics', placementAnalyticsRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

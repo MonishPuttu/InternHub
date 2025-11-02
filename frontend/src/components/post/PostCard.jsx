@@ -1,4 +1,4 @@
-import { Card, Box, Typography, Button, Chip, IconButton } from "@mui/material";
+import { Card, Box, Typography, Button, Chip, IconButton, Snackbar, Alert } from "@mui/material";
 import {
   AttachMoney as AttachMoneyIcon,
   LocationOn as LocationOnIcon,
@@ -8,6 +8,8 @@ import {
   Share as ShareIcon,
 } from "@mui/icons-material";
 import { STATUS_COLORS, STATUS_LABELS } from "@/constants/postConstants";
+import useApplyToPost from "@/hooks/useApplyToPost";
+import ApplyDialog from "./ApplyDialog";
 
 export default function PostCard({
   post,
@@ -15,7 +17,16 @@ export default function PostCard({
   onToggleSave,
   onApply,
   onViewDetails,
+  onShare,
 }) {
+  const {
+    applyDialogOpen,
+    setApplyDialogOpen,
+    hasApplied,
+    handleApply,
+    snackbar,
+    handleCloseSnackbar,
+  } = useApplyToPost(post.id);
   return (
     <Card
       elevation={0}
@@ -163,19 +174,34 @@ export default function PostCard({
             >
               View Details
             </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onApply}
-              sx={{
-                bgcolor: "#10b981",
-                "&:hover": { bgcolor: "#059669" },
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Apply Now
-            </Button>
+            {hasApplied ? (
+              <Button
+                variant="contained"
+                size="small"
+                disabled
+                sx={{
+                  bgcolor: "#10b981",
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Applied
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => setApplyDialogOpen(true)}
+                sx={{
+                  bgcolor: "#10b981",
+                  "&:hover": { bgcolor: "#059669" },
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Apply Now
+              </Button>
+            )}
             <Box sx={{ display: "flex", gap: 1 }}>
               <IconButton
                 size="small"
@@ -199,6 +225,7 @@ export default function PostCard({
               </IconButton>
               <IconButton
                 size="small"
+                onClick={onShare}
                 sx={{
                   flex: 1,
                   color: "#64748b",
@@ -216,6 +243,28 @@ export default function PostCard({
           </Box>
         </Box>
       </Box>
+
+      <ApplyDialog
+        open={applyDialogOpen}
+        post={post}
+        onClose={() => setApplyDialogOpen(false)}
+        onSubmit={handleApply}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Card>
   );
 }
