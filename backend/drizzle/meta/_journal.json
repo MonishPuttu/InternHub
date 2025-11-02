@@ -12,15 +12,8 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1761655030920,
-      "tag": "0001_far_miracleman",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1761824921306,
-      "tag": "0002_last_cammi",
+      "when": 1761738860469,
+      "tag": "0001_kind_roland_deschain",
       "breakpoints": true
     }
   ]

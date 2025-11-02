@@ -5,4 +5,5 @@ export * from "./profile.js";
 export * from "./calendar.js";
 export * from "./post.js";
 export * from "./Dashboard/student_applications.js";
+export * from "./training.js";
 export * from "./placement_analytics.js";

@@ -25,6 +25,7 @@ import {
   CalendarToday as CalenderIcon,
   WorkOutline as WorkOutlineIcon,
 } from "@mui/icons-material";
+import SchoolIcon from "@mui/icons-material/School";
 
 const drawerWidth = 240;
 
@@ -33,13 +34,19 @@ import { text } from "drizzle-orm/gel-core";
 
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
-  { text: "Posts", icon: <DescriptionIcon />, path: "/post", roles: null },
-  // {
-  //   text: "My Applications",
-  //   icon: <WorkOutlineIcon />,
-  //   path: "/my-applications",
-  //   roles: ["student"],
-  // },
+  { text: "Posts", icon: <DescriptionIcon />, path: "/Post", roles: null },
+//   {
+//     text: "My Applications",
+//     icon: <WorkOutlineIcon />,
+//     path: "/my-applications",
+//     roles: ["student"],
+//   },
+  {
+    text: "Training",
+    icon: <SchoolIcon />,
+    path: "/training",
+    roles: ["student", "placement"],
+  },
   {
     text: "Profile & Resume",
     icon: <PersonIcon />,
