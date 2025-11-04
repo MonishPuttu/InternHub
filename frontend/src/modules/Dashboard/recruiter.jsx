@@ -240,34 +240,6 @@ export default function RecruiterDashboard() {
 
 
 
-      {/* Quick Actions */}
-      <Card
-        sx={{
-          bgcolor: "#1e293b",
-          border: "1px solid #334155",
-          borderRadius: 2,
-          p: 3,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{ color: "#e2e8f0", fontWeight: 600, mb: 2 }}
-        >
-          Quick Actions
-        </Typography>
-        <Stack spacing={2}>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            • Go to Posts section to create new job opportunities
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            • View and manage your posted opportunities
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            • Check applications from students
-          </Typography>
-        </Stack>
-      </Card>
-
       {/* Approved Posts Section */}
       <Box sx={{ mb: 4 }}>
         <Typography
@@ -339,6 +311,34 @@ export default function RecruiterDashboard() {
           ))}
         </Box>
       </Box>
+
+      {/* Quick Actions */}
+      <Card
+        sx={{
+          bgcolor: "#1e293b",
+          border: "1px solid #334155",
+          borderRadius: 2,
+          p: 3,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ color: "#e2e8f0", fontWeight: 600, mb: 2 }}
+        >
+          Quick Actions
+        </Typography>
+        <Stack spacing={2}>
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            • Go to Posts section to create new job opportunities
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            • View and manage your posted opportunities
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            • Check applications from students
+          </Typography>
+        </Stack>
+      </Card>
 
       {/* View Post Details Dialog */}
       <Dialog
