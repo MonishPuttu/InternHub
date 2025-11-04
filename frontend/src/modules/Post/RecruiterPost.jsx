@@ -471,23 +471,6 @@ export default function RecruiterPost() {
                     alignItems: "center",
                   }}
                 >
-                  <Box />
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleMenuOpen(e, app)}
-                    sx={{ color: "#94a3b8" }}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
                   <Box sx={{ flex: 1 }}>
                     <Typography
                       variant="h6"
@@ -511,6 +494,13 @@ export default function RecruiterPost() {
                       {app.company_name}
                     </Typography>
                   </Box>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleMenuOpen(e, app)}
+                    sx={{ color: "#94a3b8" }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
                 </Box>
 
                 <Box
