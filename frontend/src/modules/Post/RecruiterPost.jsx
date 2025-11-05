@@ -13,11 +13,6 @@ import {
   Snackbar,
   Alert,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -26,7 +21,6 @@ import {
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
   Close as CloseIcon,
-  Edit as EditIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { CreateApplicationModal } from "@/components/post/CreateApplicationModal";
@@ -46,23 +40,7 @@ export default function RecruiterPost() {
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    position: "",
-    company_name: "",
-    industry: "",
-    package_offered: "",
-    notes: "",
-    status: "",
-    media: "",
-    location: "",
-    job_type: "",
-    contact_person: "",
-    contact_email: "",
-    job_link: "",
-    application_deadline: "",
-    interview_date: "",
-  });
+
 
   useEffect(() => {
     fetchApplications();
@@ -137,92 +115,7 @@ export default function RecruiterPost() {
     router.push(`/post/postdetails/${app.id}`);
   };
 
-  const handleOpenEditDialog = () => {
-    if (!selectedApp) return;
 
-    setEditFormData({
-      position: selectedApp.position || "",
-      company_name: selectedApp.company_name || "",
-      industry: selectedApp.industry || "",
-      package_offered: selectedApp.package_offered || "",
-      notes: selectedApp.notes || "",
-      status: selectedApp.status || "applied",
-      media: selectedApp.media || "",
-      location: selectedApp.location || "",
-      job_type: selectedApp.job_type || "",
-      contact_person: selectedApp.contact_person || "",
-      contact_email: selectedApp.contact_email || "",
-      job_link: selectedApp.job_link || "",
-      application_deadline: selectedApp.application_deadline
-        ? selectedApp.application_deadline.split("T")[0]
-        : "",
-      interview_date: selectedApp.interview_date
-        ? selectedApp.interview_date.split("T")[0]
-        : "",
-    });
-    setEditDialogOpen(true);
-  };
-
-  const handleCloseEditDialog = () => {
-    setEditDialogOpen(false);
-    handleMenuClose();
-    setEditFormData({
-      position: "",
-      company_name: "",
-      industry: "",
-      package_offered: "",
-      notes: "",
-      status: "",
-      media: "",
-      location: "",
-      job_type: "",
-      contact_person: "",
-      contact_email: "",
-      job_link: "",
-      application_deadline: "",
-      interview_date: "",
-    });
-  };
-
-  const handleEditFormChange = (field, value) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSaveEdit = async () => {
-    if (!selectedApp) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const updatePayload = {};
-
-      Object.keys(editFormData).forEach((key) => {
-        const value = editFormData[key];
-        if (value !== "" && value !== null && value !== undefined) {
-          updatePayload[key] = value;
-        }
-      });
-
-      const response = await axios.put(
-        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-        updatePayload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.ok) {
-        setSuccessMsg("Post updated successfully!");
-        handleCloseEditDialog();
-        fetchApplications();
-      } else {
-        setErrorMsg(response.data.error || "Failed to update post");
-      }
-    } catch (error) {
-      console.error("Error updating post:", error);
-      setErrorMsg(error.response?.data?.error || "Failed to update post");
-    }
-  };
 
   const filteredApplications = applications.filter((app) => {
     if (filterStatus === "all") return true;
@@ -552,15 +445,17 @@ export default function RecruiterPost() {
                         {new Date(app.application_date).toLocaleDateString()}
                       </Typography>
                     </Box>
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
-                      >
-                        Deadline{" "}
-                        {new Date(app.application_deadline).toLocaleDateString()}
-                      </Typography>
-                    </Box>
+                    {app.application_deadline && !isNaN(new Date(app.application_deadline).getTime()) && (
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                        >
+                          Deadline{" "}
+                          {new Date(app.application_deadline).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -637,150 +532,12 @@ export default function RecruiterPost() {
           sx: { bgcolor: "#1e293b", border: "1px solid #334155" },
         }}
       >
-        <MenuItem onClick={handleOpenEditDialog}>
-          <EditIcon sx={{ mr: 1, fontSize: 20, color: "#8b5cf6" }} />
-          Edit Post
-        </MenuItem>
         <MenuItem onClick={handleDelete} sx={{ color: "#ef4444" }}>
           Delete
         </MenuItem>
       </Menu>
 
-      {/* Edit Dialog */}
-      <Dialog
-        open={editDialogOpen}
-        onClose={handleCloseEditDialog}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: "#1e293b",
-            color: "#e2e8f0",
-            borderRadius: 2,
-            maxHeight: "90vh",
-          },
-        }}
-      >
-        <DialogTitle
-          component="div"
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontSize: "1.25rem",
-            fontWeight: 700,
-            color: "#e2e8f0",
-          }}
-        >
-          Edit Post
-          <IconButton onClick={handleCloseEditDialog} sx={{ color: "#94a3b8" }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "#334155" }}>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField
-              fullWidth
-              label="Position"
-              value={editFormData.position}
-              onChange={(e) => handleEditFormChange("position", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-              }}
-            />
 
-            <TextField
-              fullWidth
-              label="Company Name"
-              value={editFormData.company_name}
-              onChange={(e) =>
-                handleEditFormChange("company_name", e.target.value)
-              }
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              label="Industry"
-              value={editFormData.industry}
-              onChange={(e) => handleEditFormChange("industry", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              label="Media URL"
-              value={editFormData.media}
-              onChange={(e) => handleEditFormChange("media", e.target.value)}
-              placeholder="https://example.com/image.jpg"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Description/Notes"
-              value={editFormData.notes}
-              onChange={(e) => handleEditFormChange("notes", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-              }}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
-          <Button onClick={handleCloseEditDialog} sx={{ color: "#94a3b8" }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSaveEdit}
-            sx={{
-              bgcolor: "#8b5cf6",
-              "&:hover": { bgcolor: "#7c3aed" },
-            }}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Create Modal */}
       <CreateApplicationModal open={openModal} onClose={handleModalClose} />

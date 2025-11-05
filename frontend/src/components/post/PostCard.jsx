@@ -132,6 +132,9 @@ export default function PostCard({
                 <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
                 <Typography variant="body2" sx={{ color: "#94a3b8" }}>
                   Posted {new Date(post.application_date).toLocaleDateString()}
+                  {post.application_deadline && !isNaN(new Date(post.application_deadline).getTime()) && (
+                    <> | Deadline {new Date(post.application_deadline).toLocaleDateString()}</>
+                  )}
                 </Typography>
               </Box>
             </Box>

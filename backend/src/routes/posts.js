@@ -1,7 +1,7 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { posts } from "../db/schema/post.js"; // Use the new posts table
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, or, isNull, gt } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -59,6 +59,7 @@ router.post("/applications", requireAuth, async (req, res) => {
       package_offered,
       notes,
       media,
+      application_deadline,
     } = req.body;
 
     if (!company_name || !position || !industry) {
@@ -77,6 +78,7 @@ router.post("/applications", requireAuth, async (req, res) => {
         package_offered: package_offered || null,
         notes: notes || null,
         media: media || null,
+        application_deadline: application_deadline ? new Date(application_deadline) : null,
         approval_status: "pending", // Default to pending
       })
       .returning();
@@ -101,6 +103,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     if (updateData.interview_date) updateData.interview_date = new Date(updateData.interview_date);
     if (updateData.offer_date) updateData.offer_date = new Date(updateData.offer_date);
     if (updateData.rejection_date) updateData.rejection_date = new Date(updateData.rejection_date);
+    if (updateData.application_deadline) updateData.application_deadline = new Date(updateData.application_deadline);
     updateData.updated_at = new Date();
 
     // Handle media deletion - explicitly set to null if empty string
@@ -168,10 +171,20 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
     // Only students should fetch approved posts
     if (req.user.role !== "student") return res.status(403).json({ ok: false, error: "Forbidden" });
 
+    const currentDate = new Date();
+
     const approvedPosts = await db
       .select()
       .from(posts)
-      .where(eq(posts.approval_status, "approved"))
+      .where(
+        and(
+          eq(posts.approval_status, "approved"),
+          or(
+            isNull(posts.application_deadline),
+            gt(posts.application_deadline, currentDate)
+          )
+        )
+      )
       .orderBy(desc(posts.application_date))
       .limit(200);
 

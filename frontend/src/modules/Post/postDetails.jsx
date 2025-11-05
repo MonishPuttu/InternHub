@@ -388,7 +388,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
               </Grid>
             )}
 
-            {post.application_deadline && (
+            {post.application_deadline && !isNaN(new Date(post.application_deadline).getTime()) && (
               <Grid item xs={12} sm={6} md={4}>
                 <Box
                   sx={{

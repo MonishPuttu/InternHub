@@ -13,6 +13,7 @@ import {
   Select,
   MenuItem,
   Button,
+  Pagination,
 } from "@mui/material";
 import axios from "axios";
 import { BACKEND_URL, INDUSTRIES } from "@/constants/postConstants";
@@ -31,11 +32,27 @@ export default function StudentPosts() {
   const [filterIndustry, setFilterIndustry] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [appliedPosts, setAppliedPosts] = useState([]);
+
+  const [showAppliedOnly, setShowAppliedOnly] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 10;
 
   useEffect(() => {
     fetchApprovedPosts();
     loadSavedPosts();
+    loadAppliedPosts();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterIndustry, searchQuery, showSavedOnly, showAppliedOnly]);
+
+  useEffect(() => {
+    if (posts.length > 0) {
+      fetchAppliedPostsFromBackend();
+    }
+  }, [posts]);
 
   const fetchApprovedPosts = async () => {
     try {
@@ -66,6 +83,42 @@ export default function StudentPosts() {
     const saved = localStorage.getItem("savedPosts");
     if (saved) {
       setSavedPosts(JSON.parse(saved));
+    }
+  };
+
+  const loadAppliedPosts = () => {
+    const applied = localStorage.getItem("appliedPosts");
+    if (applied) {
+      setAppliedPosts(JSON.parse(applied));
+    }
+  };
+
+  const fetchAppliedPostsFromBackend = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const appliedIds = [];
+
+      // Check each post if the student has applied
+      for (const post of posts) {
+        try {
+          const response = await axios.get(
+            `${BACKEND_URL}/api/student-applications/check-applied/${post.id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (response.data.ok && response.data.hasApplied) {
+            appliedIds.push(post.id);
+          }
+        } catch (error) {
+          console.error(`Error checking application for post ${post.id}:`, error);
+        }
+      }
+
+      setAppliedPosts(appliedIds);
+      localStorage.setItem("appliedPosts", JSON.stringify(appliedIds));
+    } catch (error) {
+      console.error("Error fetching applied posts:", error);
     }
   };
 
@@ -116,6 +169,10 @@ export default function StudentPosts() {
 
       if (response.data.ok) {
         setSuccessMsg("Application submitted successfully!");
+        // Add to applied posts
+        const updatedApplied = [...appliedPosts, selectedPost.id];
+        setAppliedPosts(updatedApplied);
+        localStorage.setItem("appliedPosts", JSON.stringify(updatedApplied));
         setApplyDialogOpen(false);
         setSelectedPost(null);
       }
@@ -128,6 +185,14 @@ export default function StudentPosts() {
 
   const getFilteredPosts = () => {
     let filtered = posts;
+
+    if (showAppliedOnly) {
+      // Show only applied posts
+      filtered = filtered.filter((post) => appliedPosts.includes(post.id));
+    } else {
+      // Show all posts (including applied ones in main list)
+      // No filtering needed for applied posts here since we want them in main list too
+    }
 
     if (showSavedOnly) {
       filtered = filtered.filter((post) => savedPosts.includes(post.id));
@@ -144,6 +209,16 @@ export default function StudentPosts() {
   };
 
   const filteredPosts = getFilteredPosts();
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPosts = filteredPosts.slice(startIndex, endIndex);
+
+  const handlePageChange = (event, page) => {
+    setCurrentPage(page);
+  };
 
   if (loading) {
     return (
@@ -163,10 +238,12 @@ export default function StudentPosts() {
           variant="h4"
           sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
         >
-          Available Opportunities
+          {showAppliedOnly ? "Applied Posts" : "Available Opportunities"}
         </Typography>
         <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
-          Explore and apply to approved internship and job opportunities
+          {showAppliedOnly
+            ? "View and track your applied internship and job opportunities"
+            : "Explore and apply to approved internship and job opportunities"}
         </Typography>
 
         {/* Stats */}
@@ -185,6 +262,17 @@ export default function StudentPosts() {
             </Typography>
             <Typography variant="h6" sx={{ color: "#a78bfa", fontWeight: 700 }}>
               {savedPosts.length}
+            </Typography>
+          </Box>
+          <Box
+            sx={{ cursor: "pointer" }}
+            onClick={() => setShowAppliedOnly(true)}
+          >
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              Applied Posts
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
+              {appliedPosts.length}
             </Typography>
           </Box>
         </Stack>
@@ -262,6 +350,24 @@ export default function StudentPosts() {
           >
             Saved ({savedPosts.length})
           </Button>
+          {showAppliedOnly && (
+            <Button
+              variant="outlined"
+              onClick={() => setShowAppliedOnly(false)}
+              sx={{
+                color: "#10b981",
+                borderColor: "#10b981",
+                textTransform: "none",
+                fontWeight: 600,
+                "&:hover": {
+                  bgcolor: "rgba(16, 185, 129, 0.1)",
+                  borderColor: "#10b981",
+                },
+              }}
+            >
+              Back to All Posts
+            </Button>
+          )}
         </Stack>
       </Box>
 
@@ -277,29 +383,63 @@ export default function StudentPosts() {
           }}
         >
           <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
-            {showSavedOnly ? "No saved posts yet" : "No opportunities found"}
+            {showSavedOnly
+              ? "No saved posts yet"
+              : showAppliedOnly
+              ? "No applied posts yet"
+              : "No opportunities found"}
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
             {showSavedOnly
               ? "Save posts to view them here"
+              : showAppliedOnly
+              ? "Apply to posts to view them here"
               : "Try adjusting your filters or search query"}
           </Typography>
         </Box>
       ) : (
-        <Stack spacing={3}>
-          {filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              isSaved={savedPosts.includes(post.id)}
-              onToggleSave={() => toggleSavePost(post.id)}
-              onApply={() => handleApplyClick(post)}
-              onViewDetails={() => router.push(`/post/postdetails/${post.id}`)}
-              onShare={() => handleShare(post)}
-            />
-          ))}
-        </Stack>
+        <>
+          <Stack spacing={3}>
+            {currentPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                isSaved={savedPosts.includes(post.id)}
+                onToggleSave={() => toggleSavePost(post.id)}
+                onApply={() => handleApplyClick(post)}
+                onViewDetails={() => router.push(`/post/postdetails/${post.id}`)}
+                onShare={() => handleShare(post)}
+              />
+            ))}
+          </Stack>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    color: "#e2e8f0",
+                  },
+                  "& .Mui-selected": {
+                    backgroundColor: "#8b5cf6 !important",
+                    color: "white",
+                  },
+                  "& .MuiPaginationItem-root:hover": {
+                    backgroundColor: "rgba(139, 92, 246, 0.1)",
+                  },
+                }}
+              />
+            </Box>
+          )}
+        </>
       )}
+
+
 
       {/* Apply Dialog */}
       <ApplyDialog
