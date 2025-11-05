@@ -35,6 +35,7 @@ export default function StudentPosts() {
   const [appliedPosts, setAppliedPosts] = useState([]);
 
   const [showAppliedOnly, setShowAppliedOnly] = useState(false);
+  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 10;
 
@@ -46,7 +47,7 @@ export default function StudentPosts() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterIndustry, searchQuery, showSavedOnly, showAppliedOnly]);
+  }, [filterIndustry, searchQuery, showSavedOnly, showAppliedOnly, showHistoryOnly]);
 
   useEffect(() => {
     if (posts.length > 0) {
@@ -183,15 +184,25 @@ export default function StudentPosts() {
     }
   };
 
+  const isExpired = (post) => {
+    if (!post.application_deadline) return true; // null deadline means expired
+    const deadline = new Date(post.application_deadline);
+    const now = new Date();
+    return deadline < now;
+  };
+
   const getFilteredPosts = () => {
     let filtered = posts;
 
     if (showAppliedOnly) {
-      // Show only applied posts
-      filtered = filtered.filter((post) => appliedPosts.includes(post.id));
+      // Show only applied posts that are not expired
+      filtered = filtered.filter((post) => appliedPosts.includes(post.id) && !isExpired(post));
+    } else if (showHistoryOnly) {
+      // Show only expired applied posts
+      filtered = filtered.filter((post) => appliedPosts.includes(post.id) && isExpired(post));
     } else {
-      // Show all posts (including applied ones in main list)
-      // No filtering needed for applied posts here since we want them in main list too
+      // Show all posts excluding applied ones (both active and expired)
+      filtered = filtered.filter((post) => !appliedPosts.includes(post.id));
     }
 
     if (showSavedOnly) {
@@ -238,11 +249,13 @@ export default function StudentPosts() {
           variant="h4"
           sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
         >
-          {showAppliedOnly ? "Applied Posts" : "Available Opportunities"}
+          {showAppliedOnly ? "Applied Posts" : showHistoryOnly ? "Application History" : "Available Opportunities"}
         </Typography>
         <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
           {showAppliedOnly
             ? "View and track your applied internship and job opportunities"
+            : showHistoryOnly
+            ? "View your past applications that have expired or closed"
             : "Explore and apply to approved internship and job opportunities"}
         </Typography>
 
@@ -253,25 +266,26 @@ export default function StudentPosts() {
               cursor: "pointer",
               p: 2,
               borderRadius: 1,
-              border: !showAppliedOnly && !showSavedOnly ? "2px solid #8b5cf6" : "2px solid transparent",
-              boxShadow: !showAppliedOnly && !showSavedOnly ? "0 0 10px rgba(139, 92, 246, 0.5)" : "none",
+              border: !showAppliedOnly && !showSavedOnly && !showHistoryOnly ? "2px solid #8b5cf6" : "2px solid transparent",
+              boxShadow: !showAppliedOnly && !showSavedOnly && !showHistoryOnly ? "0 0 10px rgba(139, 92, 246, 0.5)" : "none",
               transition: "all 0.2s",
             }}
             onClick={() => {
               setShowAppliedOnly(false);
               setShowSavedOnly(false);
+              setShowHistoryOnly(false);
             }}
           >
             <Typography
               variant="body2"
               sx={{
-                color: !showAppliedOnly && !showSavedOnly ? "#8b5cf6" : "#94a3b8",
+                color: !showAppliedOnly && !showSavedOnly && !showHistoryOnly ? "#8b5cf6" : "#94a3b8",
               }}
             >
               Total Opportunities
             </Typography>
             <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
-              {posts.length}
+              {posts.filter((post) => !appliedPosts.includes(post.id)).length}
             </Typography>
           </Box>
           <Box
@@ -304,7 +318,10 @@ export default function StudentPosts() {
               boxShadow: showAppliedOnly ? "0 0 10px rgba(16, 185, 129, 0.5)" : "none",
               transition: "all 0.2s",
             }}
-            onClick={() => setShowAppliedOnly(true)}
+            onClick={() => {
+              setShowAppliedOnly(true);
+              setShowHistoryOnly(false);
+            }}
           >
             <Typography
               variant="body2"
@@ -315,7 +332,39 @@ export default function StudentPosts() {
               Applied Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
-              {appliedPosts.length}
+              {appliedPosts.filter(id => {
+                const post = posts.find(p => p.id === id);
+                return post && !isExpired(post);
+              }).length}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              cursor: "pointer",
+              p: 2,
+              borderRadius: 1,
+              border: showHistoryOnly ? "2px solid #f59e0b" : "2px solid transparent",
+              boxShadow: showHistoryOnly ? "0 0 10px rgba(245, 158, 11, 0.5)" : "none",
+              transition: "all 0.2s",
+            }}
+            onClick={() => {
+              setShowHistoryOnly(true);
+              setShowAppliedOnly(false);
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: showHistoryOnly ? "#f59e0b" : "#94a3b8",
+              }}
+            >
+              Application History
+            </Typography>
+            <Typography variant="h6" sx={{ color: "#f59e0b", fontWeight: 700 }}>
+              {appliedPosts.filter(id => {
+                const post = posts.find(p => p.id === id);
+                return post && isExpired(post);
+              }).length}
             </Typography>
           </Box>
         </Stack>
@@ -393,10 +442,13 @@ export default function StudentPosts() {
           >
             Saved ({savedPosts.length})
           </Button>
-          {showAppliedOnly && (
+          {(showAppliedOnly || showHistoryOnly) && (
             <Button
               variant="outlined"
-              onClick={() => setShowAppliedOnly(false)}
+              onClick={() => {
+                setShowAppliedOnly(false);
+                setShowHistoryOnly(false);
+              }}
               sx={{
                 color: "#10b981",
                 borderColor: "#10b981",
@@ -430,6 +482,8 @@ export default function StudentPosts() {
               ? "No saved posts yet"
               : showAppliedOnly
               ? "No applied posts yet"
+              : showHistoryOnly
+              ? "No application history yet"
               : "No opportunities found"}
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
@@ -437,6 +491,8 @@ export default function StudentPosts() {
               ? "Save posts to view them here"
               : showAppliedOnly
               ? "Apply to posts to view them here"
+              : showHistoryOnly
+              ? "Expired or closed applications will appear here"
               : "Try adjusting your filters or search query"}
           </Typography>
         </Box>
