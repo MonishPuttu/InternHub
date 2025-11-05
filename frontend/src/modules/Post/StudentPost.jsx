@@ -248,16 +248,47 @@ export default function StudentPosts() {
 
         {/* Stats */}
         <Stack direction="row" spacing={3} sx={{ mb: 3 }}>
-          <Box>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Box
+            sx={{
+              cursor: "pointer",
+              p: 2,
+              borderRadius: 1,
+              border: !showAppliedOnly && !showSavedOnly ? "2px solid #8b5cf6" : "2px solid transparent",
+              boxShadow: !showAppliedOnly && !showSavedOnly ? "0 0 10px rgba(139, 92, 246, 0.5)" : "none",
+              transition: "all 0.2s",
+            }}
+            onClick={() => {
+              setShowAppliedOnly(false);
+              setShowSavedOnly(false);
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: !showAppliedOnly && !showSavedOnly ? "#8b5cf6" : "#94a3b8",
+              }}
+            >
               Total Opportunities
             </Typography>
             <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
               {posts.length}
             </Typography>
           </Box>
-          <Box>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 1,
+              border: showSavedOnly ? "2px solid #a78bfa" : "2px solid transparent",
+              boxShadow: showSavedOnly ? "0 0 10px rgba(167, 139, 250, 0.5)" : "none",
+              transition: "all 0.2s",
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: showSavedOnly ? "#a78bfa" : "#94a3b8",
+              }}
+            >
               Saved Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#a78bfa", fontWeight: 700 }}>
@@ -265,10 +296,22 @@ export default function StudentPosts() {
             </Typography>
           </Box>
           <Box
-            sx={{ cursor: "pointer" }}
+            sx={{
+              cursor: "pointer",
+              p: 2,
+              borderRadius: 1,
+              border: showAppliedOnly ? "2px solid #10b981" : "2px solid transparent",
+              boxShadow: showAppliedOnly ? "0 0 10px rgba(16, 185, 129, 0.5)" : "none",
+              transition: "all 0.2s",
+            }}
             onClick={() => setShowAppliedOnly(true)}
           >
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: showAppliedOnly ? "#10b981" : "#94a3b8",
+              }}
+            >
               Applied Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
