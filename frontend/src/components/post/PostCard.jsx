@@ -69,22 +69,6 @@ export default function PostCard({
             flexWrap: "wrap",
           }}
         >
-          {STATUS_LABELS[post.status] && (
-            <Box sx={{ minWidth: 100 }}>
-              <Chip
-                label={STATUS_LABELS[post.status]}
-                size="small"
-                sx={{
-                  bgcolor: `${STATUS_COLORS[post.status]}30`,
-                  color: STATUS_COLORS[post.status],
-                  fontWeight: 600,
-                  fontSize: "0.7rem",
-                  px: 1,
-                }}
-              />
-            </Box>
-          )}
-
           <Box sx={{ flex: 1, minWidth: 250 }}>
             <Box sx={{ mb: 2 }}>
               <Typography
