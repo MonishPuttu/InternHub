@@ -87,3 +87,15 @@ export const genderOptions = [
   { value: "female", label: "Female" },
   { value: "other", label: "Other" },
 ];
+
+export const branchOptions = [
+  { value: "CSE", label: "Computer Science Engineering" },
+  { value: "IT", label: "Information Technology" },
+  { value: "AIML", label: "Artificial Intelligence & Machine Learning" },
+  { value: "ECE", label: "Electronics & Communication Engineering" },
+  { value: "EEE", label: "Electrical & Electronics Engineering" },
+  { value: "CIVIL", label: "Civil Engineering" },
+  { value: "MECH", label: "Mechanical Engineering" },
+  { value: "MBA", label: "Master of Business Administration" },
+  { value: "MCA", label: "Master of Computer Applications" },
+];

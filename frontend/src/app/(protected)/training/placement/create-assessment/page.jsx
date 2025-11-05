@@ -23,9 +23,23 @@ import {
   Radio,
   Checkbox,
   Chip,
+  OutlinedInput,
+  ListItemText,
 } from "@mui/material";
 import { Add, Delete, ArrowBack, Save } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+
+const BRANCH_OPTIONS = [
+  "CSE",
+  "IT",
+  "AIML",
+  "ECE",
+  "EEE",
+  "CIVIL",
+  "MECH",
+  "MBA",
+  "MCA",
+];
 
 export default function CreateAssessment() {
   const router = useRouter();
@@ -42,6 +56,7 @@ export default function CreateAssessment() {
     passingMarks: 0,
     startDate: "",
     endDate: "",
+    allowedBranches: [],
   });
 
   const [questions, setQuestions] = useState([
@@ -59,7 +74,6 @@ export default function CreateAssessment() {
     },
   ]);
 
-  // Get current year and next year for date validation
   const currentYear = new Date().getFullYear();
   const maxYear = currentYear + 1;
 
@@ -67,19 +81,16 @@ export default function CreateAssessment() {
     setAssessment((prev) => {
       const updated = { ...prev, [field]: value };
 
-      // Title validation (max 50 characters)
       if (field === "title" && value.length > 50) {
         setError("Title cannot exceed 50 characters");
         return prev;
       }
 
-      // Description validation (max 250 characters)
       if (field === "description" && value.length > 250) {
         setError("Description cannot exceed 250 characters");
         return prev;
       }
 
-      // Duration validation (max 3 hours = 180 minutes)
       if (field === "duration") {
         if (value > 180) {
           setError("Duration cannot exceed 3 hours (180 minutes)");
@@ -87,7 +98,6 @@ export default function CreateAssessment() {
         }
       }
 
-      // Passing marks validation
       if (field === "passingMarks" && value > updated.totalMarks) {
         setError("Passing marks cannot exceed total marks");
         return prev;
@@ -95,7 +105,6 @@ export default function CreateAssessment() {
         setError("");
       }
 
-      // Date validation
       if (field === "startDate" || field === "endDate") {
         const year = new Date(value).getFullYear();
         if (year > maxYear) {
@@ -104,7 +113,6 @@ export default function CreateAssessment() {
         }
       }
 
-      // Clear error if validation passes
       if (
         (field === "title" && value.length <= 50) ||
         (field === "description" && value.length <= 250)
@@ -119,13 +127,11 @@ export default function CreateAssessment() {
   const handleQuestionChange = (index, field, value) => {
     const updatedQuestions = [...questions];
 
-    // Question text validation (max 500 characters)
     if (field === "questionText" && value.length > 500) {
       setError("Question text cannot exceed 500 characters");
       return;
     }
 
-    // Marks validation (max 3 digits = 999)
     if (field === "marks") {
       if (value > 999) {
         setError("Marks cannot exceed 999");
@@ -136,7 +142,6 @@ export default function CreateAssessment() {
     updatedQuestions[index][field] = value;
     setQuestions(updatedQuestions);
 
-    // Recalculate total marks
     const total = updatedQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
     setAssessment((prev) => {
       const updated = { ...prev, totalMarks: total };
@@ -146,7 +151,6 @@ export default function CreateAssessment() {
       return updated;
     });
 
-    // Clear error if valid
     if (field === "questionText" && value.length <= 500) {
       setError("");
     }
@@ -156,7 +160,6 @@ export default function CreateAssessment() {
   };
 
   const handleOptionChange = (qIndex, optionId, text) => {
-    // Option text validation (max 100 characters)
     if (text.length > 100) {
       setError("Option text cannot exceed 100 characters");
       return;
@@ -169,7 +172,6 @@ export default function CreateAssessment() {
     if (option) option.text = text;
     setQuestions(updatedQuestions);
 
-    // Clear error if valid
     if (text.length <= 100) {
       setError("");
     }
@@ -229,7 +231,10 @@ export default function CreateAssessment() {
       if (!assessment.startDate) throw new Error("Start date is required");
       if (!assessment.endDate) throw new Error("End date is required");
 
-      // Additional validations
+      if (assessment.allowedBranches.length === 0) {
+        throw new Error("Please select at least one department");
+      }
+
       if (assessment.title.length > 50)
         throw new Error("Title cannot exceed 50 characters");
       if (assessment.description.length > 250)
@@ -425,6 +430,68 @@ export default function CreateAssessment() {
             />
           </Box>
 
+          {/* Department Filter */}
+          <Box mb={2}>
+            <FormControl fullWidth>
+              <InputLabel
+                sx={{
+                  color: "#94a3b8",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                }}
+              >
+                Target Departments *
+              </InputLabel>
+              <Select
+                multiple
+                value={assessment.allowedBranches}
+                onChange={(e) =>
+                  handleAssessmentChange("allowedBranches", e.target.value)
+                }
+                input={<OutlinedInput label="Target Departments *" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip
+                        key={value}
+                        label={value}
+                        sx={{
+                          bgcolor: "#8b5cf620",
+                          color: "#8b5cf6",
+                          fontWeight: "500",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
+                sx={{
+                  color: "#e2e8f0",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#334155",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#8b5cf6",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#8b5cf6",
+                  },
+                }}
+              >
+                {BRANCH_OPTIONS.map((branch) => (
+                  <MenuItem key={branch} value={branch}>
+                    <Checkbox
+                      checked={assessment.allowedBranches.indexOf(branch) > -1}
+                      sx={{
+                        color: "#94a3b8",
+                        "&.Mui-checked": { color: "#8b5cf6" },
+                      }}
+                    />
+                    <ListItemText primary={branch} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
           {/* Row 2: Duration, Total Marks, Passing Marks */}
           <Box display="flex" gap={2} mb={2}>
             <TextField
@@ -543,7 +610,7 @@ export default function CreateAssessment() {
 
         <Divider sx={{ my: 4, bgcolor: "#334155" }} />
 
-        {/* Questions */}
+        {/* Questions Section */}
         <Box>
           <Box
             display="flex"
@@ -599,7 +666,7 @@ export default function CreateAssessment() {
                   </IconButton>
                 </Box>
 
-                {/* Row 1: Question Text (Full Width) */}
+                {/* Question Text */}
                 <TextField
                   fullWidth
                   multiline
@@ -622,7 +689,7 @@ export default function CreateAssessment() {
                   }}
                 />
 
-                {/* Row 2: Type, Marks, Difficulty */}
+                {/* Type, Marks, Difficulty */}
                 <Box display="flex" gap={2} mb={2}>
                   <FormControl sx={{ flex: 1 }}>
                     <InputLabel sx={{ color: "#94a3b8" }}>Type</InputLabel>
@@ -705,7 +772,7 @@ export default function CreateAssessment() {
                   </FormControl>
                 </Box>
 
-                {/* Row 3: Options Section */}
+                {/* Options Section */}
                 <Box mb={2}>
                   <Box
                     display="flex"
@@ -781,7 +848,7 @@ export default function CreateAssessment() {
                   </Typography>
                 </Box>
 
-                {/* Row 4: Correct Answer */}
+                {/* Correct Answer */}
                 <Box>
                   <Typography
                     variant="subtitle2"
@@ -808,7 +875,14 @@ export default function CreateAssessment() {
                         <FormControlLabel
                           key={option.id}
                           value={option.id.toString()}
-                          control={<Radio sx={{ color: "#8b5cf6" }} />}
+                          control={
+                            <Radio
+                              sx={{
+                                color: "#8b5cf6",
+                                "&.Mui-checked": { color: "#8b5cf6" },
+                              }}
+                            />
+                          }
                           label={option.text || `Option ${option.id}`}
                           sx={{
                             color: "#e2e8f0",
@@ -849,7 +923,10 @@ export default function CreateAssessment() {
                                   newValue
                                 );
                               }}
-                              sx={{ color: "#8b5cf6" }}
+                              sx={{
+                                color: "#8b5cf6",
+                                "&.Mui-checked": { color: "#8b5cf6" },
+                              }}
                             />
                           }
                           label={option.text || `Option ${option.id}`}

@@ -33,8 +33,30 @@ router.post("/assessments", requireAuth, async (req, res) => {
       passingMarks,
       startDate,
       endDate,
+      allowedBranches,
       questions: questionsList,
     } = req.body;
+
+    if (!title || !startDate || !endDate) {
+      return res.status(400).json({
+        ok: false,
+        error: "Title, start date, and end date are required",
+      });
+    }
+
+    if (!allowedBranches || allowedBranches.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "At least one department must be selected",
+      });
+    }
+
+    if (!questionsList || questionsList.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "At least one question is required",
+      });
+    }
 
     // Create assessment
     const [newAssessment] = await db
@@ -50,25 +72,24 @@ router.post("/assessments", requireAuth, async (req, res) => {
         end_date: new Date(endDate),
         created_by: req.user.id,
         is_active: true,
+        allowed_branches: allowedBranches,
       })
       .returning();
 
     // Add questions
-    if (questionsList && questionsList.length > 0) {
-      const questionsToInsert = questionsList.map((q, index) => ({
-        assessment_id: newAssessment.id,
-        question_text: q.questionText,
-        question_type: q.questionType,
-        options: q.options,
-        correct_answer: q.correctAnswer,
-        marks: q.marks,
-        difficulty: q.difficulty,
-        tags: q.tags,
-        order_index: index + 1,
-      }));
+    const questionsToInsert = questionsList.map((q, index) => ({
+      assessment_id: newAssessment.id,
+      question_text: q.questionText,
+      question_type: q.questionType,
+      options: q.options,
+      correct_answer: q.correctAnswer,
+      marks: q.marks,
+      difficulty: q.difficulty,
+      tags: q.tags || [],
+      order_index: index + 1,
+    }));
 
-      await db.insert(questions).values(questionsToInsert);
-    }
+    await db.insert(questions).values(questionsToInsert);
 
     res.status(201).json({
       ok: true,
@@ -85,7 +106,7 @@ router.post("/assessments", requireAuth, async (req, res) => {
   }
 });
 
-// Get all assessments (Placement Cell)
+// Get all assessments (Placement Cell) - Return only assessments created by this placement cell user
 router.get("/assessments", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "placement") {
@@ -93,8 +114,23 @@ router.get("/assessments", requireAuth, async (req, res) => {
     }
 
     const allAssessments = await db
-      .select()
+      .select({
+        id: assessments.id,
+        title: assessments.title,
+        description: assessments.description,
+        type: assessments.type,
+        duration: assessments.duration,
+        totalMarks: assessments.total_marks,
+        passingMarks: assessments.passing_marks,
+        startDate: assessments.start_date,
+        endDate: assessments.end_date,
+        isActive: assessments.is_active,
+        allowedBranches: assessments.allowed_branches,
+        createdBy: assessments.created_by,
+        createdAt: assessments.created_at,
+      })
       .from(assessments)
+      .where(eq(assessments.created_by, req.user.id))
       .orderBy(desc(assessments.created_at));
 
     res.json({ ok: true, data: allAssessments });
@@ -104,7 +140,7 @@ router.get("/assessments", requireAuth, async (req, res) => {
   }
 });
 
-// Get assessment by ID with questions (Placement Cell)
+// Get assessment by ID with questions
 router.get("/assessments/:assessmentId", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "placement") {
@@ -154,7 +190,6 @@ router.get(
 
       const { assessmentId } = req.params;
 
-      // Get leaderboard with student details
       const leaderboardData = await db
         .select({
           rank: leaderboard.rank,
@@ -181,7 +216,7 @@ router.get(
   }
 );
 
-// Get student details (Placement Cell)
+// Get student details
 router.get("/students/:studentId/details", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "placement") {
@@ -194,9 +229,6 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Student ID required" });
     }
 
-    console.log("Fetching student details for:", studentId);
-
-    // Get student profile (contains phone number)
     const profileResult = await db
       .select()
       .from(student_profile)
@@ -210,7 +242,6 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
 
     const studentProfileData = profileResult[0];
 
-    // Get user details
     const userResult = await db
       .select()
       .from(user)
@@ -222,7 +253,6 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
 
     const userData = userResult[0];
 
-    // Combine results - contact_number is in student_profile
     const profile = {
       userId: studentProfileData.user_id,
       fullName: studentProfileData.full_name,
@@ -236,7 +266,6 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
       currentSemester: studentProfileData.current_semester || "N/A",
     };
 
-    // Get assessment attempts
     const attempts = await db
       .select({
         assessmentTitle: assessments.title,
@@ -252,13 +281,6 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
       )
       .where(eq(student_attempts.student_id, studentId))
       .orderBy(desc(student_attempts.created_at));
-
-    console.log("Successfully fetched student details:", {
-      fullName: profile.fullName,
-      email: profile.email,
-      phone: profile.phone,
-      assessmentCount: attempts.length,
-    });
 
     res.json({
       ok: true,
@@ -286,7 +308,6 @@ router.delete("/assessments/:assessmentId", requireAuth, async (req, res) => {
 
     const { assessmentId } = req.params;
 
-    // Check if assessment exists
     const [existingAssessment] = await db
       .select()
       .from(assessments)
@@ -297,8 +318,12 @@ router.delete("/assessments/:assessmentId", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Assessment not found" });
     }
 
+    // Verify ownership
+    if (existingAssessment.created_by !== req.user.id) {
+      return res.status(403).json({ ok: false, error: "Access denied" });
+    }
+
     // Delete in order to maintain referential integrity
-    // Delete student answers first
     await db.delete(student_answers).where(
       sql`attempt_id IN (
           SELECT id FROM student_attempts 
@@ -306,25 +331,20 @@ router.delete("/assessments/:assessmentId", requireAuth, async (req, res) => {
         )`
     );
 
-    // Delete report cards
     await db
       .delete(report_cards)
       .where(eq(report_cards.assessment_id, assessmentId));
 
-    // Delete student attempts
     await db
       .delete(student_attempts)
       .where(eq(student_attempts.assessment_id, assessmentId));
 
-    // Delete leaderboard entries
     await db
       .delete(leaderboard)
       .where(eq(leaderboard.assessment_id, assessmentId));
 
-    // Delete questions
     await db.delete(questions).where(eq(questions.assessment_id, assessmentId));
 
-    // Finally delete the assessment
     await db.delete(assessments).where(eq(assessments.id, assessmentId));
 
     res.json({
@@ -350,10 +370,31 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "Access denied" });
     }
 
+    const [studentProfile] = await db
+      .select({ branch: student_profile.branch })
+      .from(student_profile)
+      .where(eq(student_profile.user_id, req.user.id))
+      .limit(1);
+
+    if (!studentProfile) {
+      return res.status(400).json({
+        ok: false,
+        error: "Student profile not found. Please complete your profile.",
+      });
+    }
+
+    if (!studentProfile.branch) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "Branch not set. Please update your profile with your department.",
+      });
+    }
+
+    const studentBranch = studentProfile.branch;
     const currentDate = new Date();
 
-    // Get active assessments
-    const availableAssessments = await db
+    const allAssessments = await db
       .select({
         id: assessments.id,
         title: assessments.title,
@@ -364,6 +405,7 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
         passingMarks: assessments.passing_marks,
         startDate: assessments.start_date,
         endDate: assessments.end_date,
+        allowedBranches: assessments.allowed_branches,
       })
       .from(assessments)
       .where(
@@ -375,7 +417,14 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
       )
       .orderBy(assessments.start_date);
 
-    // Check which assessments are attempted
+    const availableAssessments = allAssessments.filter((assessment) => {
+      const allowedBranches = assessment.allowedBranches || [];
+      return (
+        Array.isArray(allowedBranches) &&
+        allowedBranches.includes(studentBranch)
+      );
+    });
+
     const attemptedAssessmentIds = await db
       .select({ assessmentId: student_attempts.assessment_id })
       .from(student_attempts)
@@ -402,7 +451,7 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
   }
 });
 
-// Start assessment attempt - FIXED VERSION
+// Start assessment attempt
 router.post(
   "/student/assessments/:assessmentId/start",
   requireAuth,
@@ -415,7 +464,6 @@ router.post(
       const { assessmentId } = req.params;
       const studentId = req.user.id;
 
-      // Get assessment details first
       const [assessment] = await db
         .select()
         .from(assessments)
@@ -426,6 +474,25 @@ router.post(
         return res
           .status(404)
           .json({ ok: false, error: "Assessment not found" });
+      }
+
+      const [studentProfile] = await db
+        .select({ branch: student_profile.branch })
+        .from(student_profile)
+        .where(eq(student_profile.user_id, studentId))
+        .limit(1);
+
+      if (studentProfile && studentProfile.branch) {
+        const allowedBranches = assessment.allowed_branches || [];
+        if (
+          !Array.isArray(allowedBranches) ||
+          !allowedBranches.includes(studentProfile.branch)
+        ) {
+          return res.status(403).json({
+            ok: false,
+            error: "This assessment is not available for your department",
+          });
+        }
       }
 
       // Check if already completed
@@ -461,7 +528,6 @@ router.post(
         .limit(1);
 
       if (inProgressAttempt) {
-        // Return existing attempt with duration
         const assessmentQuestions = await db
           .select({
             id: questions.id,
@@ -480,7 +546,7 @@ router.post(
           data: {
             attempt: {
               ...inProgressAttempt,
-              duration: assessment.duration, // Add duration from assessment
+              duration: assessment.duration,
             },
             questions: assessmentQuestions,
           },
@@ -498,7 +564,6 @@ router.post(
         })
         .returning();
 
-      // Get questions (without correct answers)
       const assessmentQuestions = await db
         .select({
           id: questions.id,
@@ -517,7 +582,7 @@ router.post(
         data: {
           attempt: {
             ...newAttempt,
-            duration: assessment.duration, // Add duration from assessment
+            duration: assessment.duration,
           },
           questions: assessmentQuestions,
         },
@@ -542,7 +607,6 @@ router.post(
       const { attemptId } = req.params;
       const { questionId, answer, timeTaken } = req.body;
 
-      // Check if answer already exists
       const [existingAnswer] = await db
         .select()
         .from(student_answers)
@@ -555,13 +619,11 @@ router.post(
         .limit(1);
 
       if (existingAnswer) {
-        // Update existing answer
         await db
           .update(student_answers)
           .set({ answer, time_taken: timeTaken, updated_at: new Date() })
           .where(eq(student_answers.id, existingAnswer.id));
       } else {
-        // Insert new answer
         await db.insert(student_answers).values({
           attempt_id: attemptId,
           question_id: questionId,
@@ -590,7 +652,6 @@ router.post(
 
       const { attemptId } = req.params;
 
-      // Get attempt details
       const [attempt] = await db
         .select()
         .from(student_attempts)
@@ -601,7 +662,6 @@ router.post(
         return res.status(404).json({ ok: false, error: "Attempt not found" });
       }
 
-      // Get all questions with answers
       const questionsWithAnswers = await db
         .select({
           questionId: questions.id,
@@ -644,14 +704,6 @@ router.post(
           const marksAwarded = isCorrect ? q.marks : 0;
           totalScore += marksAwarded;
 
-          console.log("Question Evaluation:", {
-            questionId: q.questionId,
-            correctAnswer: sortedCorrect,
-            studentAnswer: sortedStudent,
-            isCorrect,
-            marksAwarded,
-          });
-
           await db
             .update(student_answers)
             .set({
@@ -662,7 +714,6 @@ router.post(
         }
       }
 
-      // Get assessment details
       const [assessment] = await db
         .select()
         .from(assessments)
@@ -676,7 +727,6 @@ router.post(
         (new Date() - new Date(attempt.start_time)) / 60000
       );
 
-      // Update attempt
       await db
         .update(student_attempts)
         .set({
@@ -689,7 +739,6 @@ router.post(
         })
         .where(eq(student_attempts.id, attemptId));
 
-      // Update leaderboard
       await updateLeaderboard(attempt.assessment_id);
 
       await generateReportCard(
@@ -793,7 +842,6 @@ router.get("/student/report-cards", requireAuth, async (req, res) => {
 // Helper function to update leaderboard
 async function updateLeaderboard(assessmentId) {
   try {
-    // Get all completed attempts for this assessment
     const attempts = await db
       .select()
       .from(student_attempts)
@@ -806,16 +854,13 @@ async function updateLeaderboard(assessmentId) {
       .orderBy(desc(student_attempts.total_score), student_attempts.time_taken);
 
     if (!attempts || attempts.length === 0) {
-      console.log("No completed attempts found for assessment:", assessmentId);
       return;
     }
 
-    // Delete existing leaderboard entries
     await db
       .delete(leaderboard)
       .where(eq(leaderboard.assessment_id, assessmentId));
 
-    // Insert new leaderboard entries with ranks
     const leaderboardEntries = attempts.map((attempt, index) => ({
       student_id: attempt.student_id,
       assessment_id: attempt.assessment_id,
@@ -832,7 +877,6 @@ async function updateLeaderboard(assessmentId) {
   }
 }
 
-// Helper function to generate report card
 async function generateReportCard(
   attemptId,
   studentId,
@@ -846,7 +890,6 @@ async function generateReportCard(
       .where(eq(student_attempts.id, attemptId))
       .limit(1);
 
-    // Calculate grade
     const percentage = attempt.percentage_score;
     let grade;
     if (percentage >= 90) grade = "A+";
@@ -856,7 +899,6 @@ async function generateReportCard(
     else if (percentage >= 50) grade = "C";
     else grade = "F";
 
-    // Analyze performance by tags
     const tagPerformance = {};
 
     questionsWithAnswers.forEach((q) => {
@@ -867,10 +909,24 @@ async function generateReportCard(
           }
           tagPerformance[tag].total++;
           tagPerformance[tag].marks += q.marks;
+
           if (q.studentAnswer) {
+            // ✅ FIXED: Use same comparison logic as submit endpoint
+            const correctAnswerArray = Array.isArray(q.correctAnswer)
+              ? q.correctAnswer.map(String)
+              : [String(q.correctAnswer)];
+
+            const studentAnswerArray = Array.isArray(q.studentAnswer)
+              ? q.studentAnswer.map(String)
+              : [String(q.studentAnswer)];
+
+            const sortedCorrect = correctAnswerArray.sort();
+            const sortedStudent = studentAnswerArray.sort();
+
             const isCorrect =
-              JSON.stringify(q.correctAnswer) ===
-              JSON.stringify(q.studentAnswer);
+              sortedCorrect.length === sortedStudent.length &&
+              sortedCorrect.every((val, idx) => val === sortedStudent[idx]);
+
             if (isCorrect) {
               tagPerformance[tag].correct++;
               tagPerformance[tag].earned += q.marks;
@@ -880,7 +936,6 @@ async function generateReportCard(
       }
     });
 
-    // Identify strengths and weaknesses
     const strengths = [];
     const weaknesses = [];
 
@@ -900,7 +955,6 @@ async function generateReportCard(
           )}. Practice more problems in these areas.`
         : "Great performance! Continue practicing to maintain your level.";
 
-    // Insert report card
     await db.insert(report_cards).values({
       student_id: studentId,
       attempt_id: attemptId,
@@ -918,7 +972,7 @@ async function generateReportCard(
   }
 }
 
-// Get attempt details by ID (for resuming/loading assessment)
+// Get attempt details by ID
 router.get("/student/attempts/:attemptId", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "student") {
@@ -942,7 +996,6 @@ router.get("/student/attempts/:attemptId", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Attempt not found" });
     }
 
-    // Get assessment details for duration
     const [assessment] = await db
       .select()
       .from(assessments)
@@ -962,7 +1015,7 @@ router.get("/student/attempts/:attemptId", requireAuth, async (req, res) => {
   }
 });
 
-// Get questions for an assessment (without correct answers for students)
+// Get questions for an assessment
 router.get(
   "/student/assessments/:assessmentId/questions",
   requireAuth,
@@ -974,7 +1027,6 @@ router.get(
 
       const { assessmentId } = req.params;
 
-      // Validate assessmentId is not undefined
       if (!assessmentId || assessmentId === "undefined") {
         return res
           .status(400)

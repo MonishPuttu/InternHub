@@ -146,10 +146,12 @@ export default function SignUp() {
           value={profileData.college_name || ""}
           onChange={(e) => updateProfileData("college_name", e.target.value)}
         />
-        <StyledTextField
-          label="Branch"
+        <StyledSelect
+          label="Branch/Department"
           value={profileData.branch || ""}
           onChange={(e) => updateProfileData("branch", e.target.value)}
+          options={branchOptions}
+          required
         />
       </Stack>
 

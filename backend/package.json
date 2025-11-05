@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "db:generate": "drizzle-kit generate --config ./drizzle.config.js",
+    "db:generate-new": "drizzle-kit generate --config ./drizzle.config.js",
     "db:push": "drizzle-kit push --config ./drizzle.config.js"
   },
   "keywords": [],

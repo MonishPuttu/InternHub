@@ -21,6 +21,7 @@ export const assessments = pgTable("assessments", {
   start_date: timestamp("start_date").notNull(),
   end_date: timestamp("end_date").notNull(),
   is_active: boolean("is_active").default(true),
+  allowed_branches: jsonb("allowed_branches"),
   created_by: uuid("created_by")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
