@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react"; // ✅ ADD THIS
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -19,32 +20,20 @@ import {
   TableRow,
   Chip,
 } from "@mui/material";
-import { ArrowBack, Email, Phone, TrendingUp } from "@mui/icons-material";
+import { ArrowBack, Email, Phone } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
-export default function StudentDetails({ params: paramsPromise }) {
+export default function StudentDetails({ params }) {
   const router = useRouter();
-  const [studentId, setStudentId] = useState(null);
+  const { studentId } = use(params); // ✅ FIXED: Use React.use()
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const extractParams = async () => {
-      try {
-        const resolvedParams = await paramsPromise;
-        if (!resolvedParams?.studentId) {
-          setLoading(false);
-          return;
-        }
-        setStudentId(resolvedParams.studentId);
-        await fetchStudentDetails(resolvedParams.studentId);
-      } catch (error) {
-        console.error("Error:", error);
-        setLoading(false);
-      }
-    };
-    extractParams();
-  }, [paramsPromise]);
+    if (studentId) {
+      fetchStudentDetails(studentId);
+    }
+  }, [studentId]);
 
   const fetchStudentDetails = async (id) => {
     try {
@@ -73,28 +62,14 @@ export default function StudentDetails({ params: paramsPromise }) {
 
   const { profile, assessmentHistory } = studentData;
 
-  // Calculate useful metrics
-  const totalAssessments = assessmentHistory.length;
-  const completedAssessments = assessmentHistory.filter(
-    (a) => a.status === "completed"
-  ).length;
-  const avgScore =
-    assessmentHistory.length > 0
-      ? Math.round(
-          assessmentHistory.reduce((sum, a) => sum + a.percentage, 0) /
-            assessmentHistory.length
-        )
-      : 0;
-  const bestScore = Math.max(...assessmentHistory.map((a) => a.percentage), 0);
-
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Button
         startIcon={<ArrowBack />}
-        onClick={() => router.push("/training/placement")}
+        onClick={() => router.back()}
         sx={{ mb: 3, color: "#8b5cf6" }}
       >
-        Back to Assessments
+        Back
       </Button>
 
       {/* Student Profile Section */}
@@ -120,7 +95,7 @@ export default function StudentDetails({ params: paramsPromise }) {
             Student Profile
           </Typography>
 
-          {/* Top Row - Name, Roll Number, Email, Branch */}
+          {/* Top Row */}
           <Box
             sx={{
               display: "grid",
@@ -133,7 +108,6 @@ export default function StudentDetails({ params: paramsPromise }) {
               mb: 4,
             }}
           >
-            {/* Name */}
             <Box>
               <Typography
                 variant="body2"
@@ -159,7 +133,6 @@ export default function StudentDetails({ params: paramsPromise }) {
               </Typography>
             </Box>
 
-            {/* Roll Number */}
             <Box>
               <Typography
                 variant="body2"
@@ -184,7 +157,6 @@ export default function StudentDetails({ params: paramsPromise }) {
               </Typography>
             </Box>
 
-            {/* Email */}
             <Box>
               <Typography
                 variant="body2"
@@ -212,7 +184,6 @@ export default function StudentDetails({ params: paramsPromise }) {
               </Box>
             </Box>
 
-            {/* Branch */}
             <Box>
               <Typography
                 variant="body2"
@@ -237,7 +208,7 @@ export default function StudentDetails({ params: paramsPromise }) {
             </Box>
           </Box>
 
-          {/* Bottom Row - Phone, Current Semester */}
+          {/* Bottom Row */}
           <Box
             sx={{
               display: "grid",
@@ -245,7 +216,6 @@ export default function StudentDetails({ params: paramsPromise }) {
               gap: 3,
             }}
           >
-            {/* Phone */}
             <Box>
               <Typography
                 variant="body2"
@@ -272,7 +242,6 @@ export default function StudentDetails({ params: paramsPromise }) {
               </Box>
             </Box>
 
-            {/* Current Semester */}
             <Box>
               <Typography
                 variant="body2"
@@ -302,6 +271,7 @@ export default function StudentDetails({ params: paramsPromise }) {
           </Box>
         </Box>
 
+        {/* Academic Scores */}
         <Box
           sx={{
             display: "grid",
@@ -313,7 +283,6 @@ export default function StudentDetails({ params: paramsPromise }) {
             border: "1px solid #334155",
           }}
         >
-          {/* CGPA */}
           <Card
             sx={{
               bgcolor: "#1e293b",
@@ -347,7 +316,6 @@ export default function StudentDetails({ params: paramsPromise }) {
             </CardContent>
           </Card>
 
-          {/* 10th Score */}
           <Card
             sx={{
               bgcolor: "#1e293b",
@@ -381,7 +349,6 @@ export default function StudentDetails({ params: paramsPromise }) {
             </CardContent>
           </Card>
 
-          {/* 12th Score */}
           <Card
             sx={{
               bgcolor: "#1e293b",
@@ -415,7 +382,6 @@ export default function StudentDetails({ params: paramsPromise }) {
             </CardContent>
           </Card>
 
-          {/* Average Assessment Score */}
           <Card
             sx={{
               bgcolor: "#1e293b",

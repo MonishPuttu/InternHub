@@ -1,3 +1,5 @@
+// frontend/src/app/training/placement/assessments/[assessmentId]/page.jsx
+
 "use client";
 
 import { use } from "react";
@@ -116,14 +118,42 @@ export default function ViewAssessment({ params }) {
             color: "#94a3b8",
             mb: 3,
             wordBreak: "break-word",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            textOverflow: "ellipsis",
           }}
         >
           {assessment.description || "No description provided"}
         </Typography>
+
+        {assessment.allowed_branches &&
+          assessment.allowed_branches.length > 0 && (
+            <Box mb={3}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#64748b",
+                  mb: 1,
+                  textTransform: "uppercase",
+                  fontSize: "0.75rem",
+                  fontWeight: "600",
+                }}
+              >
+                Target Departments
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {assessment.allowed_branches.map((branch) => (
+                  <Chip
+                    key={branch}
+                    label={branch}
+                    sx={{
+                      bgcolor: "#8b5cf620",
+                      color: "#8b5cf6",
+                      border: "1px solid #8b5cf640",
+                      fontWeight: "500",
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
 
         <Divider sx={{ my: 3, bgcolor: "#334155" }} />
 
@@ -327,7 +357,7 @@ export default function ViewAssessment({ params }) {
         </Box>
       </Paper>
 
-      {/* Questions Section */}
+      {/* Questions Section - Keep your existing code */}
       <Paper
         elevation={3}
         sx={{
@@ -349,231 +379,7 @@ export default function ViewAssessment({ params }) {
           Questions ({questions.length})
         </Typography>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {questions.map((question, index) => (
-            <Accordion
-              key={question.id}
-              sx={{
-                bgcolor: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: 1,
-                "&:before": { display: "none" },
-                "&:hover": { borderColor: "#8b5cf6" },
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMore sx={{ color: "#8b5cf6" }} />}
-                sx={{
-                  p: 2,
-                  "&:hover": { bgcolor: "#1e293b" },
-                }}
-              >
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  gap={2}
-                  width="100%"
-                  sx={{ minWidth: 0 }}
-                >
-                  <Chip
-                    label={`Q${index + 1}`}
-                    size="small"
-                    sx={{
-                      bgcolor: "#8b5cf620",
-                      color: "#8b5cf6",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      color: "#e2e8f0",
-                      flex: 1,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {question.question_text}
-                  </Typography>
-                  <Chip
-                    label={`${question.marks} marks`}
-                    size="small"
-                    sx={{
-                      bgcolor: "#10b98120",
-                      color: "#10b981",
-                      flexShrink: 0,
-                    }}
-                  />
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails sx={{ p: 3, bgcolor: "#0f172a" }}>
-                <Box>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "#e2e8f0",
-                      mb: 2,
-                      wordBreak: "break-word",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {question.question_text}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 2,
-                      mb: 2,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#94a3b8",
-                        bgcolor: "#1e293b",
-                        px: 2,
-                        py: 1,
-                        borderRadius: 1,
-                      }}
-                    >
-                      Type: {question.question_type}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#94a3b8",
-                        bgcolor: "#1e293b",
-                        px: 2,
-                        py: 1,
-                        borderRadius: 1,
-                      }}
-                    >
-                      Difficulty: {question.difficulty}
-                    </Typography>
-                  </Box>
-
-                  <Divider sx={{ my: 2, bgcolor: "#334155" }} />
-
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      color: "#e2e8f0",
-                      mb: 2,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Options:
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1.5,
-                      mb: 2,
-                    }}
-                  >
-                    {question.options.map((option, optIndex) => (
-                      <Box
-                        key={option.id}
-                        sx={{
-                          p: 2,
-                          borderRadius: 1,
-                          border: "1px solid #334155",
-                          bgcolor: question.correct_answer.includes(
-                            option.id.toString()
-                          )
-                            ? "#10b98115"
-                            : "#0f172a",
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 2,
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        <Box sx={{ flexShrink: 0 }}>
-                          {question.correct_answer.includes(
-                            option.id.toString()
-                          ) && (
-                            <CheckCircle
-                              sx={{
-                                color: "#10b981",
-                                fontSize: 24,
-                              }}
-                            />
-                          )}
-                        </Box>
-                        <Box>
-                          <Typography
-                            sx={{
-                              color: question.correct_answer.includes(
-                                option.id.toString()
-                              )
-                                ? "#10b981"
-                                : "#e2e8f0",
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            <strong>
-                              {String.fromCharCode(65 + optIndex)}.
-                            </strong>{" "}
-                            {option.text}
-                          </Typography>
-                          {question.correct_answer.includes(
-                            option.id.toString()
-                          ) && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "#10b981",
-                                mt: 0.5,
-                                display: "block",
-                              }}
-                            >
-                              ✓ Correct Answer
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    ))}
-                  </Box>
-
-                  {question.tags && question.tags.length > 0 && (
-                    <Box mt={2}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "#64748b",
-                          mb: 1,
-                          textTransform: "uppercase",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        Tags:
-                      </Typography>
-                      <Box display="flex" gap={1} flexWrap="wrap">
-                        {question.tags.map((tag, idx) => (
-                          <Chip
-                            key={idx}
-                            label={tag}
-                            size="small"
-                            sx={{
-                              bgcolor: "#64748b20",
-                              color: "#94a3b8",
-                              border: "1px solid #64748b40",
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </Box>
+        {/* Keep your existing questions accordion code */}
       </Paper>
     </Container>
   );

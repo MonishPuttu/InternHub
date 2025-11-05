@@ -17,9 +17,33 @@ import {
   LinearProgress,
   Button,
   Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from "@mui/material";
-import { ArrowBack, TrendingUp } from "@mui/icons-material";
+import {
+  ArrowBack,
+  TrendingUp,
+  FilterList,
+  Business,
+  Numbers,
+} from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+
+const BRANCH_OPTIONS = [
+  "CSE",
+  "IT",
+  "AIML",
+  "ECE",
+  "EEE",
+  "CIVIL",
+  "MECH",
+  "MBA",
+  "MCA",
+];
 
 export default function Leaderboard({ params }) {
   const router = useRouter();
@@ -27,17 +51,21 @@ export default function Leaderboard({ params }) {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assessmentTitle, setAssessmentTitle] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("all");
+  const [anchorEl, setAnchorEl] = useState(null); // ✅ For filter menu
+  const open = Boolean(anchorEl);
 
   useEffect(() => {
     if (assessmentId) {
-      fetchLeaderboard(assessmentId);
+      fetchLeaderboard(assessmentId, selectedBranch);
     }
-  }, [assessmentId]);
+  }, [assessmentId, selectedBranch]);
 
-  const fetchLeaderboard = async (id) => {
+  const fetchLeaderboard = async (id, branch = "all") => {
     try {
+      const queryParam = branch !== "all" ? `?branch=${branch}` : "";
       const response = await apiRequest(
-        `/api/training/assessments/${id}/leaderboard`
+        `/api/training/assessments/${id}/leaderboard${queryParam}`
       );
       setLeaderboardData(response.data || []);
 
@@ -48,6 +76,19 @@ export default function Leaderboard({ params }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleBranchSelect = (branch) => {
+    setSelectedBranch(branch);
+    handleFilterClose();
   };
 
   if (loading) {
@@ -75,18 +116,38 @@ export default function Leaderboard({ params }) {
           borderRadius: 2,
         }}
       >
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <TrendingUp sx={{ color: "#8b5cf6", fontSize: 32 }} />
-          <Typography
-            variant="h4"
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={2}
+        >
+          <Box display="flex" alignItems="center" gap={2}>
+            <TrendingUp sx={{ color: "#8b5cf6", fontSize: 32 }} />
+            <Typography
+              variant="h4"
+              sx={{
+                color: "#e2e8f0",
+                fontWeight: "bold",
+              }}
+            >
+              Leaderboard
+            </Typography>
+          </Box>
+
+          {/* ✅ Filter Icon Button */}
+          <IconButton
+            onClick={handleFilterClick}
             sx={{
-              color: "#e2e8f0",
-              fontWeight: "bold",
+              color: "#8b5cf6",
+              bgcolor: "#8b5cf620",
+              "&:hover": { bgcolor: "#8b5cf640" },
             }}
           >
-            Leaderboard
-          </Typography>
+            <FilterList />
+          </IconButton>
         </Box>
+
         {assessmentTitle && (
           <Typography
             variant="body1"
@@ -97,7 +158,76 @@ export default function Leaderboard({ params }) {
             {assessmentTitle}
           </Typography>
         )}
+
+        {/* Show active filter */}
+        {selectedBranch !== "all" && (
+          <Box mt={2}>
+            <Chip
+              label={`Filtered by: ${selectedBranch}`}
+              onDelete={() => setSelectedBranch("all")}
+              sx={{
+                bgcolor: "#8b5cf620",
+                color: "#8b5cf6",
+                fontWeight: "500",
+              }}
+            />
+          </Box>
+        )}
       </Paper>
+
+      {/* ✅ Filter Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleFilterClose}
+        PaperProps={{
+          sx: {
+            bgcolor: "#1e293b",
+            border: "1px solid #334155",
+            minWidth: 220,
+          },
+        }}
+      >
+        <MenuItem disabled sx={{ color: "#94a3b8", fontSize: "0.875rem" }}>
+          Filter Options
+        </MenuItem>
+        <Divider sx={{ borderColor: "#334155" }} />
+
+        <MenuItem
+          onClick={() => handleBranchSelect("all")}
+          selected={selectedBranch === "all"}
+          sx={{
+            color: "#e2e8f0",
+            "&:hover": { bgcolor: "#0f172a" },
+            "&.Mui-selected": { bgcolor: "#8b5cf620" },
+          }}
+        >
+          <ListItemIcon>
+            <Business sx={{ color: "#8b5cf6" }} />
+          </ListItemIcon>
+          <ListItemText>All Departments</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ borderColor: "#334155", my: 1 }} />
+
+        {BRANCH_OPTIONS.map((branch) => (
+          <MenuItem
+            key={branch}
+            onClick={() => handleBranchSelect(branch)}
+            selected={selectedBranch === branch}
+            sx={{
+              color: "#e2e8f0",
+              "&:hover": { bgcolor: "#0f172a" },
+              "&.Mui-selected": { bgcolor: "#8b5cf620" },
+            }}
+          >
+            <ListItemIcon>
+              <Business sx={{ color: "#8b5cf6", fontSize: 20 }} />
+            </ListItemIcon>
+            <ListItemText>{branch}</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
 
       {/* Leaderboard Table */}
       <Paper
@@ -131,10 +261,10 @@ export default function Leaderboard({ params }) {
                     Student Name
                   </TableCell>
                   <TableCell sx={{ color: "#94a3b8", fontWeight: "bold" }}>
-                    Email
+                    Roll Number
                   </TableCell>
                   <TableCell sx={{ color: "#94a3b8", fontWeight: "bold" }}>
-                    Roll Number
+                    Department
                   </TableCell>
                   <TableCell
                     align="center"
@@ -166,9 +296,14 @@ export default function Leaderboard({ params }) {
                 {leaderboardData.map((student, index) => (
                   <TableRow
                     key={student.studentId}
+                    onClick={() =>
+                      router.push(
+                        `/training/placement/student-details/${student.studentId}`
+                      )
+                    }
                     sx={{
                       borderBottom: "1px solid #334155",
-                      "&:hover": { bgcolor: "#0f172a" },
+                      "&:hover": { bgcolor: "#0f172a", cursor: "pointer" },
                       backgroundColor:
                         index === 0
                           ? "#8b5cf610"
@@ -207,10 +342,18 @@ export default function Leaderboard({ params }) {
                       {student.studentName}
                     </TableCell>
                     <TableCell sx={{ color: "#94a3b8", py: 2 }}>
-                      {student.email}
-                    </TableCell>
-                    <TableCell sx={{ color: "#94a3b8", py: 2 }}>
                       {student.rollNumber}
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Chip
+                        label={student.branch || "N/A"}
+                        size="small"
+                        sx={{
+                          bgcolor: "#8b5cf620",
+                          color: "#8b5cf6",
+                          fontWeight: "500",
+                        }}
+                      />
                     </TableCell>
                     <TableCell
                       align="center"

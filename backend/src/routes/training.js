@@ -189,14 +189,15 @@ router.get(
       }
 
       const { assessmentId } = req.params;
+      const { branch } = req.query;
 
-      const leaderboardData = await db
+      let query = db
         .select({
           rank: leaderboard.rank,
           studentId: leaderboard.student_id,
           studentName: student_profile.full_name,
-          email: user.email,
           rollNumber: student_profile.roll_number,
+          branch: student_profile.branch,
           totalScore: leaderboard.total_score,
           percentageScore: leaderboard.percentage_score,
           timeTaken: leaderboard.time_taken,
@@ -205,8 +206,13 @@ router.get(
         .from(leaderboard)
         .innerJoin(user, eq(leaderboard.student_id, user.id))
         .innerJoin(student_profile, eq(user.id, student_profile.user_id))
-        .where(eq(leaderboard.assessment_id, assessmentId))
-        .orderBy(leaderboard.rank);
+        .where(eq(leaderboard.assessment_id, assessmentId));
+
+      if (branch && branch !== "all") {
+        query = query.where(and(eq(student_profile.branch, branch)));
+      }
+
+      const leaderboardData = await query.orderBy(leaderboard.rank);
 
       res.json({ ok: true, data: leaderboardData });
     } catch (error) {
