@@ -466,6 +466,19 @@ export default function PlacementPosts() {
                           {new Date(app.application_date).toLocaleDateString()}
                         </Typography>
                       </Box>
+                      {app.application_deadline && !isNaN(new Date(app.application_deadline).getTime()) && (
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                        >
+                          <AccessTimeIcon
+                            sx={{ fontSize: 18, color: "#ef4444" }}
+                          />
+                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                            Deadline{" "}
+                            {new Date(app.application_deadline).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
 

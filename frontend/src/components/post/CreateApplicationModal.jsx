@@ -144,15 +144,17 @@ export const CreateApplicationModal = ({ open, onClose }) => {
       // Prepare data
       const payload = {
         ...formData,
+        application_deadline: formData.deadline, // Map deadline to application_deadline
         media: mediaPreview // Save base64 encoded image
       };
 
-      // Remove empty optional fields
+      // Remove empty optional fields and the old deadline field
       Object.keys(payload).forEach(key => {
         if (!payload[key] || payload[key] === '') {
           delete payload[key];
         }
       });
+      delete payload.deadline; // Remove the old deadline field
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/posts/applications`, {
         method: 'POST',
