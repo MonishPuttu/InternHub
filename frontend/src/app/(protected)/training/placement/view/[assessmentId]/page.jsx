@@ -1,5 +1,3 @@
-// frontend/src/app/training/placement/assessments/[assessmentId]/page.jsx
-
 "use client";
 
 import { use } from "react";
@@ -67,7 +65,7 @@ export default function ViewAssessment({ params }) {
       <Button
         startIcon={<ArrowBack />}
         onClick={() => router.push("/training/placement")}
-        sx={{ mb: 3, color: "#8b5cf6" }}
+        sx={{ mb: 3, color: "#8b5cf6", textTransform: "none" }}
       >
         Back to Assessments
       </Button>
@@ -86,7 +84,7 @@ export default function ViewAssessment({ params }) {
         <Box
           display="flex"
           justifyContent="space-between"
-          alignItems="start"
+          alignItems="flex-start"
           mb={3}
           gap={2}
         >
@@ -103,11 +101,12 @@ export default function ViewAssessment({ params }) {
             </Typography>
           </Box>
           <Chip
-            label={assessment.type.toUpperCase()}
+            label={assessment.type?.toUpperCase()}
             sx={{
               bgcolor: "#8b5cf620",
               color: "#8b5cf6",
               flexShrink: 0,
+              fontWeight: "500",
             }}
           />
         </Box>
@@ -127,13 +126,14 @@ export default function ViewAssessment({ params }) {
           assessment.allowed_branches.length > 0 && (
             <Box mb={3}>
               <Typography
-                variant="body2"
+                variant="caption"
                 sx={{
                   color: "#64748b",
                   mb: 1,
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   fontWeight: "600",
+                  display: "block",
                 }}
               >
                 Target Departments
@@ -179,11 +179,11 @@ export default function ViewAssessment({ params }) {
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
               <Typography
-                variant="h6"
                 sx={{
-                  color: "#8b5cf6",
+                  color: "#06b6d4",
                   fontWeight: "bold",
                   mb: 0.5,
+                  fontSize: "1.5rem",
                 }}
               >
                 {assessment.duration}
@@ -193,7 +193,8 @@ export default function ViewAssessment({ params }) {
                 sx={{
                   color: "#94a3b8",
                   textTransform: "uppercase",
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem",
+                  fontWeight: "600",
                 }}
               >
                 Minutes
@@ -211,11 +212,11 @@ export default function ViewAssessment({ params }) {
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
               <Typography
-                variant="h6"
                 sx={{
                   color: "#10b981",
                   fontWeight: "bold",
                   mb: 0.5,
+                  fontSize: "1.5rem",
                 }}
               >
                 {assessment.total_marks}
@@ -225,7 +226,8 @@ export default function ViewAssessment({ params }) {
                 sx={{
                   color: "#94a3b8",
                   textTransform: "uppercase",
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem",
+                  fontWeight: "600",
                 }}
               >
                 Total Marks
@@ -243,11 +245,11 @@ export default function ViewAssessment({ params }) {
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
               <Typography
-                variant="h6"
                 sx={{
                   color: "#f59e0b",
                   fontWeight: "bold",
                   mb: 0.5,
+                  fontSize: "1.5rem",
                 }}
               >
                 {assessment.passing_marks}
@@ -257,7 +259,8 @@ export default function ViewAssessment({ params }) {
                 sx={{
                   color: "#94a3b8",
                   textTransform: "uppercase",
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem",
+                  fontWeight: "600",
                 }}
               >
                 Passing Marks
@@ -275,21 +278,22 @@ export default function ViewAssessment({ params }) {
           >
             <CardContent sx={{ textAlign: "center", p: 2 }}>
               <Typography
-                variant="h6"
                 sx={{
-                  color: "#06b6d4",
+                  color: "#8b5cf6",
                   fontWeight: "bold",
                   mb: 0.5,
+                  fontSize: "1.5rem",
                 }}
               >
-                {questions.length}
+                {questions?.length || 0}
               </Typography>
               <Typography
                 variant="caption"
                 sx={{
                   color: "#94a3b8",
                   textTransform: "uppercase",
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem",
+                  fontWeight: "600",
                 }}
               >
                 Questions
@@ -314,12 +318,14 @@ export default function ViewAssessment({ params }) {
         >
           <Box>
             <Typography
-              variant="body2"
+              variant="caption"
               sx={{
                 color: "#64748b",
-                mb: 0.5,
+                mb: 1,
                 textTransform: "uppercase",
                 fontSize: "0.75rem",
+                fontWeight: "600",
+                display: "block",
               }}
             >
               Start Date
@@ -328,6 +334,7 @@ export default function ViewAssessment({ params }) {
               sx={{
                 color: "#e2e8f0",
                 fontWeight: "500",
+                fontSize: "0.95rem",
               }}
             >
               {new Date(assessment.start_date).toLocaleString()}
@@ -335,12 +342,14 @@ export default function ViewAssessment({ params }) {
           </Box>
           <Box>
             <Typography
-              variant="body2"
+              variant="caption"
               sx={{
                 color: "#64748b",
-                mb: 0.5,
+                mb: 1,
                 textTransform: "uppercase",
                 fontSize: "0.75rem",
+                fontWeight: "600",
+                display: "block",
               }}
             >
               End Date
@@ -349,6 +358,7 @@ export default function ViewAssessment({ params }) {
               sx={{
                 color: "#e2e8f0",
                 fontWeight: "500",
+                fontSize: "0.95rem",
               }}
             >
               {new Date(assessment.end_date).toLocaleString()}
@@ -357,7 +367,7 @@ export default function ViewAssessment({ params }) {
         </Box>
       </Paper>
 
-      {/* Questions Section - Keep your existing code */}
+      {/* Questions Section */}
       <Paper
         elevation={3}
         sx={{
@@ -369,17 +379,191 @@ export default function ViewAssessment({ params }) {
       >
         <Typography
           variant="h5"
-          gutterBottom
           sx={{
             color: "#e2e8f0",
             mb: 3,
             fontWeight: "bold",
           }}
         >
-          Questions ({questions.length})
+          Questions ({questions?.length || 0})
         </Typography>
 
-        {/* Keep your existing questions accordion code */}
+        {!questions || questions.length === 0 ? (
+          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 3 }}>
+            No questions available
+          </Typography>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {questions.map((question, index) => (
+              <Accordion
+                key={question.id || index}
+                sx={{
+                  bgcolor: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 1,
+                  "&:before": { display: "none" },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMore sx={{ color: "#8b5cf6" }} />}
+                  sx={{
+                    bgcolor: "#0f172a",
+                    borderBottom: "1px solid #334155",
+                    "&:hover": { bgcolor: "#1e293b" },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      width: "100%",
+                    }}
+                  >
+                    <Chip
+                      label={`Q${index + 1}`}
+                      size="small"
+                      sx={{
+                        bgcolor: "#8b5cf620",
+                        color: "#8b5cf6",
+                        fontWeight: "600",
+                      }}
+                    />
+                    <Chip
+                      label={question.type?.toUpperCase() || "MCQ"}
+                      size="small"
+                      sx={{
+                        bgcolor: "#06b6d420",
+                        color: "#06b6d4",
+                        fontWeight: "600",
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        color: "#e2e8f0",
+                        flex: 1,
+                        minWidth: 0,
+                        wordBreak: "break-word",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      {question.text || question.question}
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+
+                <AccordionDetails sx={{ bgcolor: "#0f172a", p: 3 }}>
+                  {question.options && question.options.length > 0 ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          fontWeight: "600",
+                          mb: 1,
+                          display: "block",
+                        }}
+                      >
+                        Options:
+                      </Typography>
+                      {question.options.map((option, optIndex) => (
+                        <Box
+                          key={optIndex}
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 2,
+                            p: 1.5,
+                            bgcolor: "#1e293b",
+                            borderRadius: 1,
+                            border:
+                              option.isCorrect || option.correct
+                                ? "1px solid #10b98140"
+                                : "1px solid #334155",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "#8b5cf6",
+                              fontWeight: "600",
+                              minWidth: "24px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {String.fromCharCode(65 + optIndex)}.
+                          </Typography>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                              sx={{
+                                color:
+                                  option.isCorrect || option.correct
+                                    ? "#10b981"
+                                    : "#e2e8f0",
+                                fontWeight:
+                                  option.isCorrect || option.correct
+                                    ? "600"
+                                    : "400",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {option.text}
+                            </Typography>
+                          </Box>
+                          {(option.isCorrect || option.correct) && (
+                            <CheckCircle
+                              sx={{
+                                color: "#10b981",
+                                fontSize: 20,
+                                flexShrink: 0,
+                              }}
+                            />
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography sx={{ color: "#94a3b8" }}>
+                      No options available
+                    </Typography>
+                  )}
+
+                  {question.explanation && (
+                    <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid #334155" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          fontWeight: "600",
+                          display: "block",
+                          mb: 1,
+                        }}
+                      >
+                        Explanation:
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: "#94a3b8",
+                          fontSize: "0.9rem",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {question.explanation}
+                      </Typography>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Box>
+        )}
       </Paper>
     </Container>
   );

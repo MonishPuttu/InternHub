@@ -47,6 +47,7 @@ export const questions = pgTable("questions", {
 });
 
 // STUDENT ATTEMPTS
+// STUDENT ATTEMPTS
 export const student_attempts = pgTable("student_attempts", {
   id: uuid("id").primaryKey().defaultRandom(),
   student_id: uuid("student_id")
@@ -62,6 +63,8 @@ export const student_attempts = pgTable("student_attempts", {
   percentage_score: integer("percentage_score").default(0),
   time_taken: integer("time_taken"), // in minutes
   is_evaluated: boolean("is_evaluated").default(false),
+  metadata: jsonb("metadata"),
+  attempt_date: timestamp("attempt_date").defaultNow(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -72,9 +75,7 @@ export const student_answers = pgTable("student_answers", {
   attempt_id: uuid("attempt_id")
     .notNull()
     .references(() => student_attempts.id, { onDelete: "cascade" }),
-  question_id: uuid("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
+  question_id: text("question_id").notNull(),
   answer: jsonb("answer").notNull(),
   is_correct: boolean("is_correct"),
   marks_awarded: integer("marks_awarded").default(0),

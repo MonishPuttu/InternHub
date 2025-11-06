@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { use } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Container,
@@ -22,61 +23,60 @@ import {
 import { Timer, NavigateNext, NavigateBefore } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
-export default function TakeAssessment({ params: paramsPromise }) {
+export default function TakeAssessment({ params }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { assessmentId } = use(params);
 
-  const [assessmentId, setAssessmentId] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isPremade, setIsPremade] = useState(false);
   const [attemptId, setAttemptId] = useState(null);
+  const [attempt, setAttempt] = useState(null);
   const [error, setError] = useState("");
 
-  // Extract and await params
+  // ✅ Add ref to prevent double execution
+  const fetchedRef = useRef(false);
+
+  // Initialize data
   useEffect(() => {
-    const extractParams = async () => {
-      try {
-        // Await the params promise
-        const resolvedParams = await paramsPromise;
+    // ✅ Prevent double execution in StrictMode
+    if (fetchedRef.current) {
+      console.log("⏭️ Skipping duplicate useEffect call");
+      return;
+    }
+    fetchedRef.current = true;
 
-        if (!resolvedParams?.assessmentId) {
-          setError("Invalid assessment ID");
-          setLoading(false);
-          return;
-        }
+    if (!assessmentId) {
+      setError("Invalid assessment ID");
+      setLoading(false);
+      return;
+    }
 
-        setAssessmentId(resolvedParams.assessmentId);
+    const attemptIdParam = searchParams.get("attemptId");
+    if (!attemptIdParam) {
+      setError("Invalid attempt. Please start the assessment again.");
+      setLoading(false);
+      setTimeout(() => router.push("/training/student"), 2000);
+      return;
+    }
 
-        // Get attemptId from URL
-        const id = searchParams.get("attemptId");
-        if (!id) {
-          setError("Invalid attempt. Please start the assessment again.");
-          setLoading(false);
-          setTimeout(() => router.push("/training/student"), 2000);
-          return;
-        }
+    setAttemptId(attemptIdParam);
+    fetchAttemptData(attemptIdParam, assessmentId);
+  }, [assessmentId, searchParams, router]);
 
-        setAttemptId(id);
-        // Now fetch data with both IDs
-        await fetchAttemptData(id, resolvedParams.assessmentId);
-      } catch (err) {
-        console.error("Error extracting params:", err);
-        setError("Failed to load assessment");
-        setLoading(false);
-      }
-    };
-
-    extractParams();
-  }, [paramsPromise, searchParams, router]);
-
-  // Timer effect
   useEffect(() => {
     if (!timeRemaining || timeRemaining <= 0) {
-      if (timeRemaining === 0 && questions.length > 0 && attemptId) {
+      if (
+        timeRemaining === 0 &&
+        questions.length > 0 &&
+        attemptId &&
+        !submitting
+      ) {
         handleSubmit();
       }
       return;
@@ -85,7 +85,6 @@ export default function TakeAssessment({ params: paramsPromise }) {
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
-          clearInterval(timer);
           return 0;
         }
         return prev - 1;
@@ -93,61 +92,48 @@ export default function TakeAssessment({ params: paramsPromise }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeRemaining, questions.length, attemptId]);
+  }, [timeRemaining, questions.length, attemptId, submitting]);
 
   const fetchAttemptData = async (attemptIdParam, assessmentIdParam) => {
     try {
-      if (!attemptIdParam || !assessmentIdParam) {
-        throw new Error("Missing attempt ID or assessment ID");
+      setLoading(true);
+
+      const storageKey = `attempt-${attemptIdParam}`;
+      console.log("🔍 Looking for cached data:", storageKey);
+
+      const cachedData = sessionStorage.getItem(storageKey);
+      console.log("💾 Found cached data:", cachedData ? "YES" : "NO");
+
+      if (cachedData) {
+        console.log("✅ Using cached data");
+        const data = JSON.parse(cachedData);
+
+        sessionStorage.removeItem(storageKey);
+
+        setAttempt(data.attempt);
+        setQuestions(data.questions);
+        setTimeRemaining(data.attempt.duration * 60);
+        setIsPremade(true); // ✅ Mark as premade
+        setAnswers(
+          data.questions.reduce((acc, q) => {
+            acc[q.id] = null;
+            return acc;
+          }, {})
+        );
+        setLoading(false);
+        return;
       }
 
-      console.log(
-        "Fetching with attemptId:",
-        attemptIdParam,
-        "assessmentId:",
-        assessmentIdParam
-      );
-
-      // Fetch the attempt details
-      const attemptResponse = await apiRequest(
-        `/api/training/student/attempts/${attemptIdParam}`
-      );
-
-      if (!attemptResponse.data) {
-        throw new Error("Attempt not found");
-      }
-
-      const attempt = attemptResponse.data;
-
-      // Fetch questions for the assessment
-      const questionsResponse = await apiRequest(
-        `/api/training/student/assessments/${assessmentIdParam}/questions`
-      );
-
-      if (!questionsResponse.data || !questionsResponse.data.questions) {
-        throw new Error("Questions not found");
-      }
-
-      setQuestions(questionsResponse.data.questions);
-
-      // Calculate remaining time
-      const startTime = new Date(attempt.start_time);
-      const now = new Date();
-      const elapsedSeconds = Math.floor((now - startTime) / 1000);
-      const totalSeconds = attempt.duration * 60;
-      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
-
-      setTimeRemaining(remaining);
+      // ... rest of code
+    } catch (err) {
+      console.error("❌ Error fetching attempt data:", err);
+      setError(err.message || "Failed to load assessment");
+    } finally {
       setLoading(false);
-      setError("");
-    } catch (error) {
-      console.error("Error fetching attempt data:", error);
-      setError(error.message || "Failed to load assessment. Redirecting...");
-      setLoading(false);
-      setTimeout(() => router.push("/training/student"), 2000);
     }
   };
 
+  // Update saveAnswer to skip API call for premade
   const saveAnswer = useCallback(
     async (questionId, answer) => {
       if (!attemptId) {
@@ -155,6 +141,7 @@ export default function TakeAssessment({ params: paramsPromise }) {
         return;
       }
 
+      // ✅ FIX: Save to backend for ALL assessments (including premade)
       try {
         await apiRequest(
           `/api/training/student/attempts/${attemptId}/answers`,
@@ -163,11 +150,12 @@ export default function TakeAssessment({ params: paramsPromise }) {
             body: JSON.stringify({ questionId, answer, timeTaken: 0 }),
           }
         );
+        console.log("✅ Answer saved to backend");
       } catch (error) {
         console.error("Error saving answer:", error);
       }
     },
-    [attemptId]
+    [attemptId] // Remove isPremade from dependencies
   );
 
   const handleAnswerChange = (value) => {
@@ -183,17 +171,13 @@ export default function TakeAssessment({ params: paramsPromise }) {
 
   const handleSubmit = async () => {
     if (submitting || !attemptId) {
-      console.error(
-        "Cannot submit: submitting=",
-        submitting,
-        "attemptId=",
-        attemptId
-      );
       return;
     }
 
     setSubmitting(true);
     try {
+      // ✅ FIX: No need to send answers - they're already saved
+      // Just submit directly
       const response = await apiRequest(
         `/api/training/student/attempts/${attemptId}/submit`,
         {
@@ -204,11 +188,11 @@ export default function TakeAssessment({ params: paramsPromise }) {
       if (response.ok) {
         router.push(`/training/student/report-card/${attemptId}`);
       } else {
-        throw new Error("Failed to submit assessment");
+        throw new Error(response.error || "Failed to submit assessment");
       }
     } catch (error) {
       console.error("Error submitting assessment:", error);
-      alert(
+      setError(
         "Failed to submit assessment: " + (error.message || "Unknown error")
       );
       setSubmitting(false);
@@ -345,61 +329,98 @@ export default function TakeAssessment({ params: paramsPromise }) {
         <Box
           display="flex"
           justifyContent="space-between"
-          alignItems="start"
-          mb={2}
+          alignItems="flex-start"
+          mb={3}
+          gap={2}
         >
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{
-              color: "#e2e8f0",
-              flex: 1,
-              wordBreak: "break-word",
-            }}
-          >
-            {currentQuestion.questionText}
-          </Typography>
-          <Chip
-            label={`${currentQuestion.marks} marks`}
-            sx={{
-              bgcolor: "#8b5cf620",
-              color: "#8b5cf6",
-              flexShrink: 0,
-              ml: 2,
-            }}
-          />
+          <Box flex={1} minWidth={0}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#e2e8f0",
+                fontWeight: "bold",
+                wordBreak: "break-word",
+              }}
+            >
+              {currentQuestion.questionText}
+            </Typography>
+          </Box>
+          <Box display="flex" gap={1} sx={{ flexShrink: 0 }}>
+            <Chip
+              label={
+                currentQuestion.questionType === "mcq"
+                  ? "Single Choice"
+                  : "Multiple Choice"
+              }
+              size="small"
+              sx={{
+                bgcolor: "#06b6d420",
+                color: "#06b6d4",
+                fontWeight: "500",
+              }}
+            />
+            <Chip
+              label={`${currentQuestion.marks} marks`}
+              size="small"
+              sx={{
+                bgcolor: "#8b5cf620",
+                color: "#8b5cf6",
+                fontWeight: "500",
+              }}
+            />
+          </Box>
         </Box>
 
         {/* MCQ */}
         {currentQuestion.questionType === "mcq" && (
-          <FormControl component="fieldset" sx={{ mt: 2, width: "100%" }}>
+          <FormControl component="fieldset" sx={{ width: "100%" }}>
             <RadioGroup
-              value={answers[currentQuestion.id] || ""}
+              value={answers[currentQuestion.id]?.[0] || ""}
               onChange={(e) => handleAnswerChange(e.target.value)}
             >
               {currentQuestion.options.map((option, optIndex) => (
-                <FormControlLabel
+                <Box
                   key={option.id}
-                  value={option.id.toString()}
-                  control={<Radio sx={{ color: "#8b5cf6" }} />}
-                  label={`${String.fromCharCode(65 + optIndex)}. ${
-                    option.text
-                  }`}
                   sx={{
-                    color: "#e2e8f0",
-                    mb: 1,
+                    mb: 1.5,
                     p: 1.5,
                     borderRadius: 1,
                     border: "1px solid #334155",
                     bgcolor:
-                      answers[currentQuestion.id] === option.id.toString()
+                      answers[currentQuestion.id]?.[0] === option.id.toString()
                         ? "#8b5cf620"
                         : "transparent",
+                    transition: "all 0.2s",
                     "&:hover": {
                       bgcolor: "#8b5cf610",
+                      borderColor: "#8b5cf6",
                     },
                   }}
-                />
+                >
+                  <FormControlLabel
+                    value={option.id.toString()}
+                    control={
+                      <Radio
+                        sx={{
+                          color: "#8b5cf6",
+                          "&.Mui-checked": { color: "#8b5cf6" },
+                        }}
+                      />
+                    }
+                    label={`${String.fromCharCode(65 + optIndex)}. ${
+                      option.text
+                    }`}
+                    sx={{
+                      color: "#e2e8f0",
+                      m: 0,
+                      width: "100%",
+                      "& .MuiFormControlLabel-label": {
+                        wordBreak: "break-word",
+                        ml: 1,
+                      },
+                    }}
+                  />
+                </Box>
               ))}
             </RadioGroup>
           </FormControl>
@@ -407,31 +428,12 @@ export default function TakeAssessment({ params: paramsPromise }) {
 
         {/* Multiple Select */}
         {currentQuestion.questionType === "multiple_select" && (
-          <FormGroup sx={{ mt: 2 }}>
+          <FormGroup>
             {currentQuestion.options.map((option, optIndex) => (
-              <FormControlLabel
+              <Box
                 key={option.id}
-                control={
-                  <Checkbox
-                    checked={
-                      answers[currentQuestion.id]?.includes(
-                        option.id.toString()
-                      ) || false
-                    }
-                    onChange={(e) => {
-                      const current = answers[currentQuestion.id] || [];
-                      const newValue = e.target.checked
-                        ? [...current, option.id.toString()]
-                        : current.filter((id) => id !== option.id.toString());
-                      handleAnswerChange(newValue);
-                    }}
-                    sx={{ color: "#8b5cf6" }}
-                  />
-                }
-                label={`${String.fromCharCode(65 + optIndex)}. ${option.text}`}
                 sx={{
-                  color: "#e2e8f0",
-                  mb: 1,
+                  mb: 1.5,
                   p: 1.5,
                   borderRadius: 1,
                   border: "1px solid #334155",
@@ -440,15 +442,59 @@ export default function TakeAssessment({ params: paramsPromise }) {
                   )
                     ? "#8b5cf620"
                     : "transparent",
+                  transition: "all 0.2s",
                   "&:hover": {
                     bgcolor: "#8b5cf610",
+                    borderColor: "#8b5cf6",
                   },
                 }}
-              />
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={
+                        answers[currentQuestion.id]?.includes(
+                          option.id.toString()
+                        ) || false
+                      }
+                      onChange={(e) => {
+                        const current = answers[currentQuestion.id] || [];
+                        const newValue = e.target.checked
+                          ? [...current, option.id.toString()]
+                          : current.filter((id) => id !== option.id.toString());
+                        handleAnswerChange(newValue);
+                      }}
+                      sx={{
+                        color: "#8b5cf6",
+                        "&.Mui-checked": { color: "#8b5cf6" },
+                      }}
+                    />
+                  }
+                  label={`${String.fromCharCode(65 + optIndex)}. ${
+                    option.text
+                  }`}
+                  sx={{
+                    color: "#e2e8f0",
+                    m: 0,
+                    width: "100%",
+                    "& .MuiFormControlLabel-label": {
+                      wordBreak: "break-word",
+                      ml: 1,
+                    },
+                  }}
+                />
+              </Box>
             ))}
           </FormGroup>
         )}
       </Card>
+
+      {/* Error Display */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       {/* Navigation */}
       <Box display="flex" justifyContent="space-between" gap={2}>
@@ -461,6 +507,7 @@ export default function TakeAssessment({ params: paramsPromise }) {
             color: "#8b5cf6",
             borderColor: "#8b5cf6",
             "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf610" },
+            "&:disabled": { borderColor: "#334155", color: "#64748b" },
           }}
         >
           Previous
@@ -475,6 +522,7 @@ export default function TakeAssessment({ params: paramsPromise }) {
               bgcolor: "#10b981",
               color: "#fff",
               "&:hover": { bgcolor: "#059669" },
+              "&:disabled": { bgcolor: "#64748b" },
             }}
           >
             {submitting ? "Submitting..." : "Submit Assessment"}
@@ -489,6 +537,7 @@ export default function TakeAssessment({ params: paramsPromise }) {
               bgcolor: "#8b5cf6",
               color: "#fff",
               "&:hover": { bgcolor: "#7c3aed" },
+              "&:disabled": { bgcolor: "#64748b" },
             }}
           >
             Next

@@ -11,6 +11,7 @@ import {
   student_profile,
 } from "../db/schema/index.js";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -106,37 +107,65 @@ router.post("/assessments", requireAuth, async (req, res) => {
   }
 });
 
-// Get all assessments (Placement Cell) - Return only assessments created by this placement cell user
+// Get all assessments - fix categorization
 router.get("/assessments", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "placement") {
       return res.status(403).json({ ok: false, error: "Access denied" });
     }
 
+    const currentDate = new Date();
+
     const allAssessments = await db
-      .select({
-        id: assessments.id,
-        title: assessments.title,
-        description: assessments.description,
-        type: assessments.type,
-        duration: assessments.duration,
-        totalMarks: assessments.total_marks,
-        passingMarks: assessments.passing_marks,
-        startDate: assessments.start_date,
-        endDate: assessments.end_date,
-        isActive: assessments.is_active,
-        allowedBranches: assessments.allowed_branches,
-        createdBy: assessments.created_by,
-        createdAt: assessments.created_at,
-      })
+      .select()
       .from(assessments)
       .where(eq(assessments.created_by, req.user.id))
       .orderBy(desc(assessments.created_at));
 
-    res.json({ ok: true, data: allAssessments });
+    // ✅ FIX: Completed should NOT appear in recently created
+    const completed = allAssessments.filter(
+      (a) => new Date(a.end_date) < currentDate
+    );
+
+    const completedIds = new Set(completed.map((a) => a.id));
+
+    // ✅ FIX: Recently created EXCLUDES completed
+    const recentlyCreated = allAssessments.filter(
+      (a) =>
+        new Date(a.created_at) >
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) &&
+        !completedIds.has(a.id) // ✅ Exclude completed
+    );
+
+    const ongoing = allAssessments.filter(
+      (a) =>
+        new Date(a.start_date) <= currentDate &&
+        new Date(a.end_date) >= currentDate &&
+        a.is_active &&
+        !completedIds.has(a.id) // ✅ Exclude completed
+    );
+
+    const upcoming = allAssessments.filter(
+      (a) => new Date(a.start_date) > currentDate && a.is_active
+    );
+
+    res.json({
+      ok: true,
+      data: {
+        all: allAssessments,
+        recentlyCreated,
+        ongoing,
+        completed,
+        upcoming,
+      },
+    });
   } catch (error) {
     console.error("Error fetching assessments:", error);
-    res.status(500).json({ ok: false, error: "Failed to fetch assessments" });
+    res.status(500).json({
+      ok: false,
+      error: "Failed to fetch assessments",
+      details: error.message,
+    });
   }
 });
 
@@ -231,8 +260,11 @@ router.get("/students/:studentId/details", requireAuth, async (req, res) => {
 
     const { studentId } = req.params;
 
-    if (!studentId) {
-      return res.status(400).json({ ok: false, error: "Student ID required" });
+    if (!studentId || studentId === "undefined") {
+      return res.status(400).json({
+        ok: false,
+        error: "Student ID is required and must be valid",
+      });
     }
 
     const profileResult = await db
@@ -382,22 +414,7 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
       .where(eq(student_profile.user_id, req.user.id))
       .limit(1);
 
-    if (!studentProfile) {
-      return res.status(400).json({
-        ok: false,
-        error: "Student profile not found. Please complete your profile.",
-      });
-    }
-
-    if (!studentProfile.branch) {
-      return res.status(400).json({
-        ok: false,
-        error:
-          "Branch not set. Please update your profile with your department.",
-      });
-    }
-
-    const studentBranch = studentProfile.branch;
+    const studentBranch = studentProfile?.branch;
     const currentDate = new Date();
 
     const allAssessments = await db
@@ -423,13 +440,15 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
       )
       .orderBy(assessments.start_date);
 
-    const availableAssessments = allAssessments.filter((assessment) => {
-      const allowedBranches = assessment.allowedBranches || [];
-      return (
-        Array.isArray(allowedBranches) &&
-        allowedBranches.includes(studentBranch)
-      );
-    });
+    const availableAssessments = studentBranch
+      ? allAssessments.filter((assessment) => {
+          const allowedBranches = assessment.allowedBranches || [];
+          return (
+            Array.isArray(allowedBranches) &&
+            allowedBranches.includes(studentBranch)
+          );
+        })
+      : allAssessments;
 
     const attemptedAssessmentIds = await db
       .select({ assessmentId: student_attempts.assessment_id })
@@ -501,7 +520,6 @@ router.post(
         }
       }
 
-      // Check if already completed
       const [existingAttempt] = await db
         .select()
         .from(student_attempts)
@@ -520,7 +538,6 @@ router.post(
           .json({ ok: false, error: "Assessment already completed" });
       }
 
-      // Check for in-progress attempt
       const [inProgressAttempt] = await db
         .select()
         .from(student_attempts)
@@ -533,33 +550,157 @@ router.post(
         )
         .limit(1);
 
-      if (inProgressAttempt) {
-        const assessmentQuestions = await db
-          .select({
-            id: questions.id,
-            questionText: questions.question_text,
-            questionType: questions.question_type,
-            options: questions.options,
-            marks: questions.marks,
-            orderIndex: questions.order_index,
-          })
-          .from(questions)
-          .where(eq(questions.assessment_id, assessmentId))
-          .orderBy(questions.order_index);
+      // ✅ FIX: If premade and in-progress BUT no questions, delete attempt and retry
+      if (assessment.type === "premade" && inProgressAttempt) {
+        const storedQuestions = inProgressAttempt.metadata?.questions || [];
 
-        return res.json({
-          ok: true,
-          data: {
-            attempt: {
-              ...inProgressAttempt,
-              duration: assessment.duration,
+        if (storedQuestions.length === 0) {
+          console.log("⚠️ Found corrupted attempt, deleting and retrying...");
+
+          // Delete the corrupted attempt
+          await db
+            .delete(student_attempts)
+            .where(eq(student_attempts.id, inProgressAttempt.id));
+
+          // Continue to fetch fresh questions below (don't return here)
+        } else {
+          // Has questions, return them
+          return res.json({
+            ok: true,
+            data: {
+              attempt: {
+                ...inProgressAttempt,
+                duration: assessment.duration,
+              },
+              questions: storedQuestions.map((q) => ({
+                id: q.id,
+                questionText: q.questionText,
+                questionType: q.questionType,
+                options: q.options.map((o) => ({ id: o.id, text: o.text })),
+                marks: q.marks,
+              })),
             },
-            questions: assessmentQuestions,
-          },
-        });
+          });
+        }
       }
 
-      // Create new attempt
+      // NEW: If premade assessment (or corrupted attempt), fetch fresh questions
+      if (assessment.type === "premade") {
+        const metadata = assessment.metadata || {};
+        const {
+          difficulty = "medium",
+          numQuestions = 10,
+          categoryId = 18,
+        } = metadata;
+
+        console.log("🔍 Fetching questions from Trivia API...", {
+          difficulty,
+          categoryId,
+          numQuestions,
+        });
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          const triviaResponse = await fetch(
+            `https://opentdb.com/api.php?amount=${numQuestions}&category=${categoryId}&difficulty=${difficulty}&type=multiple`,
+            { signal: controller.signal }
+          );
+
+          clearTimeout(timeoutId);
+
+          console.log("✅ Trivia API responded:", triviaResponse.status);
+
+          if (!triviaResponse.ok) {
+            throw new Error(`Trivia API returned ${triviaResponse.status}`);
+          }
+
+          const triviaData = await triviaResponse.json();
+
+          console.log("✅ Trivia data:", {
+            responseCode: triviaData.response_code,
+            questionCount: triviaData.results?.length,
+          });
+
+          if (!triviaData.results || triviaData.results.length === 0) {
+            console.error("❌ No results from Trivia API:", triviaData);
+            throw new Error("No questions received from API");
+          }
+
+          const uniqueQuestionsList = triviaData.results.map((q, index) => {
+            const correctAnswer = decodeHTML(q.correct_answer);
+            const allAnswers = [
+              correctAnswer,
+              ...q.incorrect_answers.map(decodeHTML),
+            ].sort(() => Math.random() - 0.5);
+
+            return {
+              id: `q-${index}`,
+              questionText: decodeHTML(q.question),
+              questionType: "mcq",
+              difficulty: q.difficulty,
+              marks: 1,
+              options: allAnswers.map((answer, idx) => ({
+                id: idx,
+                text: answer,
+                isCorrect: answer === correctAnswer,
+              })),
+              correctAnswer: correctAnswer,
+            };
+          });
+
+          console.log("✅ Questions transformed:", uniqueQuestionsList.length);
+
+          // Store questions in attempt metadata
+          const [newAttempt] = await db
+            .insert(student_attempts)
+            .values({
+              student_id: studentId,
+              assessment_id: assessmentId,
+              start_time: new Date(),
+              status: "in_progress",
+              metadata: {
+                questions: uniqueQuestionsList,
+              },
+            })
+            .returning();
+
+          console.log("✅ Attempt created with questions:", newAttempt.id);
+
+          return res.status(201).json({
+            ok: true,
+            data: {
+              attempt: {
+                ...newAttempt,
+                duration: assessment.duration,
+              },
+              questions: uniqueQuestionsList.map((q) => ({
+                id: q.id,
+                questionText: q.questionText,
+                questionType: q.questionType,
+                options: q.options.map((o) => ({ id: o.id, text: o.text })),
+                marks: q.marks,
+              })),
+            },
+          });
+        } catch (fetchError) {
+          console.error(
+            "❌ Error fetching from Trivia API:",
+            fetchError.message
+          );
+          console.error("❌ Stack:", fetchError.stack);
+
+          return res.status(500).json({
+            ok: false,
+            error:
+              "Failed to fetch questions from external API. Please try again.",
+            details: fetchError.message,
+          });
+        }
+      }
+
+      // Regular assessment flow
       const [newAttempt] = await db
         .insert(student_attempts)
         .values({
@@ -583,7 +724,7 @@ router.post(
         .where(eq(questions.assessment_id, assessmentId))
         .orderBy(questions.order_index);
 
-      res.status(201).json({
+      return res.status(201).json({
         ok: true,
         data: {
           attempt: {
@@ -594,8 +735,13 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Error starting assessment:", error);
-      res.status(500).json({ ok: false, error: "Failed to start assessment" });
+      console.error("❌ Error starting assessment:", error.message);
+      console.error("❌ Stack:", error.stack);
+      return res.status(500).json({
+        ok: false,
+        error: "Failed to start assessment",
+        details: error.message,
+      });
     }
   }
 );
@@ -606,13 +752,24 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      if (req.user.role !== "student") {
-        return res.status(403).json({ ok: false, error: "Access denied" });
-      }
-
       const { attemptId } = req.params;
       const { questionId, answer, timeTaken } = req.body;
 
+      console.log("💾 Saving answer:", { attemptId, questionId, answer });
+
+      // Get attempt
+      const [attempt] = await db
+        .select()
+        .from(student_attempts)
+        .where(eq(student_attempts.id, attemptId))
+        .limit(1);
+
+      if (!attempt) {
+        return res.status(404).json({ ok: false, error: "Attempt not found" });
+      }
+
+      // ✅ FIX: Save answers to DB for BOTH premade and regular assessments
+      // Check if answer already exists
       const [existingAnswer] = await db
         .select()
         .from(student_answers)
@@ -627,8 +784,14 @@ router.post(
       if (existingAnswer) {
         await db
           .update(student_answers)
-          .set({ answer, time_taken: timeTaken, updated_at: new Date() })
+          .set({
+            answer,
+            time_taken: timeTaken,
+            updated_at: new Date(),
+          })
           .where(eq(student_answers.id, existingAnswer.id));
+
+        console.log("✅ Answer updated");
       } else {
         await db.insert(student_answers).values({
           attempt_id: attemptId,
@@ -636,12 +799,18 @@ router.post(
           answer,
           time_taken: timeTaken,
         });
+
+        console.log("✅ Answer inserted");
       }
 
       res.json({ ok: true, message: "Answer saved successfully" });
     } catch (error) {
-      console.error("Error saving answer:", error);
-      res.status(500).json({ ok: false, error: "Failed to save answer" });
+      console.error("❌ Error saving answer:", error);
+      res.status(500).json({
+        ok: false,
+        error: "Failed to save answer",
+        details: error.message,
+      });
     }
   }
 );
@@ -652,11 +821,9 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      if (req.user.role !== "student") {
-        return res.status(403).json({ ok: false, error: "Access denied" });
-      }
-
       const { attemptId } = req.params;
+
+      console.log("📥 Submit request for attempt:", attemptId);
 
       const [attempt] = await db
         .select()
@@ -668,56 +835,8 @@ router.post(
         return res.status(404).json({ ok: false, error: "Attempt not found" });
       }
 
-      const questionsWithAnswers = await db
-        .select({
-          questionId: questions.id,
-          correctAnswer: questions.correct_answer,
-          questionType: questions.question_type,
-          marks: questions.marks,
-          tags: questions.tags,
-          studentAnswer: student_answers.answer,
-          answerId: student_answers.id,
-        })
-        .from(questions)
-        .leftJoin(
-          student_answers,
-          and(
-            eq(student_answers.question_id, questions.id),
-            eq(student_answers.attempt_id, attemptId)
-          )
-        )
-        .where(eq(questions.assessment_id, attempt.assessment_id));
-
-      // Auto-evaluate answers
-      let totalScore = 0;
-      for (const q of questionsWithAnswers) {
-        if (q.answerId && q.studentAnswer) {
-          const correctAnswerArray = Array.isArray(q.correctAnswer)
-            ? q.correctAnswer.map(String)
-            : [String(q.correctAnswer)];
-
-          const studentAnswerArray = Array.isArray(q.studentAnswer)
-            ? q.studentAnswer.map(String)
-            : [String(q.studentAnswer)];
-
-          const sortedCorrect = correctAnswerArray.sort();
-          const sortedStudent = studentAnswerArray.sort();
-
-          const isCorrect =
-            sortedCorrect.length === sortedStudent.length &&
-            sortedCorrect.every((val, idx) => val === sortedStudent[idx]);
-
-          const marksAwarded = isCorrect ? q.marks : 0;
-          totalScore += marksAwarded;
-
-          await db
-            .update(student_answers)
-            .set({
-              is_correct: isCorrect,
-              marks_awarded: marksAwarded,
-            })
-            .where(eq(student_answers.id, q.answerId));
-        }
+      if (attempt.student_id !== req.user.id) {
+        return res.status(403).json({ ok: false, error: "Access denied" });
       }
 
       const [assessment] = await db
@@ -726,6 +845,137 @@ router.post(
         .where(eq(assessments.id, attempt.assessment_id))
         .limit(1);
 
+      let totalScore = 0;
+      let questionsWithAnswers = [];
+
+      // ✅ REPLACE THIS SECTION - For premade assessments
+      if (assessment.type === "premade") {
+        console.log("✅ Premade assessment - grading from metadata");
+
+        const storedQuestions = attempt.metadata?.questions || [];
+        console.log("📚 Found questions in metadata:", storedQuestions.length);
+
+        const studentAnswers = await db
+          .select()
+          .from(student_answers)
+          .where(eq(student_answers.attempt_id, attemptId));
+
+        console.log("📝 Found student answers:", studentAnswers.length);
+
+        // ✅ NEW SIMPLE GRADING LOGIC
+        for (const q of storedQuestions) {
+          const studentAnswer = studentAnswers.find(
+            (sa) => sa.question_id === q.id
+          );
+
+          if (studentAnswer && studentAnswer.answer) {
+            // Get the option ID from student's answer
+            const selectedOptionId = Array.isArray(studentAnswer.answer)
+              ? parseInt(studentAnswer.answer[0])
+              : parseInt(studentAnswer.answer);
+
+            console.log(
+              "🔍 Grading",
+              q.id,
+              "- selected option:",
+              selectedOptionId
+            );
+
+            // Find the selected option and check if it's correct
+            const selectedOption = q.options?.find(
+              (opt) => opt.id === selectedOptionId
+            );
+            const isCorrect = selectedOption?.isCorrect || false;
+            const marksAwarded = isCorrect ? q.marks : 0;
+
+            totalScore += marksAwarded;
+
+            console.log(
+              `${isCorrect ? "✅" : "❌"} ${
+                q.id
+              }: option ${selectedOptionId} (${
+                selectedOption?.text
+              }) = ${marksAwarded}/${q.marks}`
+            );
+
+            // Update the answer record
+            await db
+              .update(student_answers)
+              .set({
+                is_correct: isCorrect,
+                marks_awarded: marksAwarded,
+                updated_at: new Date(),
+              })
+              .where(eq(student_answers.id, studentAnswer.id));
+
+            questionsWithAnswers.push({
+              questionId: q.id,
+              correctAnswer: q.correctAnswer,
+              questionType: q.questionType,
+              marks: q.marks,
+              tags: ["premade"],
+              studentAnswer: studentAnswer.answer,
+              answerId: studentAnswer.id,
+            });
+          } else {
+            console.log("⚠️ No answer for question:", q.id);
+          }
+        }
+
+        console.log("📊 Total score:", totalScore, "/", assessment.total_marks);
+      } else {
+        // Regular assessment grading (keep existing logic)
+        questionsWithAnswers = await db
+          .select({
+            questionId: questions.id,
+            correctAnswer: questions.correct_answer,
+            questionType: questions.question_type,
+            marks: questions.marks,
+            tags: questions.tags,
+            studentAnswer: student_answers.answer,
+            answerId: student_answers.id,
+          })
+          .from(questions)
+          .leftJoin(
+            student_answers,
+            and(
+              sql`CAST(${student_answers.question_id} AS uuid) = ${questions.id}`,
+              eq(student_answers.attempt_id, attemptId)
+            )
+          )
+          .where(eq(questions.assessment_id, attempt.assessment_id));
+        for (const q of questionsWithAnswers) {
+          if (q.answerId && q.studentAnswer) {
+            const correctAnswerArray = Array.isArray(q.correctAnswer)
+              ? q.correctAnswer.map(String)
+              : [String(q.correctAnswer)];
+
+            const studentAnswerArray = Array.isArray(q.studentAnswer)
+              ? q.studentAnswer.map(String)
+              : [String(q.studentAnswer)];
+
+            const sortedCorrect = correctAnswerArray.sort();
+            const sortedStudent = studentAnswerArray.sort();
+
+            const isCorrect =
+              sortedCorrect.length === sortedStudent.length &&
+              sortedCorrect.every((val, idx) => val === sortedStudent[idx]);
+
+            const marksAwarded = isCorrect ? q.marks : 0;
+            totalScore += marksAwarded;
+
+            await db
+              .update(student_answers)
+              .set({
+                is_correct: isCorrect,
+                marks_awarded: marksAwarded,
+              })
+              .where(eq(student_answers.id, q.answerId));
+          }
+        }
+      }
+
+      // Calculate final scores
       const percentageScore = Math.round(
         (totalScore / assessment.total_marks) * 100
       );
@@ -733,6 +983,7 @@ router.post(
         (new Date() - new Date(attempt.start_time)) / 60000
       );
 
+      // Update attempt
       await db
         .update(student_attempts)
         .set({
@@ -746,7 +997,6 @@ router.post(
         .where(eq(student_attempts.id, attemptId));
 
       await updateLeaderboard(attempt.assessment_id);
-
       await generateReportCard(
         attemptId,
         attempt.student_id,
@@ -754,13 +1004,15 @@ router.post(
         questionsWithAnswers
       );
 
+      console.log("✅ Assessment submitted successfully");
+
       res.json({
         ok: true,
         message: "Assessment submitted successfully",
         data: { totalScore, percentageScore },
       });
     } catch (error) {
-      console.error("Error submitting assessment:", error);
+      console.error("❌ Error submitting assessment:", error);
       res.status(500).json({ ok: false, error: "Failed to submit assessment" });
     }
   }
@@ -1033,12 +1285,64 @@ router.get(
 
       const { assessmentId } = req.params;
 
-      if (!assessmentId || assessmentId === "undefined") {
+      // ✅ NEW: Check if assessment is premade
+      const [assessment] = await db
+        .select()
+        .from(assessments)
+        .where(eq(assessments.id, assessmentId))
+        .limit(1);
+
+      if (!assessment) {
         return res
-          .status(400)
-          .json({ ok: false, error: "Assessment ID is required" });
+          .status(404)
+          .json({ ok: false, error: "Assessment not found" });
       }
 
+      // ✅ For premade assessments, questions come from attempt metadata
+      if (assessment.type === "premade") {
+        // Find student's attempt
+        const [attempt] = await db
+          .select()
+          .from(student_attempts)
+          .where(
+            and(
+              eq(student_attempts.assessment_id, assessmentId),
+              eq(student_attempts.student_id, req.user.id)
+            )
+          )
+          .limit(1);
+
+        if (!attempt) {
+          return res.status(404).json({
+            ok: false,
+            error: "No attempt found. Start the assessment first.",
+          });
+        }
+
+        const storedQuestions = attempt.metadata?.questions || [];
+
+        if (storedQuestions.length === 0) {
+          return res
+            .status(404)
+            .json({ ok: false, error: "No questions found" });
+        }
+
+        // Return questions without correct answers
+        return res.json({
+          ok: true,
+          data: {
+            questions: storedQuestions.map((q) => ({
+              id: q.id,
+              questionText: q.questionText,
+              questionType: q.questionType,
+              options: q.options.map((o) => ({ id: o.id, text: o.text })),
+              marks: q.marks,
+            })),
+          },
+        });
+      }
+
+      // ✅ For regular assessments, get from questions table
       const assessmentQuestions = await db
         .select({
           id: questions.id,
@@ -1064,9 +1368,120 @@ router.get(
       });
     } catch (error) {
       console.error("Error fetching questions:", error);
-      res.status(500).json({ ok: false, error: "Failed to fetch questions" });
+      res.status(500).json({
+        ok: false,
+        error: "Failed to fetch questions",
+        details: error.message,
+      });
     }
   }
 );
 
+//
+//
+//
+//
+
+// 1. Create premade assessment using external API
+router.post(
+  "/premade-assessments/create-template",
+  requireAuth,
+  async (req, res) => {
+    try {
+      if (req.user.role !== "placement") {
+        return res.status(403).json({ ok: false, error: "Access denied" });
+      }
+
+      const {
+        subject,
+        difficulty,
+        numQuestions = 10,
+        startDate,
+        endDate,
+        allowedBranches = [],
+      } = req.body;
+
+      const userId = req.user?.id;
+
+      if (!subject || !difficulty || !startDate || !endDate) {
+        return res.status(400).json({
+          ok: false,
+          error: "Subject, difficulty, and dates are required",
+        });
+      }
+
+      if (allowedBranches.length === 0) {
+        return res
+          .status(400)
+          .json({ ok: false, error: "At least one branch must be selected" });
+      }
+
+      const assessmentId = uuidv4();
+
+      // ✅ Store only assessment metadata - NO questions
+      const [assessment] = await db
+        .insert(assessments)
+        .values({
+          id: assessmentId,
+          title: `${subject.charAt(0).toUpperCase() + subject.slice(1)} - ${
+            difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+          } Level`,
+          description: `${subject} assessment covering key concepts`,
+          type: "premade",
+          duration: 15,
+          total_marks: numQuestions,
+          passing_marks: Math.ceil(numQuestions * 0.6),
+          start_date: new Date(startDate),
+          end_date: new Date(endDate),
+          created_by: userId,
+          is_active: true,
+          allowed_branches: allowedBranches,
+          // ✅ Store metadata for fetching questions later
+          metadata: {
+            subject,
+            difficulty,
+            numQuestions,
+            categoryId: 18,
+          },
+        })
+        .returning();
+
+      // ✅ NO questions inserted here
+
+      res.status(201).json({
+        ok: true,
+        data: {
+          assessmentId: assessment.id,
+        },
+      });
+    } catch (error) {
+      console.error("Error creating premade assessment:", error);
+      res.status(500).json({
+        ok: false,
+        error: "Failed to create assessment",
+        details: error.message,
+      });
+    }
+  }
+);
+// Helper function
+function decodeHTML(html) {
+  const entities = {
+    "&quot;": '"',
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&#039;": "'",
+    "&apos;": "'",
+    "&ndash;": "–",
+    "&mdash;": "—",
+    "&hellip;": "…",
+  };
+
+  return html.replace(/&[^;]+;/g, (entity) => {
+    return entities[entity] || entity;
+  });
+}
+
+// Export at the end
 export default router;

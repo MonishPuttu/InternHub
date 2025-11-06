@@ -16,17 +16,44 @@ import {
   DialogActions,
   LinearProgress,
   Alert,
+  Tabs,
+  Tab,
 } from "@mui/material";
-import { Assignment, Schedule, CheckCircle } from "@mui/icons-material";
+import {
+  Assignment,
+  Schedule,
+  CheckCircle,
+  PlayArrow,
+} from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      aria-labelledby={`tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+    </div>
+  );
+}
+
 export default function StudentTraining() {
-  const [assessments, setAssessments] = useState([]);
+  const [assessments, setAssessments] = useState({
+    new: [],
+    ongoing: [],
+    completed: [],
+  });
   const [loading, setLoading] = useState(true);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,16 +63,55 @@ export default function StudentTraining() {
   const fetchAssessments = async () => {
     try {
       const response = await apiRequest("/api/training/student/assessments");
-      setAssessments(response.data);
-    } catch (error) {
-      console.error("Error fetching assessments:", error);
-      setError("Failed to load assessments");
+
+      if (response.ok && response.data) {
+        let allAssessments = [];
+
+        if (Array.isArray(response.data)) {
+          allAssessments = response.data;
+        } else {
+          allAssessments = [
+            ...(response.data.new || []),
+            ...(response.data.ongoing || []),
+            ...(response.data.completed || []),
+          ];
+        }
+
+        const newAssessments = allAssessments.filter(
+          (a) => !a.isAttempted && !a.hasInProgress
+        );
+        const ongoingAssessments = allAssessments.filter(
+          (a) => a.hasInProgress
+        );
+        const completedAssessments = allAssessments.filter(
+          (a) => a.isAttempted && !a.hasInProgress
+        );
+
+        setAssessments({
+          new: newAssessments,
+          ongoing: ongoingAssessments,
+          completed: completedAssessments,
+        });
+        setError("");
+      } else {
+        setError(response.error || "Failed to fetch assessments");
+      }
+    } catch (err) {
+      console.error("Error fetching assessments:", err);
+      setError("Error loading assessments");
     } finally {
       setLoading(false);
     }
   };
 
   const handleStartAssessment = (assessment) => {
+    if (assessment.hasInProgress && assessment.inProgressAttemptId) {
+      router.push(
+        `/training/student/take-assessment/${assessment.id}?attemptId=${assessment.inProgressAttemptId}`
+      );
+      return;
+    }
+
     setSelectedAssessment(assessment);
     setOpenDialog(true);
   };
@@ -53,27 +119,56 @@ export default function StudentTraining() {
   const confirmStartAssessment = async () => {
     if (!selectedAssessment) return;
 
-    setSubmitting(true);
     try {
+      setSubmitting(true);
+      setError("");
+
+      console.log("🔍 Starting assessment:", selectedAssessment.id);
+
       const response = await apiRequest(
         `/api/training/student/assessments/${selectedAssessment.id}/start`,
         { method: "POST" }
       );
 
-      if (!response.data?.attempt?.id) {
-        throw new Error("Failed to create attempt");
-      }
+      console.log("✅ Start response:", response);
 
-      const attemptId = response.data.attempt.id;
-      router.push(
-        `/training/student/take-assessment/${selectedAssessment.id}?attemptId=${attemptId}`
-      );
-    } catch (error) {
-      console.error("Error starting assessment:", error);
-      alert(error.message || "Failed to start assessment");
+      if (response.ok && response.data) {
+        const attemptId = response.data.attempt.id;
+        const storageKey = `attempt-${attemptId}`;
+
+        console.log("💾 Storing in sessionStorage:", storageKey);
+
+        // ✅ Store data in sessionStorage
+        sessionStorage.setItem(storageKey, JSON.stringify(response.data));
+
+        // ✅ Verify it was stored
+        const stored = sessionStorage.getItem(storageKey);
+        console.log("✅ Verified stored data:", stored ? "YES" : "NO");
+
+        // ✅ Close dialog
+        setOpenDialog(false);
+
+        // ✅ Small delay before navigation to ensure storage completes
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        console.log("🚀 Navigating to assessment...");
+
+        // Navigate to assessment
+        router.push(
+          `/training/student/take-assessment/${selectedAssessment.id}?attemptId=${attemptId}`
+        );
+      } else {
+        console.error("❌ Start failed:", response.error);
+        setError(response.error || "Failed to start assessment");
+        setOpenDialog(false);
+      }
+    } catch (err) {
+      console.error("❌ Error starting assessment:", err);
+      setError("Error starting assessment. Please try again.");
+      setOpenDialog(false);
+    } finally {
       setSubmitting(false);
     }
-    setOpenDialog(false);
   };
 
   const getTypeColor = (type) => {
@@ -89,6 +184,124 @@ export default function StudentTraining() {
     }
   };
 
+  const AssessmentCard = ({ assessment }) => (
+    <Card
+      sx={{
+        bgcolor: "#1e293b",
+        border: "1px solid #334155",
+        borderRadius: 2,
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.3s ease",
+        "&:hover": {
+          borderColor: "#8b5cf6",
+          boxShadow: "0 0 20px rgba(139, 92, 246, 0.1)",
+        },
+      }}
+    >
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          p: 3,
+        }}
+      >
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          mb={2}
+          gap={2}
+          sx={{ width: "100%" }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#e2e8f0",
+              fontWeight: "bold",
+              flex: 1,
+              minWidth: 0,
+              wordBreak: "break-word",
+            }}
+          >
+            {assessment.title}
+          </Typography>
+          <Chip
+            label={assessment.type?.toUpperCase()}
+            color={getTypeColor(assessment.type)}
+            size="small"
+            sx={{ flexShrink: 0 }}
+          />
+        </Box>
+
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#94a3b8",
+            mb: 2,
+            wordBreak: "break-word",
+          }}
+        >
+          {assessment.description || "No description provided"}
+        </Typography>
+
+        <Box display="flex" alignItems="center" gap={2} mb={2}>
+          <Schedule fontSize="small" sx={{ color: "#8b5cf6", flexShrink: 0 }} />
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            Duration: {assessment.duration} minutes
+          </Typography>
+        </Box>
+
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
+          <Assignment
+            fontSize="small"
+            sx={{ color: "#8b5cf6", flexShrink: 0 }}
+          />
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            Total Marks: {assessment.totalMarks}
+          </Typography>
+        </Box>
+
+        <Box mt="auto">
+          {assessment.isAttempted && !assessment.hasInProgress ? (
+            <Box display="flex" alignItems="center" gap={1}>
+              <CheckCircle sx={{ color: "#10b981" }} />
+              <Chip
+                label="Completed"
+                sx={{
+                  bgcolor: "#10b98120",
+                  color: "#10b981",
+                }}
+              />
+            </Box>
+          ) : (
+            <Button
+              variant="contained"
+              fullWidth
+              startIcon={assessment.hasInProgress ? <PlayArrow /> : null}
+              onClick={() => handleStartAssessment(assessment)}
+              sx={{
+                bgcolor: assessment.hasInProgress ? "#06b6d4" : "#8b5cf6",
+                color: "#fff",
+                "&:hover": {
+                  bgcolor: assessment.hasInProgress ? "#0891b2" : "#7c3aed",
+                },
+                textTransform: "none",
+                fontSize: "1rem",
+              }}
+            >
+              {assessment.hasInProgress
+                ? "Resume Assessment"
+                : "Start Assessment"}
+            </Button>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
   if (loading) {
     return (
       <Box sx={{ width: "100%", mt: 4 }}>
@@ -99,11 +312,11 @@ export default function StudentTraining() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: "#e2e8f0" }}>
-          Available Assessments
+      <Box mb={4}>
+        <Typography variant="h4" sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+          Training & Assessments
         </Typography>
-        <Typography variant="body1" sx={{ color: "#94a3b8" }}>
+        <Typography variant="body1" sx={{ color: "#94a3b8", mt: 1 }}>
           Complete assessments to improve your placement readiness
         </Typography>
       </Box>
@@ -114,167 +327,103 @@ export default function StudentTraining() {
         </Alert>
       )}
 
-      {/* Cards Container - Using Box instead of Grid */}
-      <Box
+      <Tabs
+        value={tabValue}
+        onChange={(e, newValue) => setTabValue(newValue)}
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 3,
-          width: "100%",
+          bgcolor: "transparent",
+          borderBottom: "1px solid #334155",
+          mb: 3,
+          "& .MuiTab-root": {
+            color: "#64748b",
+            textTransform: "none",
+            fontSize: "1rem",
+            "&.Mui-selected": {
+              color: "#8b5cf6",
+            },
+          },
+          "& .MuiTabs-indicator": {
+            backgroundColor: "#8b5cf6",
+          },
         }}
       >
-        {assessments.length === 0 ? (
-          <Card
+        <Tab
+          label={`Recently Posted (${assessments.new.length})`}
+          id="tab-0"
+          aria-controls="tabpanel-0"
+        />
+        <Tab
+          label={`Ongoing (${assessments.ongoing.length})`}
+          id="tab-1"
+          aria-controls="tabpanel-1"
+        />
+        <Tab
+          label={`Completed (${assessments.completed.length})`}
+          id="tab-2"
+          aria-controls="tabpanel-2"
+        />
+      </Tabs>
+
+      <TabPanel value={tabValue} index={0}>
+        {assessments.new.length === 0 ? (
+          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+            No recently posted assessments
+          </Typography>
+        ) : (
+          <Box
             sx={{
-              bgcolor: "#1e293b",
-              border: "1px solid #334155",
-              borderRadius: 2,
-              p: 4,
-              textAlign: "center",
-              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
             }}
           >
-            <Typography variant="h6" sx={{ color: "#94a3b8" }}>
-              No assessments available at the moment
-            </Typography>
-          </Card>
-        ) : (
-          assessments.map((assessment) => (
-            <Card
-              key={assessment.id}
-              elevation={3}
-              sx={{
-                bgcolor: "#1e293b",
-                border: "1px solid #334155",
-                borderRadius: 2,
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  borderColor: "#8b5cf6",
-                  boxShadow: "0 0 20px rgba(139, 92, 246, 0.1)",
-                },
-              }}
-            >
-              <CardContent
-                sx={{
-                  flexGrow: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  p: 3,
-                }}
-              >
-                {/* Header with Title and Type */}
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                  mb={2}
-                  gap={2}
-                  sx={{ width: "100%" }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: "#e2e8f0",
-                      flex: 1,
-                      minWidth: 0,
-                      wordBreak: "break-word",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                    }}
-                  >
-                    {assessment.title}
-                  </Typography>
-                  <Chip
-                    label={assessment.type.toUpperCase()}
-                    color={getTypeColor(assessment.type)}
-                    size="small"
-                    sx={{ flexShrink: 0 }}
-                  />
-                </Box>
-
-                {/* Description */}
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "#94a3b8",
-                    mb: 2,
-                    wordBreak: "break-word",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical",
-                    textOverflow: "ellipsis",
-                    minHeight: "3em",
-                    width: "100%",
-                  }}
-                >
-                  {assessment.description || "No description provided"}
-                </Typography>
-
-                {/* Duration and Marks */}
-                <Box display="flex" alignItems="center" gap={2} mb={2}>
-                  <Schedule
-                    fontSize="small"
-                    sx={{ color: "#8b5cf6", flexShrink: 0 }}
-                  />
-                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                    Duration: {assessment.duration} minutes
-                  </Typography>
-                </Box>
-
-                <Box display="flex" alignItems="center" gap={2} mb={3}>
-                  <Assignment
-                    fontSize="small"
-                    sx={{ color: "#8b5cf6", flexShrink: 0 }}
-                  />
-                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                    Total Marks: {assessment.totalMarks}
-                  </Typography>
-                </Box>
-
-                {/* Button or Completed Status */}
-                <Box mt="auto">
-                  {assessment.isAttempted ? (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <CheckCircle sx={{ color: "#10b981" }} />
-                      <Chip
-                        label="Completed"
-                        sx={{
-                          bgcolor: "#10b98120",
-                          color: "#10b981",
-                        }}
-                      />
-                    </Box>
-                  ) : (
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={() => handleStartAssessment(assessment)}
-                      sx={{
-                        bgcolor: "#8b5cf6",
-                        color: "#fff",
-                        "&:hover": { bgcolor: "#7c3aed" },
-                        textTransform: "none",
-                        fontSize: "1rem",
-                      }}
-                    >
-                      Start Assessment
-                    </Button>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          ))
+            {assessments.new.map((assessment) => (
+              <AssessmentCard key={assessment.id} assessment={assessment} />
+            ))}
+          </Box>
         )}
-      </Box>
+      </TabPanel>
 
-      {/* Confirmation Dialog */}
+      <TabPanel value={tabValue} index={1}>
+        {assessments.ongoing.length === 0 ? (
+          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+            No ongoing assessments
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+            }}
+          >
+            {assessments.ongoing.map((assessment) => (
+              <AssessmentCard key={assessment.id} assessment={assessment} />
+            ))}
+          </Box>
+        )}
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
+        {assessments.completed.length === 0 ? (
+          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+            No completed assessments yet
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+            }}
+          >
+            {assessments.completed.map((assessment) => (
+              <AssessmentCard key={assessment.id} assessment={assessment} />
+            ))}
+          </Box>
+        )}
+      </TabPanel>
+
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
