@@ -109,34 +109,45 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
   }
 });
 
-// Get all applications for a post (placement cell or post owner)
+// Get all applications for a post (placement cell only)
 router.get("/post/:postId/applications", requireAuth, async (req, res) => {
   try {
     const { postId } = req.params;
-    const userId = req.user.id;
     const userRole = req.user.role;
     const { download } = req.query; // Check if it's a download request
 
-    // Check if user is placement cell or owns the post
-    let post = null;
+    // Only allow placement cell access
     if (userRole !== "placement") {
-      post = await db
-        .select()
-        .from(posts)
-        .where(eq(posts.id, postId))
-        .limit(1);
-
-      if (post.length === 0 || post[0].user_id !== userId) {
-        return res.status(403).json({ ok: false, error: "Forbidden" });
+      // Return empty applications for non-placement users
+      if (download === "true") {
+        const csvHeaders = [
+          "Student Name",
+          "Roll Number",
+          "Branch",
+          "Semester",
+          "CGPA",
+          "10th",
+          "12th",
+          "Company",
+          "Position",
+          "Status",
+          "Applied Date"
+        ];
+        const csvContent = [csvHeaders].map(row => row.map(field => `"${field}"`).join(",")).join("\n");
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="no_applications.csv"`);
+        return res.send(csvContent);
+      } else {
+        return res.json({ ok: true, applications: [] });
       }
-    } else {
-      // For placement cell, still fetch post details for CSV
-      post = await db
-        .select()
-        .from(posts)
-        .where(eq(posts.id, postId))
-        .limit(1);
     }
+
+    // For placement cell, fetch post details for CSV
+    const post = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
 
     const applications = await db
       .select()

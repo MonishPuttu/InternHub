@@ -43,13 +43,15 @@ export default function RecruiterDashboard() {
   const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [viewListDialogOpen, setViewListDialogOpen] = useState(false);
   const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
-  const [postApplications, setPostApplications] = useState([]);
+  const [receivedLists, setReceivedLists] = useState([]);
+  const [selectedReceivedList, setSelectedReceivedList] = useState(null);
   const [postAppLoading, setPostAppLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchReceivedLists();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -83,6 +85,24 @@ export default function RecruiterDashboard() {
     }
   };
 
+  const fetchReceivedLists = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${BACKEND_URL}/api/student-applications/received-lists`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok) {
+        setReceivedLists(response.data.lists);
+      }
+    } catch (error) {
+      console.error("Error fetching received lists:", error);
+    }
+  };
+
   const handleViewPostDetails = (post) => {
     setSelectedPost(post);
     setViewPostDialogOpen(true);
@@ -91,22 +111,16 @@ export default function RecruiterDashboard() {
 
 
   const handleViewApplicationsList = async (post) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${BACKEND_URL}/api/student-applications/post/${post.id}/applications`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    // Find if there's a received list for this post
+    const receivedList = receivedLists.find(list => list.post.id === post.id);
 
-      if (response.data.ok) {
-        setSelectedPostForList(post);
-        setApplicationsList(response.data.applications);
-        setViewListDialogOpen(true);
-      }
-    } catch (error) {
-      console.error("Error fetching applications:", error);
+    if (receivedList) {
+      setSelectedReceivedList(receivedList);
+      setViewListDialogOpen(true);
+    } else {
+      // No received list yet - show message or handle accordingly
+      console.log("No applications received for this post yet");
+      // You could show a snackbar or dialog here
     }
   };
 
@@ -114,7 +128,7 @@ export default function RecruiterDashboard() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${BACKEND_URL}/api/student-applications/post/${selectedPostForList.id}/applications?download=true`,
+        `${BACKEND_URL}/api/student-applications/received-list/${selectedReceivedList.sent_list.id}/download`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: 'blob',
@@ -125,7 +139,7 @@ export default function RecruiterDashboard() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${selectedPostForList.company_name}_${selectedPostForList.position}_applications.csv`);
+      link.setAttribute('download', `${selectedReceivedList.post.company_name}_${selectedReceivedList.post.position}_applications.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -281,32 +295,38 @@ export default function RecruiterDashboard() {
               >
                 {post.industry} • Posted {new Date(post.application_date).toLocaleDateString()}
               </Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handleViewPostDetails(post)}
-                  sx={{
-                    color: "#8b5cf6",
-                    borderColor: "#8b5cf6",
-                    "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf620" },
-                  }}
-                >
-                  View Details
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handleViewApplicationsList(post)}
-                  sx={{
-                    color: "#10b981",
-                    borderColor: "#10b981",
-                    "&:hover": { borderColor: "#059669", bgcolor: "#10b98120" },
-                  }}
-                >
-                  View Applications
-                </Button>
-              </Box>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleViewPostDetails(post)}
+                    sx={{
+                      color: "#8b5cf6",
+                      borderColor: "#8b5cf6",
+                      "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf620" },
+                    }}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleViewApplicationsList(post)}
+                    disabled={!receivedLists.some(list => list.post.id === post.id)}
+                    sx={{
+                      color: "#10b981",
+                      borderColor: "#10b981",
+                      "&:hover": { borderColor: "#059669", bgcolor: "#10b98120" },
+                      "&:disabled": {
+                        color: "#64748b",
+                        borderColor: "#64748b",
+                        opacity: 0.5
+                      }
+                    }}
+                  >
+                    View Applications
+                  </Button>
+                </Box>
             </Paper>
           ))}
         </Box>
@@ -366,10 +386,10 @@ export default function RecruiterDashboard() {
         }}
       >
         <DialogTitle>
-          Applications for {selectedPostForList?.company_name} - {selectedPostForList?.position}
+          Applications for {selectedReceivedList?.post.company_name} - {selectedReceivedList?.post.position}
         </DialogTitle>
         <DialogContent>
-          {applicationsList.length > 0 ? (
+          {selectedReceivedList && selectedReceivedList.sent_list.list_data.length > 0 ? (
             <TableContainer
               component={Paper}
               sx={{
@@ -410,7 +430,7 @@ export default function RecruiterDashboard() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {applicationsList
+                  {selectedReceivedList.sent_list.list_data
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((app) => (
                       <TableRow
@@ -457,12 +477,12 @@ export default function RecruiterDashboard() {
                         <TableCell
                           sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
                         >
-                          {selectedPostForList?.company_name}
+                          {selectedReceivedList?.post.company_name}
                         </TableCell>
                         <TableCell
                           sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
                         >
-                          {selectedPostForList?.position}
+                          {selectedReceivedList?.post.position}
                         </TableCell>
                         <TableCell sx={{ borderBottom: "1px solid #334155" }}>
                           <Chip
@@ -486,7 +506,7 @@ export default function RecruiterDashboard() {
               </Table>
               <TablePagination
                 component="div"
-                count={applicationsList.length}
+                count={selectedReceivedList.sent_list.list_data.length}
                 page={page}
                 onPageChange={(e, newPage) => setPage(newPage)}
                 rowsPerPage={rowsPerPage}
@@ -503,7 +523,7 @@ export default function RecruiterDashboard() {
             </TableContainer>
           ) : (
             <Typography variant="body2" sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
-              No applications found for this post.
+              No applications received for this post yet.
             </Typography>
           )}
         </DialogContent>
@@ -514,7 +534,7 @@ export default function RecruiterDashboard() {
           >
             Close
           </Button>
-          {applicationsList.length > 0 && (
+          {selectedReceivedList && selectedReceivedList.sent_list.list_data.length > 0 && (
             <Button
               onClick={handleDownloadApplications}
               variant="contained"
