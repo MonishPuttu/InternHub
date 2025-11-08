@@ -96,6 +96,8 @@ export default function ApprovedPostsSection(props) {
   const [postAppLoading, setPostAppLoading] = useState(false);
   const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
+  const [sendListDialogOpen, setSendListDialogOpen] = useState(false);
+  const [sentLists, setSentLists] = useState(new Set()); // Track sent posts
 
   // Stats state
   const [overallStats, setOverallStats] = useState({
@@ -115,7 +117,27 @@ export default function ApprovedPostsSection(props) {
   useEffect(() => {
     fetchApprovedPosts();
     fetchGlobalStats();
+    fetchSentLists();
   }, []);
+
+  const fetchSentLists = async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `${BACKEND_URL}/api/student-applications/sent-lists`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok) {
+        const sentPostIds = response.data.lists.map(list => list.sent_list.post_id);
+        setSentLists(new Set(sentPostIds));
+      }
+    } catch (error) {
+      console.error("Error fetching sent lists:", error);
+    }
+  };
 
   // Calculate stats from all applications
   const calculateStats = (applications) => {
@@ -216,13 +238,19 @@ export default function ApprovedPostsSection(props) {
     }
   };
 
-  const handleSendList = async (post) => {
+  const handleSendListClick = (post) => {
+    setSelectedPost(post);
+    setSendListDialogOpen(true);
+  };
+
+  const handleSendListConfirm = async () => {
+    setSendListDialogOpen(false);
     try {
       const token = getToken();
       const response = await axios.post(
-        `${BACKEND_URL}/api/student-applications/send-list/${post.id}`,
+        `${BACKEND_URL}/api/student-applications/send-list/${selectedPost.id}`,
         {
-          recruiterId: post.user_id, // Send the recruiter ID who owns the post
+          recruiterId: selectedPost.user_id, // Send the recruiter ID who owns the post
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -231,12 +259,18 @@ export default function ApprovedPostsSection(props) {
 
       if (response.data.ok) {
         setSuccessMsg("Application list sent to recruiter successfully");
+        // Mark this post as sent
+        setSentLists(prev => new Set([...prev, selectedPost.id]));
       } else {
-        setErrorMsg("Failed to send application list");
+        setErrorMsg(response.data.error || "Failed to send application list");
       }
     } catch (error) {
       console.error("Error sending list:", error);
-      setErrorMsg("Failed to send application list");
+      if (error.response?.data?.error) {
+        setErrorMsg(error.response.data.error);
+      } else {
+        setErrorMsg("Failed to send application list");
+      }
     }
   };
 
@@ -646,16 +680,22 @@ export default function ApprovedPostsSection(props) {
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
               variant="outlined"
-              onClick={() => handleSendList(selectedPost)}
+              onClick={() => handleSendListClick(selectedPost)}
+              disabled={sentLists.has(selectedPost?.id)}
               sx={{
                 color: "#f59e0b",
                 borderColor: "#f59e0b",
                 "&:hover": { borderColor: "#d97706", bgcolor: "#f59e0b20" },
+                "&:disabled": {
+                  color: "#64748b",
+                  borderColor: "#64748b",
+                  opacity: 0.5
+                },
                 padding: { xs: "4px 8px", sm: "6px 16px" },
                 fontSize: { xs: "0.75rem", sm: "0.875rem" },
               }}
             >
-              Send List
+              {sentLists.has(selectedPost?.id) ? "List Sent" : "Send List"}
             </Button>
             <Button
               variant="contained"
@@ -921,6 +961,47 @@ export default function ApprovedPostsSection(props) {
             sx={{ color: "#94a3b8" }}
           >
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Send List Confirmation Dialog */}
+      <Dialog
+        open={sendListDialogOpen}
+        onClose={() => setSendListDialogOpen(false)}
+        PaperProps={{
+          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+        }}
+      >
+        <DialogTitle>
+          Confirm Send List
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ color: "#e2e8f0", mb: 2 }}>
+            Check the information before sending. Further changes cannot be changed.
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            This action will send the application list to the recruiter for {selectedPost?.company_name} - {selectedPost?.position}.
+            Once sent, you cannot send the list again for this post.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setSendListDialogOpen(false)}
+            sx={{ color: "#94a3b8" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSendListConfirm}
+            variant="contained"
+            sx={{
+              bgcolor: "#f59e0b",
+              color: "#1e293b",
+              "&:hover": { bgcolor: "#d97706" },
+            }}
+          >
+            Send List
           </Button>
         </DialogActions>
       </Dialog>

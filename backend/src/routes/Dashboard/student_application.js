@@ -578,6 +578,17 @@ router.post("/send-list/:postId", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Recruiter ID is required" });
     }
 
+    // Check if list has already been sent for this post
+    const existingSentList = await db
+      .select()
+      .from(sent_lists)
+      .where(eq(sent_lists.post_id, postId))
+      .limit(1);
+
+    if (existingSentList.length > 0) {
+      return res.status(400).json({ ok: false, error: "Application list has already been sent for this post" });
+    }
+
     // Verify post exists and belongs to the recruiter
     const post = await db
       .select()
@@ -673,6 +684,30 @@ router.get("/received-list/:listId", requireAuth, async (req, res) => {
     res.json({ ok: true, list: receivedList[0] });
   } catch (e) {
     console.error("Error fetching received list details:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get all sent lists for placement cell
+router.get("/sent-lists", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const sentLists = await db
+      .select({
+        sent_list: sent_lists,
+        post: posts,
+      })
+      .from(sent_lists)
+      .leftJoin(posts, eq(sent_lists.post_id, posts.id))
+      .where(eq(sent_lists.sent_by, req.user.id))
+      .orderBy(desc(sent_lists.sent_at));
+
+    res.json({ ok: true, lists: sentLists });
+  } catch (e) {
+    console.error("Error fetching sent lists:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
