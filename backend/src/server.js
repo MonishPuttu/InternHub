@@ -12,12 +12,13 @@ import dashboardRoutes from "./routes/Dashboard/Dashboard.js"; // Dashobard page
 import studentApplicationsRoutes from "./routes/Dashboard/student_application.js"; // Dashobard page [placementcell]
 import postsRoutes from "./routes/posts.js"; // Post management routes
 import trainingRoutes from "./routes/training.js"; // Training part routes
-import placementAnalyticsRoutes from './routes/placement_analytics.js';
+import placementAnalyticsRoutes from "./routes/placement_analytics.js";
+import timelineRoutes from "./routes/timeline.js";
+import { startTimelineUpdater } from "./jobs/timeline-updater.js";
 
 const app = express();
 
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
-app.use(express.json());
 
 import dotenv from "dotenv";
 
@@ -27,8 +28,8 @@ const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoutes);
@@ -39,9 +40,9 @@ app.use("/api/posts", postsRoutes);
 app.use("/api/student-applications", studentApplicationsRoutes);
 app.use("/api", calendarRoutes);
 app.use("/api/training", trainingRoutes);
+app.use("/api/timeline", timelineRoutes);
 
-
-app.use('/api/placement-analytics', placementAnalyticsRoutes);
+app.use("/api/placement-analytics", placementAnalyticsRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
@@ -52,6 +53,8 @@ const io = new Server(server, {
 });
 
 chatSocket(io);
+
+startTimelineUpdater();
 
 const port = process.env.PORT || 4000;
 

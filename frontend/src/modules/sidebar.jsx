@@ -25,6 +25,7 @@ import {
   CalendarToday as CalenderIcon,
   WorkOutline as WorkOutlineIcon,
   Assessment as AssessmentIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import SchoolIcon from "@mui/icons-material/School";
 
@@ -74,6 +75,12 @@ const navigationItems = [
     path: "/placement-analytics",
     icon: <BarChartIcon />,
     roles: ["placement"],
+  },
+  {
+    text: "Timeline",
+    icon: <TimelineIcon />,
+    path: "/timeline",
+    roles: ["student"],
   },
 
   {

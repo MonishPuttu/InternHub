@@ -8,8 +8,17 @@ import { requireAuth } from "../middleware/authmiddleware.js";
 const router = express.Router();
 
 // ✅ Allowed departments
-const ALLOWED_DEPARTMENTS = ["ECE", "CSE", "EEE", "MECH", "CIVIL", "IT", "MBA", "AIML", "MCA"];
-
+const ALLOWED_DEPARTMENTS = [
+  "ECE",
+  "CSE",
+  "EEE",
+  "MECH",
+  "CIVIL",
+  "IT",
+  "MBA",
+  "AIML",
+  "MCA",
+];
 
 router.get("/applications", requireAuth, async (req, res) => {
   try {
@@ -26,9 +35,12 @@ router.get("/applications", requireAuth, async (req, res) => {
         .limit(1);
 
       if (placementProfile.length > 0) {
-        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        const officerDepartment = placementProfile[0].department_branch;
         conditions.push(
-          or(isNull(posts.target_departments), arrayContains(posts.target_departments, [officerDepartment]))
+          or(
+            isNull(posts.target_departments),
+            arrayContains(posts.target_departments, [officerDepartment])
+          )
         );
       }
     } else {
@@ -54,14 +66,15 @@ router.get("/applications", requireAuth, async (req, res) => {
   }
 });
 
-
 router.post("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
 
     if (userRole !== "recruiter") {
-      return res.status(403).json({ ok: false, error: "Only recruiters can create posts" });
+      return res
+        .status(403)
+        .json({ ok: false, error: "Only recruiters can create posts" });
     }
 
     const {
@@ -78,16 +91,28 @@ router.post("/applications", requireAuth, async (req, res) => {
     } = req.body;
 
     if (!company_name || !position || !industry) {
-      return res.status(400).json({ ok: false, error: "Company name, position and industry are required" });
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          error: "Company name, position and industry are required",
+        });
     }
 
     // ✅ Validate departments
     let validatedDepartments = [];
     if (Array.isArray(target_departments) && target_departments.length > 0) {
-      validatedDepartments = target_departments.map((d) => d.toUpperCase());
-      const invalid = validatedDepartments.filter((d) => !ALLOWED_DEPARTMENTS.includes(d));
+      validatedDepartments = target_departments.map((d) => d);
+      const invalid = validatedDepartments.filter(
+        (d) => !ALLOWED_DEPARTMENTS.includes(d)
+      );
       if (invalid.length > 0) {
-        return res.status(400).json({ ok: false, error: `Invalid departments: ${invalid.join(", ")}` });
+        return res
+          .status(400)
+          .json({
+            ok: false,
+            error: `Invalid departments: ${invalid.join(", ")}`,
+          });
       }
     }
 
@@ -98,12 +123,16 @@ router.post("/applications", requireAuth, async (req, res) => {
         company_name,
         position,
         industry,
-        application_date: application_date ? new Date(application_date) : new Date(),
+        application_date: application_date
+          ? new Date(application_date)
+          : new Date(),
         status: status || "applied",
         package_offered: package_offered || null,
         notes: notes || null,
         media: media || null,
-        application_deadline: application_deadline ? new Date(application_deadline) : null,
+        application_deadline: application_deadline
+          ? new Date(application_deadline)
+          : null,
         target_departments: validatedDepartments,
         approval_status: "pending",
       })
@@ -116,7 +145,6 @@ router.post("/applications", requireAuth, async (req, res) => {
   }
 });
 
-
 router.put("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -125,10 +153,19 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     const updateData = { ...req.body };
 
     if (updateData.target_departments) {
-      updateData.target_departments = updateData.target_departments.map((d) => d.toUpperCase());
-      const invalid = updateData.target_departments.filter((d) => !ALLOWED_DEPARTMENTS.includes(d));
+      updateData.target_departments = updateData.target_departments.map(
+        (d) => d
+      );
+      const invalid = updateData.target_departments.filter(
+        (d) => !ALLOWED_DEPARTMENTS.includes(d)
+      );
       if (invalid.length > 0) {
-        return res.status(400).json({ ok: false, error: `Invalid departments: ${invalid.join(", ")}` });
+        return res
+          .status(400)
+          .json({
+            ok: false,
+            error: `Invalid departments: ${invalid.join(", ")}`,
+          });
       }
     }
 
@@ -148,19 +185,28 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
         .limit(1);
 
       if (placementProfile.length > 0) {
-        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        const officerDepartment = placementProfile[0].department_branch;
         conditions.push(
-          or(isNull(posts.target_departments), arrayContains(posts.target_departments, [officerDepartment]))
+          or(
+            isNull(posts.target_departments),
+            arrayContains(posts.target_departments, [officerDepartment])
+          )
         );
       }
     } else if (userRole !== "admin") {
       conditions.push(eq(posts.user_id, userId));
     }
 
-    const updated = await db.update(posts).set(updateData).where(and(...conditions)).returning();
+    const updated = await db
+      .update(posts)
+      .set(updateData)
+      .where(and(...conditions))
+      .returning();
 
     if (updated.length === 0) {
-      return res.status(404).json({ ok: false, error: "Post not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ ok: false, error: "Post not found or unauthorized" });
     }
 
     res.json({ ok: true, application: updated[0] });
@@ -169,7 +215,6 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
-
 
 router.delete("/applications/:id", requireAuth, async (req, res) => {
   try {
@@ -185,13 +230,23 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
         .limit(1);
 
       if (placementProfile.length > 0) {
-        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
-        await db.delete(posts).where(
-          and(eq(posts.id, id), or(isNull(posts.target_departments), arrayContains(posts.target_departments, officerDepartment)))
-        );
+        const officerDepartment = placementProfile[0].department_branch;
+        await db
+          .delete(posts)
+          .where(
+            and(
+              eq(posts.id, id),
+              or(
+                isNull(posts.target_departments),
+                arrayContains(posts.target_departments, officerDepartment)
+              )
+            )
+          );
       }
     } else {
-      await db.delete(posts).where(and(eq(posts.id, id), eq(posts.user_id, userId)));
+      await db
+        .delete(posts)
+        .where(and(eq(posts.id, id), eq(posts.user_id, userId)));
     }
 
     res.json({ ok: true });
@@ -201,16 +256,19 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
-
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "student" && req.user.role !== "placement") return res.status(403).json({ ok: false, error: "Forbidden" });
+    if (req.user.role !== "student" && req.user.role !== "placement")
+      return res.status(403).json({ ok: false, error: "Forbidden" });
 
     const { limit = 200 } = req.query;
     const currentDate = new Date();
     let conditions = [
       eq(posts.approval_status, "approved"),
-      or(isNull(posts.application_deadline), gt(posts.application_deadline, currentDate))
+      or(
+        isNull(posts.application_deadline),
+        gt(posts.application_deadline, currentDate)
+      ),
     ];
 
     if (req.user.role === "student") {
@@ -221,10 +279,15 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
         .limit(1);
 
       if (studentProfile.length === 0 || !studentProfile[0].branch) {
-        return res.status(400).json({ ok: false, error: "Student profile not found or branch not set" });
+        return res
+          .status(400)
+          .json({
+            ok: false,
+            error: "Student profile not found or branch not set",
+          });
       }
 
-      const studentBranch = studentProfile[0].branch.toUpperCase();
+      const studentBranch = studentProfile[0].branch;
       conditions.push(arrayContains(posts.target_departments, [studentBranch]));
     } else if (req.user.role === "placement") {
       const placementProfile = await db
@@ -234,9 +297,12 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
         .limit(1);
 
       if (placementProfile.length > 0) {
-        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        const officerDepartment = placementProfile[0].department_branch;
         conditions.push(
-          or(isNull(posts.target_departments), arrayContains(posts.target_departments, [officerDepartment]))
+          or(
+            isNull(posts.target_departments),
+            arrayContains(posts.target_departments, [officerDepartment])
+          )
         );
       }
     }
@@ -255,7 +321,6 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
   }
 });
 
-
 router.get("/applications/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -268,7 +333,8 @@ router.get("/applications/:id", requireAuth, async (req, res) => {
     const p = post[0];
     const isOwner = p.user_id === req.user.id;
     const isPlacement = req.user.role === "placement";
-    const isStudentApproved = req.user.role === "student" && p.approval_status === "approved";
+    const isStudentApproved =
+      req.user.role === "student" && p.approval_status === "approved";
 
     if (!isOwner && !isPlacement && !isStudentApproved) {
       return res.status(403).json({ ok: false, error: "Forbidden" });

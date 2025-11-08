@@ -8,3 +8,4 @@ export * from "./Dashboard/student_applications.js";
 export * from "./training.js";
 export * from "./placement_analytics.js";
 export * from "./Dashboard/sent_lists.js";
+export * from "./timeline.js";

@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, uuid, decimal, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  decimal,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 import { user } from "./user.js";
 
 // ✅ Define an enum for allowed department branches
@@ -11,7 +18,7 @@ export const departmentEnum = pgEnum("department_branch", [
   "IT",
   "MBA",
   "AIML",
-  "MCA"
+  "MCA",
 ]);
 
 // Dedicated posts table for recruiter opportunities
@@ -35,7 +42,10 @@ export const posts = pgTable("posts", {
   rejection_reason: text("rejection_reason"),
 
   // ✅ Restrict target departments to predefined enum values
-  target_departments: departmentEnum("target_departments").array(), 
+  target_departments: departmentEnum("target_departments").array(),
+
+  // for timeline tracker
+  interview_date: timestamp("interview_date"),
 
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
