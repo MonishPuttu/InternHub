@@ -1,23 +1,37 @@
 import express from "express";
 import { db } from "../db/index.js";
-import { posts } from "../db/schema/post.js"; // Use the new posts table
-import { eq, desc, and, or, isNull, gt } from "drizzle-orm";
+import { posts } from "../db/schema/post.js";
+import { placement_profile, student_profile } from "../db/schema/user.js";
+import { eq, desc, and, or, isNull, gt, arrayContains } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
-// Get all posts (for the authenticated user)
-// Get all posts (for the authenticated user OR all posts for placement)
+// ✅ Allowed departments
+const ALLOWED_DEPARTMENTS = ["ECE", "CSE", "EEE", "MECH", "CIVIL", "IT", "MBA", "AIML", "MCA"];
+
+
 router.get("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
     const { status, industry, limit = 50 } = req.query;
-
     let conditions = [];
 
-    // Placement officers see ALL posts, others see only their own
-    if (userRole !== "placement") {
+    if (userRole === "placement") {
+      const placementProfile = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, userId))
+        .limit(1);
+
+      if (placementProfile.length > 0) {
+        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        conditions.push(
+          or(isNull(posts.target_departments), arrayContains(posts.target_departments, [officerDepartment]))
+        );
+      }
+    } else {
       conditions.push(eq(posts.user_id, userId));
     }
 
@@ -40,14 +54,14 @@ router.get("/applications", requireAuth, async (req, res) => {
   }
 });
 
-// Create a new post (recruiter-only)
+
 router.post("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
 
     if (userRole !== "recruiter") {
-      return res.status(403).json({ ok: false, error: "Forbidden: only recruiters can create posts" });
+      return res.status(403).json({ ok: false, error: "Only recruiters can create posts" });
     }
 
     const {
@@ -60,10 +74,21 @@ router.post("/applications", requireAuth, async (req, res) => {
       notes,
       media,
       application_deadline,
+      target_departments,
     } = req.body;
 
     if (!company_name || !position || !industry) {
       return res.status(400).json({ ok: false, error: "Company name, position and industry are required" });
+    }
+
+    // ✅ Validate departments
+    let validatedDepartments = [];
+    if (Array.isArray(target_departments) && target_departments.length > 0) {
+      validatedDepartments = target_departments.map((d) => d.toUpperCase());
+      const invalid = validatedDepartments.filter((d) => !ALLOWED_DEPARTMENTS.includes(d));
+      if (invalid.length > 0) {
+        return res.status(400).json({ ok: false, error: `Invalid departments: ${invalid.join(", ")}` });
+      }
     }
 
     const newPost = await db
@@ -79,7 +104,8 @@ router.post("/applications", requireAuth, async (req, res) => {
         notes: notes || null,
         media: media || null,
         application_deadline: application_deadline ? new Date(application_deadline) : null,
-        approval_status: "pending", // Default to pending
+        target_departments: validatedDepartments,
+        approval_status: "pending",
       })
       .returning();
 
@@ -90,7 +116,7 @@ router.post("/applications", requireAuth, async (req, res) => {
   }
 });
 
-// Update post (only owner can update)
+
 router.put("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -98,39 +124,40 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
     const updateData = { ...req.body };
 
-    // Convert dates
-    if (updateData.application_date) updateData.application_date = new Date(updateData.application_date);
-    if (updateData.interview_date) updateData.interview_date = new Date(updateData.interview_date);
-    if (updateData.offer_date) updateData.offer_date = new Date(updateData.offer_date);
-    if (updateData.rejection_date) updateData.rejection_date = new Date(updateData.rejection_date);
-    if (updateData.application_deadline) updateData.application_deadline = new Date(updateData.application_deadline);
-    updateData.updated_at = new Date();
-
-    // Handle media deletion - explicitly set to null if empty string
-    if (updateData.media === "") {
-      updateData.media = null;
+    if (updateData.target_departments) {
+      updateData.target_departments = updateData.target_departments.map((d) => d.toUpperCase());
+      const invalid = updateData.target_departments.filter((d) => !ALLOWED_DEPARTMENTS.includes(d));
+      if (invalid.length > 0) {
+        return res.status(400).json({ ok: false, error: `Invalid departments: ${invalid.join(", ")}` });
+      }
     }
 
-    // Handle other fields - convert empty strings to null for nullable fields
-    const nullableFields = ['package_offered', 'notes', 'location', 'job_type', 'contact_person', 'contact_email', 'job_link', 'application_deadline', 'interview_date'];
-    nullableFields.forEach(field => {
-      if (updateData[field] === "") {
-        updateData[field] = null;
-      }
+    const nullableFields = ["package_offered", "notes", "media"];
+    nullableFields.forEach((f) => {
+      if (updateData[f] === "") updateData[f] = null;
     });
 
-    // Allow placement officers to update any post (for approval)
-    // Allow owners to update their own posts
+    updateData.updated_at = new Date();
+
     let conditions = [eq(posts.id, id)];
-    if (userRole !== "placement") {
+    if (userRole === "placement") {
+      const placementProfile = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, userId))
+        .limit(1);
+
+      if (placementProfile.length > 0) {
+        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        conditions.push(
+          or(isNull(posts.target_departments), arrayContains(posts.target_departments, [officerDepartment]))
+        );
+      }
+    } else if (userRole !== "admin") {
       conditions.push(eq(posts.user_id, userId));
     }
 
-    const updated = await db
-      .update(posts)
-      .set(updateData)
-      .where(and(...conditions))
-      .returning();
+    const updated = await db.update(posts).set(updateData).where(and(...conditions)).returning();
 
     if (updated.length === 0) {
       return res.status(404).json({ ok: false, error: "Post not found or unauthorized" });
@@ -143,7 +170,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Delete post (owner or placement officers)
+
 router.delete("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -151,10 +178,19 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
 
     if (userRole === "placement") {
-      // placement officers may delete any post
-      await db.delete(posts).where(eq(posts.id, id));
+      const placementProfile = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, userId))
+        .limit(1);
+
+      if (placementProfile.length > 0) {
+        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        await db.delete(posts).where(
+          and(eq(posts.id, id), or(isNull(posts.target_departments), arrayContains(posts.target_departments, officerDepartment)))
+        );
+      }
     } else {
-      // others may only delete their own posts
       await db.delete(posts).where(and(eq(posts.id, id), eq(posts.user_id, userId)));
     }
 
@@ -165,28 +201,52 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Get approved posts (for students)
+
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
-    // Only students should fetch approved posts
-    if (req.user.role !== "student") return res.status(403).json({ ok: false, error: "Forbidden" });
+    if (req.user.role !== "student" && req.user.role !== "placement") return res.status(403).json({ ok: false, error: "Forbidden" });
 
+    const { limit = 200 } = req.query;
     const currentDate = new Date();
+    let conditions = [
+      eq(posts.approval_status, "approved"),
+      or(isNull(posts.application_deadline), gt(posts.application_deadline, currentDate))
+    ];
+
+    if (req.user.role === "student") {
+      const studentProfile = await db
+        .select()
+        .from(student_profile)
+        .where(eq(student_profile.user_id, req.user.id))
+        .limit(1);
+
+      if (studentProfile.length === 0 || !studentProfile[0].branch) {
+        return res.status(400).json({ ok: false, error: "Student profile not found or branch not set" });
+      }
+
+      const studentBranch = studentProfile[0].branch.toUpperCase();
+      conditions.push(arrayContains(posts.target_departments, [studentBranch]));
+    } else if (req.user.role === "placement") {
+      const placementProfile = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, req.user.id))
+        .limit(1);
+
+      if (placementProfile.length > 0) {
+        const officerDepartment = placementProfile[0].department_branch.toUpperCase();
+        conditions.push(
+          or(isNull(posts.target_departments), arrayContains(posts.target_departments, [officerDepartment]))
+        );
+      }
+    }
 
     const approvedPosts = await db
       .select()
       .from(posts)
-      .where(
-        and(
-          eq(posts.approval_status, "approved"),
-          or(
-            isNull(posts.application_deadline),
-            gt(posts.application_deadline, currentDate)
-          )
-        )
-      )
+      .where(and(...conditions))
       .orderBy(desc(posts.application_date))
-      .limit(200);
+      .limit(parseInt(limit));
 
     res.json({ ok: true, posts: approvedPosts });
   } catch (e) {
@@ -195,35 +255,26 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
   }
 });
 
-// Get a single application by ID 
-// Get a single post by ID
+
 router.get("/applications/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userRole = req.user.role;
     const { id } = req.params;
-
-    // Fetch the post from posts table
-    const post = await db
-      .select()
-      .from(posts)  // ✅ FIXED - use posts table
-      .where(eq(posts.id, id))
-      .limit(1);
+    const post = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
 
     if (post.length === 0) {
       return res.status(404).json({ ok: false, error: "Post not found" });
     }
 
-    // Only allow: owner, placement cell, or student viewing approved posts
-    const isOwner = post[0].user_id === userId;
-    const isPlacement = userRole === "placement";
-    const isStudentViewingApproved = userRole === "student" && post[0].approval_status === "approved";
+    const p = post[0];
+    const isOwner = p.user_id === req.user.id;
+    const isPlacement = req.user.role === "placement";
+    const isStudentApproved = req.user.role === "student" && p.approval_status === "approved";
 
-    if (!isOwner && !isPlacement && !isStudentViewingApproved) {
-      return res.status(403).json({ ok: false, error: "Forbidden: You don't have access to this post" });
+    if (!isOwner && !isPlacement && !isStudentApproved) {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    res.json({ ok: true, application: post[0] });
+    res.json({ ok: true, application: p });
   } catch (e) {
     console.error("Error fetching post by ID:", e);
     res.status(500).json({ ok: false, error: String(e) });

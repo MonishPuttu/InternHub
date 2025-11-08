@@ -161,17 +161,14 @@ export default function ApprovedPostsSection(props) {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${BACKEND_URL}/api/posts/applications`,
+        `${BACKEND_URL}/api/posts/approved-posts?limit=1000`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (response.data.ok) {
-        const approved = response.data.applications.filter(
-          (post) => post.approval_status === "approved"
-        );
-        setApprovedPosts(approved);
+        setApprovedPosts(response.data.posts);
       }
     } catch (error) {
       console.error("Error fetching approved posts:", error);

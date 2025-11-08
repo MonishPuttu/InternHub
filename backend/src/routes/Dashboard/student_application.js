@@ -7,7 +7,7 @@ import {
   user,
   sent_lists,
 } from "../../db/schema/index.js";
-import { eq, desc, and, count, countDistinct } from "drizzle-orm";
+import { eq, desc, and, count, countDistinct, inArray, isNull } from "drizzle-orm";
 import { requireAuth } from "../../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -41,6 +41,30 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
       return res
         .status(403)
         .json({ ok: false, error: "Post is not approved yet" });
+    }
+
+    // Check if student can apply to this post (department check)
+    const studentProfile = await db
+      .select()
+      .from(student_profile)
+      .where(eq(student_profile.user_id, studentId))
+      .limit(1);
+
+    if (studentProfile.length === 0) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "Please complete your profile first" });
+    }
+
+    const studentBranch = studentProfile[0].branch.toUpperCase(); // Convert to uppercase
+
+    // Check if post targets student's department or has no target departments (legacy posts)
+    if (post[0].target_departments && post[0].target_departments.length > 0) {
+      if (!post[0].target_departments.includes(studentBranch)) {
+        return res
+          .status(403)
+          .json({ ok: false, error: "This post is not available for your department" });
+      }
     }
 
     // Check if already applied

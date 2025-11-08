@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -9,12 +9,40 @@ import {
   Avatar,
   Stack,
   Divider,
+  CircularProgress,
 } from "@mui/material";
+import axios from "axios";
 import { getUser, logout } from "@/lib/session";
 
 export default function Settings() {
   const router = useRouter();
   const user = getUser();
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const BACKEND_URL =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${BACKEND_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.ok) {
+        setProfileData(response.data.user.profile);
+      }
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get initials from name
   const getInitials = (name) => {
@@ -34,6 +62,41 @@ export default function Settings() {
   const handleLogout = async () => {
     await logout();
   };
+
+  // Get department information based on role
+  const getDepartmentInfo = () => {
+    if (!profileData) return null;
+
+    if (user?.role === "placement") {
+      return {
+        label: "Department",
+        value: profileData.department_branch || "Not specified",
+      };
+    } else if (user?.role === "recruiter") {
+      return {
+        label: "Industry Sector",
+        value: profileData.industry_sector || "Not specified",
+      };
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "80vh",
+        }}
+      >
+        <CircularProgress sx={{ color: "#8b5cf6" }} />
+      </Box>
+    );
+  }
+
+  const departmentInfo = getDepartmentInfo();
 
   return (
     <Box sx={{ p: 4, maxWidth: 800, mx: "auto" }}>
@@ -82,6 +145,11 @@ export default function Settings() {
           >
             {user?.role}
           </Typography>
+          {departmentInfo && (
+            <Typography variant="body2" sx={{ color: "#94a3b8", mb: 1 }}>
+              {departmentInfo.label}: {departmentInfo.value}
+            </Typography>
+          )}
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
             {user?.email}
           </Typography>

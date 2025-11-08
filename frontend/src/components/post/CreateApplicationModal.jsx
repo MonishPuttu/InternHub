@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import {
   Button, TextField, IconButton, Typography, Box, Paper, Modal,
-  Snackbar, Alert, MenuItem, LinearProgress
+  Snackbar, Alert, MenuItem, LinearProgress, FormControl, InputLabel, Select, Chip
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -17,6 +17,10 @@ const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'
 const INDUSTRIES = [
   'Technology', 'Finance', 'Healthcare', 'Consulting',
   'Manufacturing', 'Retail', 'Education', 'Other'
+];
+
+const DEPARTMENTS = [
+  'CSE', 'IT', 'AIML', 'ECE', 'EEE', 'CIVIL', 'MECH', 'MBA', 'MCA'
 ];
 
 const STATUS_OPTIONS = [
@@ -82,6 +86,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     package_offered: '',
     deadline: '',
     notes: '',
+    target_departments: [],
   });
   const [mediaFile, setMediaFile] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
@@ -93,6 +98,11 @@ export const CreateApplicationModal = ({ open, onClose }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDepartmentChange = (event) => {
+    const { value } = event.target;
+    setFormData(prev => ({ ...prev, target_departments: value }));
   };
 
   const handleFileSelect = (e) => {
@@ -180,6 +190,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
           package_offered: '',
           deadline: '',
           notes: '',
+          target_departments: [],
         });
         setMediaFile(null);
         setMediaPreview(null);
@@ -304,6 +315,35 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                   ))}
                 </TextField>
               </Box>
+
+              <FormControl fullWidth disabled={loading}>
+                <InputLabel sx={{ color: 'white' }}>Target Departments</InputLabel>
+                <Select
+                  multiple
+                  value={formData.target_departments}
+                  onChange={handleDepartmentChange}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip key={value} label={value} sx={{ backgroundColor: VIOLET_PRIMARY, color: 'white' }} />
+                      ))}
+                    </Box>
+                  )}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: 'white'
+                    }
+                  }}
+                >
+                  {DEPARTMENTS.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
               <TextField
                 fullWidth
