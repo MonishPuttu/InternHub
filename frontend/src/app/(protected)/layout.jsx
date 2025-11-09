@@ -1,28 +1,57 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, AppBar, Toolbar, IconButton, Typography } from "@mui/material";
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Stack,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import MenuIcon from "@mui/icons-material/Menu";
-import Sidebar from "../../modules/sidebar";
+import Sidebar from "@/modules/sidebar";
+import UserMenu from "@/components/auth/userMenu";
+import ProtectedRoute from "@/components/auth/ProtectedRoutes";
+import { isAuthenticated, startSessionChecker } from "@/lib/session";
 
 const DRAWER_WIDTH = 240;
 
 export default function ProtectedLayout({ children }) {
   const router = useRouter();
+  const theme = useTheme(); // Add this
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) router.push("/signin");
+
+    // Check authentication
+    if (!isAuthenticated()) {
+      router.push("/signin");
+      return;
+    }
+
+    // Start session checker
+    const cleanup = startSessionChecker(() => {
+      alert("Your session has expired. Please login again.");
+      router.push("/signin");
+    });
+
+    return cleanup;
   }, [router]);
 
   if (!mounted) return null;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default", // Changed from hardcoded color
+      }}
+    >
       {/* Sidebar */}
       <Box
         component="nav"
@@ -63,8 +92,9 @@ export default function ProtectedLayout({ children }) {
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: "#1e293b",
-            borderBottom: "1px solid #334155",
+            bgcolor: "background.paper", // Changed from hardcoded color
+            borderBottom: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
           <Toolbar>
@@ -72,18 +102,31 @@ export default function ProtectedLayout({ children }) {
               color="inherit"
               edge="start"
               onClick={() => setMobileOpen(true)}
-              sx={{ mr: 2, display: { md: "none" } }}
+              sx={{
+                mr: 2,
+                display: { md: "none" },
+                color: "text.primary", // Added for theme support
+              }}
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#e2e8f0" }}>
-              InternHub
-            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: "text.primary", // Changed from hardcoded color
+                flexGrow: 1,
+              }}
+            ></Typography>
+            {/* User Menu */}
+            <UserMenu />
           </Toolbar>
         </AppBar>
 
-        {/* Page Content */}
-        <Box>{children}</Box>
+        {/* Page Content with Role Protection */}
+        <Box>
+          <ProtectedRoute>{children}</ProtectedRoute>
+        </Box>
       </Box>
     </Box>
   );

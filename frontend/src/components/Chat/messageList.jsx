@@ -1,5 +1,6 @@
 import React from "react";
 import { List, ListItem, Avatar, Typography, Box, Paper } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 export default function MessageList({
   messages,
@@ -9,6 +10,7 @@ export default function MessageList({
   getUserName,
   scrollRef,
 }) {
+  const theme = useTheme();
   return (
     <Paper
       sx={{
@@ -77,7 +79,7 @@ export default function MessageList({
                       minHeight: "20px",
                       color: isSender ? "white" : "black",
 
-                      color: isSender ? "white" : "black", 
+                      color: isSender ? "white" : "black",
                     }}
                   >
                     {msg.message || "[Empty message]"}

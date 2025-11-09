@@ -5,71 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1759767319062,
-      "tag": "0000_noisy_meggan",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1759768028319,
-      "tag": "0001_outgoing_hannibal_king",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1759768211238,
-      "tag": "0002_lumpy_mystique",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1759768373609,
-      "tag": "0003_easy_the_captain",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1759768618115,
-      "tag": "0004_sad_morg",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1759849047194,
-      "tag": "0005_happy_elektra",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1759854741916,
-      "tag": "0006_salty_ulik",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1760165213515,
-      "tag": "0007_oval_expediter",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1760187504746,
-      "tag": "0008_workable_paladin",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1760263811176,
-      "tag": "0009_big_lord_hawal",
+      "when": 1762092149471,
+      "tag": "0000_bored_liz_osborn",
       "breakpoints": true
     },
     {

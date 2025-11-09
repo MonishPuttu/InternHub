@@ -135,7 +135,6 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
     const { roomId } = req.params;
     const userId = req.user.id;
 
-    // Check if user is a member of this room
     const isMember = await isUserInRoom(userId, roomId);
 
     if (!isMember) {
@@ -152,12 +151,10 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
       .orderBy(asc(schema.messages.createdAt));
 
     console.log(
-      `Fetched ${
-        Array.isArray(msgs) ? msgs.length : 0
+      `Fetched ${Array.isArray(msgs) ? msgs.length : 0
       } messages for room ${roomId}`
     );
 
-    // Get sender details for each message
     const messagesWithSenders = await Promise.all(
       msgs.map(async (m) => {
         const users = await db
@@ -193,11 +190,53 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
   }
 });
 
+router.delete("/rooms/:roomId", requireAuth, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const userId = req.user.id;
+
+    console.log(`Delete room request: ${roomId} by user: ${userId}`);
+
+    // Check if user is a member of the room
+    const isMember = await isUserInRoom(userId, roomId);
+
+    if (!isMember) {
+      return res.status(403).json({
+        ok: false,
+        error: "You are not a member of this room",
+      });
+    }
+
+    // Delete the room
+    const deletedRoom = await db
+      .delete(schema.rooms)
+      .where(eq(schema.rooms.id, roomId))
+      .returning();
+
+    if (deletedRoom.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Room not found",
+      });
+    }
+
+    console.log(`Deleted room ${roomId} and all associated data`);
+
+    res.json({
+      ok: true,
+      message: "Room deleted successfully",
+      roomId: roomId,
+    });
+  } catch (e) {
+    console.error("Error deleting room:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 router.get("/messages/:userId/:receiverId", requireAuth, async (req, res) => {
   const { userId, receiverId } = req.params;
 
   try {
-    // Verify the requesting user is one of the participants
     if (req.user.id !== userId && req.user.id !== receiverId) {
       return res.status(403).json({
         ok: false,
@@ -235,7 +274,6 @@ router.get("/rooms/:roomId/users", requireAuth, async (req, res) => {
     const { roomId } = req.params;
     const userId = req.user.id;
 
-    // Check if user is a member of this room
     const isMember = await isUserInRoom(userId, roomId);
 
     if (!isMember) {

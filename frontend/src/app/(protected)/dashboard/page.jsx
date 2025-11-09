@@ -1,14 +1,47 @@
-import { Typography, Box } from "@mui/material";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getUser } from "@/lib/session";
+import { Box, CircularProgress } from "@mui/material";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const user = getUser();
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    // Role-based routing
+    switch (user.role) {
+      case "student":
+        router.push("/dashboard/student");
+        break;
+      case "placement":
+        router.push("/dashboard/placement");
+        break;
+      case "recruiter":
+        router.push("/dashboard/recruiter");
+        break;
+      default:
+        router.push("/dashboard/student");
+    }
+  }, [user, router]);
+
   return (
-    <Box>
-      <Typography variant="h4" sx={{ color: "#e2e8f0", mb: 2 }}>
-        Dashboard
-      </Typography>
-      <Typography sx={{ color: "#94a3b8" }}>
-        Welcome to your dashboard
-      </Typography>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
+      <CircularProgress sx={{ color: "#8b5cf6" }} />
     </Box>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "@mui/material/styles";
 import {
   Box,
   Stack,
@@ -27,6 +28,7 @@ export default function RoomControls({
   initials,
   setErrorMsg,
 }) {
+  const theme = useTheme();
   return (
     <Box sx={{ p: 2 }}>
       <Stack direction="row" spacing={2} alignItems="center">

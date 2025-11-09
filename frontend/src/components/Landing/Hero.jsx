@@ -3,8 +3,10 @@ import React from "react";
 import { Box, Button, Container, Grid, Typography, Paper } from "@mui/material";
 import { ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
+import { useTheme } from "@mui/material/styles";
 
 const Hero = () => {
+  const theme = useTheme();
   const handleOnClick = () => {
     redirect("/signup");
   };
@@ -88,7 +90,7 @@ const Hero = () => {
             >
               Welcome to{" "}
               <Box component="span" sx={{ color: "#a883ff" }}>
-                Ace Graders
+                InternHub
               </Box>
             </Typography>
 

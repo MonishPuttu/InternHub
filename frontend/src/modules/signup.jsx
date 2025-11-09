@@ -14,12 +14,14 @@ import {
   Stack,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
+import { useTheme } from "@mui/material/styles";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
   StyledTextField,
   StyledSelect,
   roleOptions,
   genderOptions,
+  branchOptions,
 } from "@/components/auth/authcomp";
 
 const BACKEND_URL =
@@ -27,6 +29,7 @@ const BACKEND_URL =
 
 export default function SignUp() {
   const router = useRouter();
+  const theme = useTheme();
   const [role, setRole] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -82,6 +85,7 @@ export default function SignUp() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("sessionExpires", data.expiresAt);
 
       router.push("/dashboard");
     } catch (err) {
@@ -145,10 +149,12 @@ export default function SignUp() {
           value={profileData.college_name || ""}
           onChange={(e) => updateProfileData("college_name", e.target.value)}
         />
-        <StyledTextField
-          label="Branch"
+        <StyledSelect
+          label="Branch/Department"
           value={profileData.branch || ""}
           onChange={(e) => updateProfileData("branch", e.target.value)}
+          options={branchOptions}
+          required
         />
       </Stack>
 
@@ -347,12 +353,18 @@ export default function SignUp() {
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       {/* Left Side - Basic Auth Fields */}
       <Box
         sx={{
           width: { xs: "100%", md: role ? "40%" : "100%" },
-          bgcolor: "#0f172a",
+          bgcolor: "background.default",
           p: { xs: 3, md: 5 },
           display: "flex",
           flexDirection: "column",
@@ -363,11 +375,11 @@ export default function SignUp() {
         <Box sx={{ maxWidth: 480, mx: "auto", width: "100%" }}>
           <Typography
             variant="h4"
-            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 1 }}
+            sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
           >
             Sign Up
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 4 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
             Create your account to get started
           </Typography>
 
@@ -382,7 +394,7 @@ export default function SignUp() {
               <Box>
                 <Typography
                   variant="body2"
-                  sx={{ color: "#94a3b8", mb: 1, fontSize: "0.875rem" }}
+                  sx={{ color: "text.secondary", mb: 1, fontSize: "0.875rem" }}
                 >
                   I am a...
                 </Typography>
@@ -422,7 +434,7 @@ export default function SignUp() {
                       <IconButton
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
-                        sx={{ color: "#94a3b8" }}
+                        sx={{ color: "text.secondary" }}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -445,7 +457,7 @@ export default function SignUp() {
                       <IconButton
                         onClick={() => setShowConfirm((s) => !s)}
                         edge="end"
-                        sx={{ color: "#94a3b8" }}
+                        sx={{ color: "text.secondary" }}
                       >
                         {showConfirm ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -482,7 +494,7 @@ export default function SignUp() {
             </Stack>
 
             <Box sx={{ textAlign: "center", mt: 3 }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Already have an account?{" "}
                 <Link
                   component={NextLink}
@@ -503,7 +515,7 @@ export default function SignUp() {
         <Box
           sx={{
             width: { xs: "0%", md: "60%" },
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             p: { xs: 3, md: 6 },
@@ -514,11 +526,11 @@ export default function SignUp() {
           <Box sx={{ maxWidth: 800, mx: "auto", width: "100%" }}>
             <Typography
               variant="h5"
-              sx={{ color: "#e2e8f0", fontWeight: 700, mb: 1 }}
+              sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
             >
               {getRoleTitle()}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#94a3b8", mb: 4 }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
               Please provide additional information to complete your profile
             </Typography>
 
