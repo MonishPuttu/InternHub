@@ -36,7 +36,7 @@ import { getUser } from "@/lib/session";
 
 const navigationItems = [
   { text: "Dashboard", icon: <HomeIcon />, path: "/dashboard", roles: null },
-  { text: "Posts", icon: <DescriptionIcon />, path: "/post", roles: null },
+  { text: "Posts", icon: <DescriptionIcon />, path: "/Post", roles: null },
   {
     text: "Training",
     icon: <SchoolIcon />,
