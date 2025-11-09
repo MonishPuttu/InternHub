@@ -8,6 +8,41 @@
       "when": 1762092149471,
       "tag": "0000_bored_liz_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1760525876944,
+      "tag": "0010_third_jocasta",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1760544956824,
+      "tag": "0011_medical_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1760545740176,
+      "tag": "0012_famous_purifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1760549982920,
+      "tag": "0013_magenta_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1760599769620,
+      "tag": "0014_lame_micromax",
+      "breakpoints": true
     }
   ]
 }

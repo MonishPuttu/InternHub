@@ -1,0 +1,1 @@
+ALTER TABLE "messages" ALTER COLUMN "room_id" DROP NOT NULL;
