@@ -158,7 +158,23 @@ export default function Sidebar({
               return item.roles.includes(userRole);
             })
             .map((item) => {
-              const isActive = pathname.startsWith(item.path);
+              // ✅ Improved active state logic
+              let isActive = false;
+
+              if (item.path === "/training/student/report-card") {
+                // Report Cards - only active if on report card pages
+                isActive = pathname.startsWith("/training/student/report-card");
+              } else if (item.path === "/training") {
+                // Training - active for training but NOT report cards
+                isActive =
+                  pathname === "/training" ||
+                  pathname.startsWith("/training/placement") ||
+                  pathname.startsWith("/training/student/leaderboard");
+              } else {
+                // Default - use startsWith
+                isActive = pathname.startsWith(item.path);
+              }
+
               return (
                 <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton

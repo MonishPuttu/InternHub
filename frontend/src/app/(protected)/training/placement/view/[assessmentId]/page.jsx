@@ -367,32 +367,28 @@ export default function ViewAssessment({ params }) {
         </Box>
       </Paper>
 
-      {/* Questions Section */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          bgcolor: "#1e293b",
-          border: "1px solid #334155",
-          borderRadius: 2,
-        }}
-      >
-        <Typography
-          variant="h5"
+      {/* ✅ Questions Section - Only show if NOT premade OR has questions */}
+      {assessment.type !== "premade" && questions && questions.length > 0 && (
+        <Paper
+          elevation={3}
           sx={{
-            color: "#e2e8f0",
-            mb: 3,
-            fontWeight: "bold",
+            p: 4,
+            bgcolor: "#1e293b",
+            border: "1px solid #334155",
+            borderRadius: 2,
           }}
         >
-          Questions ({questions?.length || 0})
-        </Typography>
-
-        {!questions || questions.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 3 }}>
-            No questions available
+          <Typography
+            variant="h5"
+            sx={{
+              color: "#e2e8f0",
+              mb: 3,
+              fontWeight: "bold",
+            }}
+          >
+            Questions ({questions?.length || 0})
           </Typography>
-        ) : (
+
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {questions.map((question, index) => (
               <Accordion
@@ -473,60 +469,60 @@ export default function ViewAssessment({ params }) {
                       >
                         Options:
                       </Typography>
-                      {question.options.map((option, optIndex) => (
-                        <Box
-                          key={optIndex}
-                          sx={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 2,
-                            p: 1.5,
-                            bgcolor: "#1e293b",
-                            borderRadius: 1,
-                            border:
-                              option.isCorrect || option.correct
+                      {question.options.map((option, optIndex) => {
+                        // ✅ FIXED: Moved const declaration INSIDE the map callback
+                        const isCorrectAnswer = option.isCorrect === true;
+
+                        return (
+                          <Box
+                            key={optIndex}
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 2,
+                              p: 1.5,
+                              bgcolor: "#1e293b",
+                              borderRadius: 1,
+                              border: isCorrectAnswer
                                 ? "1px solid #10b98140"
                                 : "1px solid #334155",
-                          }}
-                        >
-                          <Typography
-                            sx={{
-                              color: "#8b5cf6",
-                              fontWeight: "600",
-                              minWidth: "24px",
-                              flexShrink: 0,
                             }}
                           >
-                            {String.fromCharCode(65 + optIndex)}.
-                          </Typography>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography
                               sx={{
-                                color:
-                                  option.isCorrect || option.correct
-                                    ? "#10b981"
-                                    : "#e2e8f0",
-                                fontWeight:
-                                  option.isCorrect || option.correct
-                                    ? "600"
-                                    : "400",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {option.text}
-                            </Typography>
-                          </Box>
-                          {(option.isCorrect || option.correct) && (
-                            <CheckCircle
-                              sx={{
-                                color: "#10b981",
-                                fontSize: 20,
+                                color: "#8b5cf6",
+                                fontWeight: "600",
+                                minWidth: "24px",
                                 flexShrink: 0,
                               }}
-                            />
-                          )}
-                        </Box>
-                      ))}
+                            >
+                              {String.fromCharCode(65 + optIndex)}.
+                            </Typography>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  color: isCorrectAnswer
+                                    ? "#10b981"
+                                    : "#e2e8f0",
+                                  fontWeight: isCorrectAnswer ? "600" : "400",
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {option.text}
+                              </Typography>
+                            </Box>
+                            {isCorrectAnswer && (
+                              <CheckCircle
+                                sx={{
+                                  color: "#10b981",
+                                  fontSize: 20,
+                                  flexShrink: 0,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        );
+                      })}
                     </Box>
                   ) : (
                     <Typography sx={{ color: "#94a3b8" }}>
@@ -563,8 +559,8 @@ export default function ViewAssessment({ params }) {
               </Accordion>
             ))}
           </Box>
-        )}
-      </Paper>
+        </Paper>
+      )}
     </Container>
   );
 }

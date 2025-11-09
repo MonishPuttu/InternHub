@@ -6,12 +6,13 @@ import {
   Container,
   Card,
   Typography,
-  Grid,
   Chip,
   Box,
   Button,
   Avatar,
   CircularProgress,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import {
   Business,
@@ -32,6 +33,7 @@ const STATUS_CONFIG = {
 export default function TimelinePage() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -54,6 +56,26 @@ export default function TimelinePage() {
   const handleViewTimeline = (applicationId) => {
     router.push(`/timeline/${applicationId}`);
   };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  const ongoingApplications = applications.filter(
+    ({ application }) =>
+      application.application_status === "applied" ||
+      application.application_status === "interview_scheduled" ||
+      application.application_status === "interviewed"
+  );
+
+  const completedApplications = applications.filter(
+    ({ application }) =>
+      application.application_status === "offered" ||
+      application.application_status === "rejected"
+  );
+
+  const currentApplications =
+    activeTab === 0 ? ongoingApplications : completedApplications;
 
   if (loading) {
     return (
@@ -97,93 +119,210 @@ export default function TimelinePage() {
           </Button>
         </Card>
       ) : (
-        <Grid container spacing={3}>
-          {applications.map(({ application, post }) => {
-            const status =
-              STATUS_CONFIG[application.application_status] ||
-              STATUS_CONFIG.applied;
-
-            return (
-              <Grid item xs={12} md={6} key={application.id}>
-                <Card
-                  sx={{
-                    p: 3,
-                    bgcolor: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: 2,
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      borderColor: "#8b5cf6",
-                      boxShadow: "0 0 20px rgba(139, 92, 246, 0.2)",
-                      transform: "translateY(-4px)",
-                    },
-                  }}
-                  onClick={() => handleViewTimeline(application.id)}
-                >
-                  <Box display="flex" alignItems="flex-start" gap={2} mb={2}>
-                    <Avatar sx={{ bgcolor: "#8b5cf6", width: 48, height: 48 }}>
-                      <Business />
-                    </Avatar>
-                    <Box flex={1}>
-                      <Typography
-                        variant="h6"
-                        sx={{ color: "#e2e8f0", fontWeight: "bold" }}
-                      >
-                        {post.position}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                        {post.company_name}
-                      </Typography>
-                    </Box>
+        <>
+          <Box sx={{ borderBottom: 1, borderColor: "#334155", mb: 4 }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              sx={{
+                "& .MuiTab-root": {
+                  color: "#94a3b8",
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  "&.Mui-selected": {
+                    color: "#8b5cf6",
+                  },
+                },
+                "& .MuiTabs-indicator": {
+                  backgroundColor: "#8b5cf6",
+                  height: 3,
+                },
+              }}
+            >
+              <Tab
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <span>Ongoing</span>
                     <Chip
-                      label={status.label}
+                      label={ongoingApplications.length}
                       size="small"
                       sx={{
-                        bgcolor: `${status.color}20`,
-                        color: status.color,
-                        fontWeight: 500,
+                        bgcolor: "#3b82f620",
+                        color: "#3b82f6",
+                        height: 20,
+                        fontSize: "0.75rem",
                       }}
                     />
                   </Box>
-
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <Schedule sx={{ fontSize: 16, color: "#64748b" }} />
-                    <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                      Applied{" "}
-                      {new Date(application.applied_at).toLocaleDateString()}
-                    </Typography>
+                }
+              />
+              <Tab
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <span>Completed</span>
+                    <Chip
+                      label={completedApplications.length}
+                      size="small"
+                      sx={{
+                        bgcolor: "#64748b20",
+                        color: "#94a3b8",
+                        height: 20,
+                        fontSize: "0.75rem",
+                      }}
+                    />
                   </Box>
+                }
+              />
+            </Tabs>
+          </Box>
 
-                  {post.package_offered && (
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#10b981", fontWeight: 500, mb: 2 }}
-                    >
-                      Package: ₹{post.package_offered} LPA
-                    </Typography>
-                  )}
+          {/* ✅ NEW: Flexbox Layout - 2 cards per row with equal width */}
+          {currentApplications.length === 0 ? (
+            <Card
+              sx={{
+                p: 4,
+                bgcolor: "#1e293b",
+                border: "1px solid #334155",
+                borderRadius: 2,
+                textAlign: "center",
+              }}
+            >
+              <Typography sx={{ color: "#94a3b8" }}>
+                No {activeTab === 0 ? "ongoing" : "completed"} applications
+              </Typography>
+            </Card>
+          ) : (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 3,
+              }}
+            >
+              {currentApplications.map(({ application, post }) => {
+                const status =
+                  STATUS_CONFIG[application.application_status] ||
+                  STATUS_CONFIG.applied;
 
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    endIcon={<NavigateNext />}
+                return (
+                  <Box
+                    key={application.id}
                     sx={{
-                      color: "#8b5cf6",
-                      borderColor: "#8b5cf6",
-                      "&:hover": {
-                        borderColor: "#7c3aed",
-                        bgcolor: "#8b5cf610",
-                      },
+                      flex: "1 1 calc(50% - 12px)", // ✅ 50% width minus gap
+                      minWidth: "300px", // Minimum width for mobile
+                      maxWidth: "calc(50% - 12px)", // Maximum 50% width
                     }}
                   >
-                    View Timeline
-                  </Button>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
+                    <Card
+                      sx={{
+                        p: 3,
+                        bgcolor: "#1e293b",
+                        border: "1px solid #334155",
+                        borderRadius: 2,
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        "&:hover": {
+                          borderColor: "#8b5cf6",
+                          boxShadow: "0 0 20px rgba(139, 92, 246, 0.2)",
+                          transform: "translateY(-4px)",
+                        },
+                      }}
+                      onClick={() => handleViewTimeline(application.id)}
+                    >
+                      <Box
+                        display="flex"
+                        alignItems="flex-start"
+                        gap={2}
+                        mb={2}
+                      >
+                        <Avatar
+                          sx={{ bgcolor: "#8b5cf6", width: 48, height: 48 }}
+                        >
+                          <Business />
+                        </Avatar>
+                        <Box flex={1} minWidth={0}>
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: "#e2e8f0",
+                              fontWeight: "bold",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {post.position}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#94a3b8",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {post.company_name}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={status.label}
+                          size="small"
+                          sx={{
+                            bgcolor: `${status.color}20`,
+                            color: status.color,
+                            fontWeight: 500,
+                            flexShrink: 0,
+                          }}
+                        />
+                      </Box>
+
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <Schedule sx={{ fontSize: 16, color: "#64748b" }} />
+                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                          Applied{" "}
+                          {new Date(
+                            application.applied_at
+                          ).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+
+                      {post.package_offered && (
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#10b981", fontWeight: 500, mb: 2 }}
+                        >
+                          Package: ₹{post.package_offered} LPA
+                        </Typography>
+                      )}
+
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        endIcon={<NavigateNext />}
+                        sx={{
+                          mt: "auto",
+                          color: "#8b5cf6",
+                          borderColor: "#8b5cf6",
+                          "&:hover": {
+                            borderColor: "#7c3aed",
+                            bgcolor: "#8b5cf610",
+                          },
+                        }}
+                      >
+                        View Timeline
+                      </Button>
+                    </Card>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </>
       )}
     </Container>
   );

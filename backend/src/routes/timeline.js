@@ -155,30 +155,12 @@ router.get(
         return res.status(403).json({ ok: false, error: "Access denied" });
       }
 
-      // Get actual timeline events from DB
-      let dbTimelineEvents = await db
+      // ✅ Simply get timeline events - NO auto-creation
+      const dbTimelineEvents = await db
         .select()
         .from(application_timeline)
         .where(eq(application_timeline.application_id, applicationId))
         .orderBy(application_timeline.event_date);
-
-      // ✅ If no timeline events exist, create the initial "applied" event
-      if (dbTimelineEvents.length === 0) {
-        const appliedEvent = await db
-          .insert(application_timeline)
-          .values({
-            application_id: applicationId,
-            event_type: "applied",
-            title: "Application Submitted",
-            description: `Successfully applied for ${application.post.position} at ${application.post.company_name}`,
-            event_date: application.application.applied_at,
-            visibility: "student",
-          })
-          .returning();
-
-        // Add the newly created event to the timeline
-        dbTimelineEvents = [appliedEvent[0]];
-      }
 
       // ✅ Build complete timeline with auto-generated events
       const completeTimeline = buildCompleteTimeline(
