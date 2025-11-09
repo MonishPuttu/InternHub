@@ -27,7 +27,7 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
-import ApplyDialog from "@/components/post/ApplyDialog";
+import ApplyDialog from "@/components/Post/ApplyDialog";
 import useApplyToPost from "@/hooks/useApplyToPost";
 import { useTheme } from "@mui/material/styles";
 import { getUser } from "@/lib/session";
@@ -896,56 +896,61 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         </Alert>
       </Snackbar>
 
-      {showApplyButtons && user && user.role !== "recruiter" && user.role !== "placement" && (
-        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
-          <Button
-            variant="outlined"
-            onClick={handleBack}
-            sx={{
-              borderColor:
-                theme.palette.mode === "dark" ? "#334155" : "#cbd5e1",
-              color: "text.secondary",
-              "&:hover": {
-                borderColor: "#8b5cf6",
-                bgcolor: "rgba(139, 92, 246, 0.1)",
-              },
-              textTransform: "none",
-              fontWeight: 600,
-              px: 4,
-            }}
+      {showApplyButtons &&
+        user &&
+        user.role !== "recruiter" &&
+        user.role !== "placement" && (
+          <Box
+            sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}
           >
-            Back to List
-          </Button>
-          {hasApplied ? (
             <Button
-              variant="contained"
-              disabled
+              variant="outlined"
+              onClick={handleBack}
               sx={{
-                bgcolor: "#10b981",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#334155" : "#cbd5e1",
+                color: "text.secondary",
+                "&:hover": {
+                  borderColor: "#8b5cf6",
+                  bgcolor: "rgba(139, 92, 246, 0.1)",
+                },
                 textTransform: "none",
                 fontWeight: 600,
                 px: 4,
               }}
             >
-              Applied
+              Back to List
             </Button>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={() => setApplyDialogOpen(true)}
-              sx={{
-                bgcolor: "#8b5cf6",
-                "&:hover": { bgcolor: "#7c3aed" },
-                textTransform: "none",
-                fontWeight: 600,
-                px: 4,
-              }}
-            >
-              Apply Now
-            </Button>
-          )}
-        </Box>
-      )}
+            {hasApplied ? (
+              <Button
+                variant="contained"
+                disabled
+                sx={{
+                  bgcolor: "#10b981",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  px: 4,
+                }}
+              >
+                Applied
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={() => setApplyDialogOpen(true)}
+                sx={{
+                  bgcolor: "#8b5cf6",
+                  "&:hover": { bgcolor: "#7c3aed" },
+                  textTransform: "none",
+                  fontWeight: 600,
+                  px: 4,
+                }}
+              >
+                Apply Now
+              </Button>
+            )}
+          </Box>
+        )}
     </Box>
   );
 }

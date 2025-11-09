@@ -23,7 +23,7 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { useTheme } from "@mui/material/styles";
-import { CreateApplicationModal } from "@/components/post/CreateApplicationModal";
+import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal";
 import {
   BACKEND_URL,
   STATUS_COLORS,
