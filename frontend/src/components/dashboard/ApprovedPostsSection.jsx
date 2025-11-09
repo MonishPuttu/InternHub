@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@mui/material/styles";
+import PostDetails from "@/modules/Post/postDetails";
 import {
   Box,
   Typography,
@@ -97,7 +98,8 @@ export default function ApprovedPostsSection(props) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [postApplications, setPostApplications] = useState([]);
   const [postAppLoading, setPostAppLoading] = useState(false);
-  const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
+  const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] =
+    useState(false);
   const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [sendListDialogOpen, setSendListDialogOpen] = useState(false);
   const [sentLists, setSentLists] = useState(new Set()); // Track sent posts

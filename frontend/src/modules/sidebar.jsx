@@ -73,12 +73,12 @@ const navigationItems = [
     roles: ["student"],
   },
 
-  {
-    text: "Analytics",
-    path: "/placement-analytics",
-    icon: <BarChartIcon />,
-    roles: ["placement"],
-  },
+  // {
+  //   text: "Analytics",
+  //   path: "/placement-analytics",
+  //   icon: <BarChartIcon />,
+  //   roles: ["placement"],
+  // },
   {
     text: "Timeline",
     icon: <TimelineIcon />,

@@ -79,11 +79,11 @@ export default function StudentDashboard() {
 
   const getRoleBasedPath = (role) => {
     const rolePaths = {
-      student: "/post_student",
-      recruiter: "/post_recruiter",
-      placement: "/post_admin",
+      student: "/post/student",
+      recruiter: "/post/recruiter",
+      placement: "/post/placement",
     };
-    return rolePaths[role] || "/post_student";
+    return rolePaths[role] || "/post/student";
   };
 
   const quickActions = [
@@ -113,7 +113,7 @@ export default function StudentDashboard() {
       subtitle: "Practice sessions",
       icon: VideoCall,
       color: "#f59e0b",
-      path: "/mock",
+      path: "/timeline",
     },
   ];
 

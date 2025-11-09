@@ -12,11 +12,11 @@ export default function RecentApplicationsCard({ applications }) {
   const handleViewAll = () => {
     const userRole = user?.role || "student";
     const rolePaths = {
-      student: "/post_student",
-      recruiter: "/post_recruiter",
-      placement: "/post_admin",
+      student: "/post/student",
+      recruiter: "/post/recruiter",
+      placement: "/post/placement",
     };
-    const targetPath = rolePaths[userRole] || "/post_student";
+    const targetPath = rolePaths[userRole] || "/post/student";
     router.push(targetPath);
   };
 
