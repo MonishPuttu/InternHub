@@ -12,12 +12,14 @@ import {
   CircularProgress,
 } from "@mui/material";
 import axios from "axios";
+import { useTheme } from "@mui/material/styles";
 import { getUser, logout } from "@/lib/session";
 
 export default function Settings() {
   const router = useRouter();
   const user = getUser();
   const [profileData, setProfileData] = useState(null);
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL =
@@ -102,7 +104,7 @@ export default function Settings() {
     <Box sx={{ p: 4, maxWidth: 800, mx: "auto" }}>
       <Typography
         variant="h4"
-        sx={{ color: "#e2e8f0", fontWeight: 700, mb: 4 }}
+        sx={{ color: "text.primary", fontWeight: 700, mb: 4 }}
       >
         Settings
       </Typography>
@@ -114,7 +116,7 @@ export default function Settings() {
           alignItems: "center",
           gap: 3,
           p: 3,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           borderRadius: 2,
           border: "1px solid #334155",
           mb: 4,
@@ -135,7 +137,7 @@ export default function Settings() {
         <Box sx={{ flex: 1 }}>
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, mb: 1 }}
+            sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
           >
             {user?.name || "User"}
           </Typography>
@@ -146,11 +148,11 @@ export default function Settings() {
             {user?.role}
           </Typography>
           {departmentInfo && (
-            <Typography variant="body2" sx={{ color: "#94a3b8", mb: 1 }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
               {departmentInfo.label}: {departmentInfo.value}
             </Typography>
           )}
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             {user?.email}
           </Typography>
         </Box>

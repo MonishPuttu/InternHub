@@ -12,6 +12,7 @@ export default function ProtectedRoute({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    bgcolor: "background.paper";
     // Check if user has access to this route
     const hasAccess = canAccessRoute(pathname);
     const userRole = getUserRole();
@@ -55,7 +56,7 @@ export default function ProtectedRoute({ children }) {
           justifyContent: "center",
           alignItems: "center",
           minHeight: "80vh",
-          bgcolor: "#0f172a",
+          bgcolor: "background.default",
         }}
       >
         <CircularProgress sx={{ color: "#8b5cf6" }} />
@@ -73,8 +74,8 @@ export default function ProtectedRoute({ children }) {
           justifyContent: "center",
           alignItems: "center",
           minHeight: "80vh",
-          bgcolor: "#0f172a",
-          color: "#e2e8f0",
+          bgcolor: "background.default",
+          color: "text.primary",
           gap: 2,
         }}
       >

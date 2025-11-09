@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@mui/material/styles";
 import {
   Box,
   Typography,
@@ -61,6 +62,7 @@ const statusLabels = {
 
 export default function ApprovedPostsSection(props) {
   const router = useRouter();
+  const theme = useTheme();
   const {
     page,
     rowsPerPage,
@@ -96,6 +98,7 @@ export default function ApprovedPostsSection(props) {
   const [postApplications, setPostApplications] = useState([]);
   const [postAppLoading, setPostAppLoading] = useState(false);
   const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
+  const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [sendListDialogOpen, setSendListDialogOpen] = useState(false);
   const [sentLists, setSentLists] = useState(new Set()); // Track sent posts
 
@@ -131,7 +134,9 @@ export default function ApprovedPostsSection(props) {
       );
 
       if (response.data.ok) {
-        const sentPostIds = response.data.lists.map(list => list.sent_list.post_id);
+        const sentPostIds = response.data.lists.map(
+          (list) => list.sent_list.post_id
+        );
         setSentLists(new Set(sentPostIds));
       }
     } catch (error) {
@@ -143,11 +148,22 @@ export default function ApprovedPostsSection(props) {
   const calculateStats = (applications) => {
     console.log("Calculating stats from applications:", applications);
     const totalApplications = applications.length;
-    const applied = applications.filter(app => app.application_status === 'applied').length;
-    const interviewed = applications.filter(app => app.application_status === 'interviewed').length;
-    const offers = applications.filter(app => app.application_status === 'offer').length;
+    const applied = applications.filter(
+      (app) => app.application_status === "applied"
+    ).length;
+    const interviewed = applications.filter(
+      (app) => app.application_status === "interviewed"
+    ).length;
+    const offers = applications.filter(
+      (app) => app.application_status === "offer"
+    ).length;
 
-    console.log("Stats calculated:", { totalApplications, applied, interviewed, offers });
+    console.log("Stats calculated:", {
+      totalApplications,
+      applied,
+      interviewed,
+      offers,
+    });
 
     setOverallStats({
       totalApplications,
@@ -189,7 +205,14 @@ export default function ApprovedPostsSection(props) {
       );
 
       if (response.data.ok) {
-        const { totalPosts, totalAppliedStudents, totalApplications, totalApplied, totalInterviewed, totalOffers } = response.data.stats;
+        const {
+          totalPosts,
+          totalAppliedStudents,
+          totalApplications,
+          totalApplied,
+          totalInterviewed,
+          totalOffers,
+        } = response.data.stats;
         setOverallStats({
           totalPosts,
           totalAppliedStudents,
@@ -256,7 +279,7 @@ export default function ApprovedPostsSection(props) {
       if (response.data.ok) {
         setSuccessMsg("Application list sent to recruiter successfully");
         // Mark this post as sent
-        setSentLists(prev => new Set([...prev, selectedPost.id]));
+        setSentLists((prev) => new Set([...prev, selectedPost.id]));
       } else {
         setErrorMsg(response.data.error || "Failed to send application list");
       }
@@ -277,14 +300,14 @@ export default function ApprovedPostsSection(props) {
         `${BACKEND_URL}/api/student-applications/post/${selectedPost.id}/applications?download=true`,
         {
           headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob', // Important for file download
+          responseType: "blob", // Important for file download
         }
       );
 
       // Create blob and download
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([response.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `${selectedPost.company_name}_${selectedPost.position}_applications.csv`;
       a.click();
@@ -302,28 +325,39 @@ export default function ApprovedPostsSection(props) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const csvText = e.target.result;
-      const lines = csvText.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      const lines = csvText.split("\n").filter((line) => line.trim());
+      const headers = lines[0].split(",").map((h) => h.trim());
 
       // Expected headers
       const expectedHeaders = [
-        "Student Name", "Roll Number", "Branch", "Semester", "CGPA",
-        "10th", "12th", "Company", "Position", "Status", "Applied Date"
+        "Student Name",
+        "Roll Number",
+        "Branch",
+        "Semester",
+        "CGPA",
+        "10th",
+        "12th",
+        "Company",
+        "Position",
+        "Status",
+        "Applied Date",
       ];
 
       // Check if headers match
-      const headersMatch = expectedHeaders.every(header =>
+      const headersMatch = expectedHeaders.every((header) =>
         headers.includes(header)
       );
 
       if (!headersMatch) {
-        setErrorMsg("CSV headers don't match expected format. Please check the file.");
+        setErrorMsg(
+          "CSV headers don't match expected format. Please check the file."
+        );
         return;
       }
 
       // Helper function to safely parse dates
       const parseDate = (dateString) => {
-        if (!dateString || dateString.trim() === '') {
+        if (!dateString || dateString.trim() === "") {
           return new Date().toISOString();
         }
         const date = new Date(dateString.trim());
@@ -340,21 +374,26 @@ export default function ApprovedPostsSection(props) {
             const match = dateString.trim().match(format);
             if (match) {
               let year, month, day;
-              if (format === formats[0]) { // MM/DD/YYYY
+              if (format === formats[0]) {
+                // MM/DD/YYYY
                 month = match[1];
                 day = match[2];
                 year = match[3];
-              } else if (format === formats[1]) { // YYYY-MM-DD
+              } else if (format === formats[1]) {
+                // YYYY-MM-DD
                 year = match[1];
                 month = match[2];
                 day = match[3];
-              } else { // DD-MM-YYYY
+              } else {
+                // DD-MM-YYYY
                 day = match[1];
                 month = match[2];
                 year = match[3];
               }
 
-              const parsedDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+              const parsedDate = new Date(
+                `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+              );
               if (!isNaN(parsedDate.getTime())) {
                 return parsedDate.toISOString();
               }
@@ -369,7 +408,7 @@ export default function ApprovedPostsSection(props) {
       // Parse CSV data
       const applications = [];
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
+        const values = lines[i].split(",").map((v) => v.trim());
         if (values.length !== expectedHeaders.length) continue;
 
         const application = {
@@ -408,7 +447,9 @@ export default function ApprovedPostsSection(props) {
         );
 
         if (response.data.ok) {
-          setSuccessMsg(`Successfully imported ${response.data.imported} applications`);
+          setSuccessMsg(
+            `Successfully imported ${response.data.imported} applications`
+          );
           // Refresh the applications list
           handleViewApplications(selectedPost);
         } else {
@@ -426,23 +467,36 @@ export default function ApprovedPostsSection(props) {
   };
 
   const filteredApplications = postApplications.filter((app) => {
-    const matchesStudentName = !filterStudentName || (app?.full_name || "").toLowerCase().includes(filterStudentName.toLowerCase());
-    const matchesRollNumber = !filterRollNumber || (app?.roll_number || "").toLowerCase().includes(filterRollNumber.toLowerCase());
-    const matchesBranch = !filterBranch || (app?.branch || "").toLowerCase().includes(filterBranch.toLowerCase());
+    const matchesStudentName =
+      !filterStudentName ||
+      (app?.full_name || "")
+        .toLowerCase()
+        .includes(filterStudentName.toLowerCase());
+    const matchesRollNumber =
+      !filterRollNumber ||
+      (app?.roll_number || "")
+        .toLowerCase()
+        .includes(filterRollNumber.toLowerCase());
+    const matchesBranch =
+      !filterBranch ||
+      (app?.branch || "").toLowerCase().includes(filterBranch.toLowerCase());
     // const matchesSemester = !filterSemester || (app?.current_semester || "").toString().includes(filterSemester);
     // const matchesCgpa = (!filterCgpaMin || app?.cgpa >= parseFloat(filterCgpaMin)) && (!filterCgpaMax || app?.cgpa <= parseFloat(filterCgpaMax));
     // const matchesTenth = (!filterTenthMin || app?.tenth_score >= parseFloat(filterTenthMin)) && (!filterTenthMax || app?.tenth_score <= parseFloat(filterTenthMax));
     // const matchesTwelfth = (!filterTwelfthMin || app?.twelfth_score >= parseFloat(filterTwelfthMin)) && (!filterTwelfthMax || app?.twelfth_score <= parseFloat(filterTwelfthMax));
     // const matchesAppliedDate = !filterAppliedDate || new Date(app?.applied_at).toDateString() === new Date(filterAppliedDate).toDateString();
-    const matchesStatus = filterStatus === "all" || app?.application_status === filterStatus;
+    const matchesStatus =
+      filterStatus === "all" || app?.application_status === filterStatus;
 
-    return matchesStudentName && matchesRollNumber && matchesBranch && matchesStatus;
+    return (
+      matchesStudentName && matchesRollNumber && matchesBranch && matchesStatus
+    );
   });
 
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>
+        <Typography sx={{ color: "text.primary" }}>
           Loading approved posts...
         </Typography>
       </Box>
@@ -452,11 +506,18 @@ export default function ApprovedPostsSection(props) {
   return (
     <Box>
       {/* Stats Cards */}
-      <Box sx={{ display: "flex", gap: { xs: 1, sm: 2, md: 3 }, mb: 4, flexWrap: "wrap" }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: { xs: 1, sm: 2, md: 3 },
+          mb: 4,
+          flexWrap: "wrap",
+        }}
+      >
         <Paper
           sx={{
             p: { xs: 2, sm: 3 },
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
             flex: { xs: "1 1 100%", sm: "1 1 calc(25% - 16px)", md: 1 },
@@ -469,13 +530,23 @@ export default function ApprovedPostsSection(props) {
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
+            sx={{
+              color: "text.primary",
+              fontWeight: 600,
+              textAlign: "center",
+              fontSize: { xs: "1rem", sm: "1.25rem" },
+            }}
           >
             Applications
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
+            sx={{
+              color: "#8b5cf6",
+              fontWeight: 700,
+              textAlign: "center",
+              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+            }}
           >
             {overallStats.totalApplications}
           </Typography>
@@ -483,10 +554,14 @@ export default function ApprovedPostsSection(props) {
         <Paper
           sx={{
             p: { xs: 2, sm: 3 },
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
-            flex: { xs: "1 1 calc(50% - 8px)", sm: "1 1 calc(25% - 16px)", md: 1 },
+            flex: {
+              xs: "1 1 calc(50% - 8px)",
+              sm: "1 1 calc(25% - 16px)",
+              md: 1,
+            },
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -496,13 +571,23 @@ export default function ApprovedPostsSection(props) {
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
+            sx={{
+              color: "text.primary",
+              fontWeight: 600,
+              textAlign: "center",
+              fontSize: { xs: "1rem", sm: "1.25rem" },
+            }}
           >
             Applied
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#0ea5e9", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
+            sx={{
+              color: "#0ea5e9",
+              fontWeight: 700,
+              textAlign: "center",
+              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+            }}
           >
             {overallStats.applied}
           </Typography>
@@ -510,10 +595,14 @@ export default function ApprovedPostsSection(props) {
         <Paper
           sx={{
             p: { xs: 2, sm: 3 },
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
-            flex: { xs: "1 1 calc(50% - 8px)", sm: "1 1 calc(25% - 16px)", md: 1 },
+            flex: {
+              xs: "1 1 calc(50% - 8px)",
+              sm: "1 1 calc(25% - 16px)",
+              md: 1,
+            },
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -523,13 +612,23 @@ export default function ApprovedPostsSection(props) {
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
+            sx={{
+              color: "text.primary",
+              fontWeight: 600,
+              textAlign: "center",
+              fontSize: { xs: "1rem", sm: "1.25rem" },
+            }}
           >
             Interviewed
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#8b5cf6", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
+            sx={{
+              color: "#8b5cf6",
+              fontWeight: 700,
+              textAlign: "center",
+              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+            }}
           >
             {overallStats.interviewed}
           </Typography>
@@ -537,7 +636,7 @@ export default function ApprovedPostsSection(props) {
         <Paper
           sx={{
             p: { xs: 2, sm: 3 },
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
             flex: { xs: "1 1 100%", sm: "1 1 calc(25% - 16px)", md: 1 },
@@ -550,13 +649,23 @@ export default function ApprovedPostsSection(props) {
         >
           <Typography
             variant="h6"
-            sx={{ color: "#e2e8f0", fontWeight: 600, textAlign: "center", fontSize: { xs: "1rem", sm: "1.25rem" } }}
+            sx={{
+              color: "text.primary",
+              fontWeight: 600,
+              textAlign: "center",
+              fontSize: { xs: "1rem", sm: "1.25rem" },
+            }}
           >
             Offers
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: "#10b981", fontWeight: 700, textAlign: "center", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}
+            sx={{
+              color: "#10b981",
+              fontWeight: 700,
+              textAlign: "center",
+              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+            }}
           >
             {overallStats.offers}
           </Typography>
@@ -567,7 +676,7 @@ export default function ApprovedPostsSection(props) {
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="h5"
-          sx={{ color: "#e2e8f0", fontWeight: 600, mb: 3 }}
+          sx={{ color: "text.primary", fontWeight: 600, mb: 3 }}
         >
           Approved Job Posts
         </Typography>
@@ -576,19 +685,25 @@ export default function ApprovedPostsSection(props) {
             display: "grid",
             gridTemplateColumns: {
               xs: "repeat(auto-fill, minmax(280px, 1fr))",
-              sm: "repeat(auto-fill, minmax(300px, 1fr))"
+              sm: "repeat(auto-fill, minmax(300px, 1fr))",
             },
             gap: { xs: 2, sm: 3 },
           }}
         >
           {approvedPosts
             .filter((post) => {
-              const matchesSearch = !searchQuery ||
-                post.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              const matchesSearch =
+                !searchQuery ||
+                post.company_name
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()) ||
                 post.position.toLowerCase().includes(searchQuery.toLowerCase());
-              const matchesPostedDate = !filterPostedDate ||
-                new Date(post.application_date).toDateString() === new Date(filterPostedDate).toDateString();
-              const matchesIndustry = !filterIndustry || post.industry === filterIndustry;
+              const matchesPostedDate =
+                !filterPostedDate ||
+                new Date(post.application_date).toDateString() ===
+                  new Date(filterPostedDate).toDateString();
+              const matchesIndustry =
+                !filterIndustry || post.industry === filterIndustry;
 
               return matchesSearch && matchesPostedDate && matchesIndustry;
             })
@@ -597,7 +712,7 @@ export default function ApprovedPostsSection(props) {
                 key={post.id}
                 sx={{
                   p: 3,
-                  bgcolor: "#1e293b",
+                  bgcolor: "background.paper",
                   border: "1px solid #334155",
                   borderRadius: 2,
                   "&:hover": { borderColor: "#8b5cf6" },
@@ -605,15 +720,16 @@ export default function ApprovedPostsSection(props) {
               >
                 <Typography
                   variant="h6"
-                  sx={{ color: "#e2e8f0", fontWeight: 600, mb: 2 }}
+                  sx={{ color: "text.primary", fontWeight: 600, mb: 2 }}
                 >
                   {post.company_name} - {post.position}
                 </Typography>
                 <Typography
                   variant="body2"
-                  sx={{ color: "#94a3b8", mb: 3 }}
+                  sx={{ color: "text.secondary", mb: 3 }}
                 >
-                  {post.industry} • Posted {new Date(post.application_date).toLocaleDateString()}
+                  {post.industry} • Posted{" "}
+                  {new Date(post.application_date).toLocaleDateString()}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Button
@@ -623,7 +739,10 @@ export default function ApprovedPostsSection(props) {
                     sx={{
                       color: "#8b5cf6",
                       borderColor: "#8b5cf6",
-                      "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf620" },
+                      "&:hover": {
+                        borderColor: "#7c3aed",
+                        bgcolor: "#8b5cf620",
+                      },
                     }}
                   >
                     View Details
@@ -646,7 +765,22 @@ export default function ApprovedPostsSection(props) {
         </Box>
       </Box>
 
-
+      {/* View Post Details Dialog */}
+      <Dialog
+        open={viewPostDialogOpen}
+        onClose={() => setViewPostDialogOpen(false)}
+        maxWidth="xl"
+        fullWidth
+        PaperProps={{
+          sx: { bgcolor: "background.paper", color: "text.primary" },
+        }}
+      >
+        <DialogContent sx={{ p: 0 }}>
+          {selectedPost && (
+            <PostDetails postId={selectedPost.id} showApplyButtons={false} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Applications Dialog */}
       <Dialog
@@ -655,11 +789,18 @@ export default function ApprovedPostsSection(props) {
         maxWidth="xl"
         fullWidth
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+          sx: { bgcolor: "background.paper", color: "text.primary" },
         }}
       >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          Applications for {selectedPost?.company_name} - {selectedPost?.position}
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          Applications for {selectedPost?.company_name} -{" "}
+          {selectedPost?.position}
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
               variant="outlined"
@@ -670,9 +811,9 @@ export default function ApprovedPostsSection(props) {
                 borderColor: "#f59e0b",
                 "&:hover": { borderColor: "#d97706", bgcolor: "#f59e0b20" },
                 "&:disabled": {
-                  color: "#64748b",
+                  color: "text.secondary",
                   borderColor: "#64748b",
-                  opacity: 0.5
+                  opacity: 0.5,
                 },
                 padding: { xs: "4px 8px", sm: "6px 16px" },
                 fontSize: { xs: "0.75rem", sm: "0.875rem" },
@@ -717,20 +858,29 @@ export default function ApprovedPostsSection(props) {
         <DialogContent>
           {/* Filters */}
           <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 2, fontWeight: 600 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "text.primary", mb: 2, fontWeight: 600 }}
+            >
               Filters
             </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 2,
+              }}
+            >
               <TextField
                 size="small"
                 label="Student Name"
                 value={filterStudentName}
                 onChange={(e) => setFilterStudentName(e.target.value)}
                 sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                  "& .MuiInputLabel-root": { color: "text.secondary" },
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
+                    color: "text.primary",
+                    bgcolor: "background.default",
                     "& fieldset": { borderColor: "#334155" },
                     "&:hover fieldset": { borderColor: "#8b5cf6" },
                   },
@@ -742,10 +892,10 @@ export default function ApprovedPostsSection(props) {
                 value={filterRollNumber}
                 onChange={(e) => setFilterRollNumber(e.target.value)}
                 sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                  "& .MuiInputLabel-root": { color: "text.secondary" },
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
+                    color: "text.primary",
+                    bgcolor: "background.default",
                     "& fieldset": { borderColor: "#334155" },
                     "&:hover fieldset": { borderColor: "#8b5cf6" },
                   },
@@ -757,10 +907,10 @@ export default function ApprovedPostsSection(props) {
                 value={filterBranch}
                 onChange={(e) => setFilterBranch(e.target.value)}
                 sx={{
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                  "& .MuiInputLabel-root": { color: "text.secondary" },
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
+                    color: "text.primary",
+                    bgcolor: "background.default",
                     "& fieldset": { borderColor: "#334155" },
                     "&:hover fieldset": { borderColor: "#8b5cf6" },
                   },
@@ -768,15 +918,17 @@ export default function ApprovedPostsSection(props) {
               />
 
               <FormControl size="small" sx={{ minWidth: 200 }}>
-                <InputLabel sx={{ color: "#94a3b8" }}>Status</InputLabel>
+                <InputLabel sx={{ color: "text.secondary" }}>Status</InputLabel>
                 <Select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   label="Status"
                   sx={{
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#334155",
+                    },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#8b5cf6",
                     },
@@ -784,7 +936,9 @@ export default function ApprovedPostsSection(props) {
                 >
                   <MenuItem value="all">All Applications</MenuItem>
                   <MenuItem value="applied">Applied</MenuItem>
-                  <MenuItem value="interview_scheduled">Interview Scheduled</MenuItem>
+                  <MenuItem value="interview_scheduled">
+                    Interview Scheduled
+                  </MenuItem>
                   <MenuItem value="interviewed">Interviewed</MenuItem>
                   <MenuItem value="offer">Offer</MenuItem>
                   <MenuItem value="rejected">Rejected</MenuItem>
@@ -797,7 +951,7 @@ export default function ApprovedPostsSection(props) {
           <TableContainer
             component={Paper}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "1px solid #334155",
               borderRadius: 2,
               overflowX: "auto",
@@ -823,8 +977,8 @@ export default function ApprovedPostsSection(props) {
                     <TableCell
                       key={header}
                       sx={{
-                        bgcolor: "#0f172a",
-                        color: "#e2e8f0",
+                        bgcolor: "background.default",
+                        color: "text.primary",
                         fontWeight: 700,
                         borderBottom: "1px solid #334155",
                       }}
@@ -845,65 +999,103 @@ export default function ApprovedPostsSection(props) {
                       }}
                     >
                       <TableCell
-                        sx={{ color: "#e2e8f0", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.primary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.full_name}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.roll_number}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.branch}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.current_semester}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.cgpa}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.tenth_score}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {app.twelfth_score}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#e2e8f0", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.primary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {selectedPost?.company_name}
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {selectedPost?.position}
                       </TableCell>
                       <TableCell sx={{ borderBottom: "1px solid #334155" }}>
                         <Chip
-                          label={statusLabels[app.application_status] || "Applied"}
+                          label={
+                            statusLabels[app.application_status] || "Applied"
+                          }
                           size="small"
                           sx={{
-                            bgcolor: `${statusColors[app.application_status] || statusColors.applied}20`,
-                            color: statusColors[app.application_status] || statusColors.applied,
+                            bgcolor: `${
+                              statusColors[app.application_status] ||
+                              statusColors.applied
+                            }20`,
+                            color:
+                              statusColors[app.application_status] ||
+                              statusColors.applied,
                             border: `1px solid ${
-                              statusColors[app.application_status] || statusColors.applied
+                              statusColors[app.application_status] ||
+                              statusColors.applied
                             }40`,
                           }}
                         />
                       </TableCell>
                       <TableCell
-                        sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        sx={{
+                          color: "text.secondary",
+                          borderBottom: "1px solid #334155",
+                        }}
                       >
                         {new Date(app.applied_at).toLocaleDateString()}
                       </TableCell>
@@ -911,7 +1103,7 @@ export default function ApprovedPostsSection(props) {
                         <IconButton
                           size="small"
                           onClick={(e) => handleMenuOpen(e, app)}
-                          sx={{ color: "#94a3b8" }}
+                          sx={{ color: "text.secondary" }}
                         >
                           <MoreVertIcon />
                         </IconButton>
@@ -931,9 +1123,9 @@ export default function ApprovedPostsSection(props) {
                 setPage(0);
               }}
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 borderTop: "1px solid #334155",
-                "& .MuiTablePagination-select": { color: "#e2e8f0" },
+                "& .MuiTablePagination-select": { color: "text.primary" },
               }}
             />
           </TableContainer>
@@ -941,7 +1133,7 @@ export default function ApprovedPostsSection(props) {
         <DialogActions>
           <Button
             onClick={() => setViewApplicationsDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Close
           </Button>
@@ -953,25 +1145,25 @@ export default function ApprovedPostsSection(props) {
         open={sendListDialogOpen}
         onClose={() => setSendListDialogOpen(false)}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+          sx: { bgcolor: "background.paper", color: "text.primary" },
         }}
       >
-        <DialogTitle>
-          Confirm Send List
-        </DialogTitle>
+        <DialogTitle>Confirm Send List</DialogTitle>
         <DialogContent>
-          <Typography variant="body1" sx={{ color: "#e2e8f0", mb: 2 }}>
-            Check the information before sending. Further changes cannot be changed.
+          <Typography variant="body1" sx={{ color: "text.primary", mb: 2 }}>
+            Check the information before sending. Further changes cannot be
+            changed.
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            This action will send the application list to the recruiter for {selectedPost?.company_name} - {selectedPost?.position}.
-            Once sent, you cannot send the list again for this post.
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            This action will send the application list to the recruiter for{" "}
+            {selectedPost?.company_name} - {selectedPost?.position}. Once sent,
+            you cannot send the list again for this post.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button
             onClick={() => setSendListDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>

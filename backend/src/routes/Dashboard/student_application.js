@@ -6,8 +6,9 @@ import {
   student_profile,
   user,
   sent_lists,
+  application_timeline,
 } from "../../db/schema/index.js";
-import { eq, desc, and, count, countDistinct, inArray, isNull } from "drizzle-orm";
+import { eq, desc, and, count, countDistinct } from "drizzle-orm";
 import { requireAuth } from "../../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -61,9 +62,10 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
     // Check if post targets student's department or has no target departments (legacy posts)
     if (post[0].target_departments && post[0].target_departments.length > 0) {
       if (!post[0].target_departments.includes(studentBranch)) {
-        return res
-          .status(403)
-          .json({ ok: false, error: "This post is not available for your department" });
+        return res.status(403).json({
+          ok: false,
+          error: "This post is not available for your department",
+        });
       }
     }
 
@@ -122,9 +124,19 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
         contact_number: studentData.contact_number,
         resume_link: resume_link || null,
         cover_letter: cover_letter || null,
-        application_status: "pending",
+        application_status: "applied",
+        interview_confirmed: false,
       })
       .returning();
+
+    await db.insert(application_timeline).values({
+      application_id: newApplication[0].id,
+      event_type: "applied",
+      title: "Application Submitted",
+      description: `Successfully applied for ${post[0].position} at ${post[0].company_name}`,
+      event_date: new Date(),
+      visibility: "student",
+    });
 
     res.status(201).json({ ok: true, application: newApplication[0] });
   } catch (e) {
@@ -155,11 +167,16 @@ router.get("/post/:postId/applications", requireAuth, async (req, res) => {
           "Company",
           "Position",
           "Status",
-          "Applied Date"
+          "Applied Date",
         ];
-        const csvContent = [csvHeaders].map(row => row.map(field => `"${field}"`).join(",")).join("\n");
+        const csvContent = [csvHeaders]
+          .map((row) => row.map((field) => `"${field}"`).join(","))
+          .join("\n");
         res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", `attachment; filename="no_applications.csv"`);
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="no_applications.csv"`
+        );
         return res.send(csvContent);
       } else {
         return res.json({ ok: true, applications: [] });
@@ -192,10 +209,10 @@ router.get("/post/:postId/applications", requireAuth, async (req, res) => {
         "Company",
         "Position",
         "Status",
-        "Applied Date"
+        "Applied Date",
       ];
 
-      const csvRows = applications.map(app => [
+      const csvRows = applications.map((app) => [
         app.full_name,
         app.roll_number,
         app.branch,
@@ -206,20 +223,24 @@ router.get("/post/:postId/applications", requireAuth, async (req, res) => {
         post[0].company_name,
         post[0].position,
         app.application_status,
-        new Date(app.applied_at).toLocaleDateString()
+        new Date(app.applied_at).toLocaleDateString(),
       ]);
 
       const csvContent = [csvHeaders, ...csvRows]
-        .map(row => row.map(field => `"${field}"`).join(","))
+        .map((row) => row.map((field) => `"${field}"`).join(","))
         .join("\n");
 
-      const filename = post.length > 0
-        ? `${post[0].company_name}_${post[0].position}_applications.csv`
-        : `post_${postId}_applications.csv`;
+      const filename =
+        post.length > 0
+          ? `${post[0].company_name}_${post[0].position}_applications.csv`
+          : `post_${postId}_applications.csv`;
 
       // Set headers for CSV download
       res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
 
       res.send(csvContent);
     } else {
@@ -423,7 +444,7 @@ router.get("/global-stats", requireAuth, async (req, res) => {
         totalApplied,
         totalInterviewed,
         totalOffers,
-      }
+      },
     });
   } catch (e) {
     console.error("Error fetching global stats:", e);
@@ -446,7 +467,9 @@ router.delete("/application/:applicationId", requireAuth, async (req, res) => {
       .returning();
 
     if (deleted.length === 0) {
-      return res.status(404).json({ ok: false, error: "Application not found" });
+      return res
+        .status(404)
+        .json({ ok: false, error: "Application not found" });
     }
 
     res.json({ ok: true, message: "Application deleted successfully" });
@@ -465,8 +488,14 @@ router.post("/bulk-import", requireAuth, async (req, res) => {
 
     const { applications, postId } = req.body;
 
-    if (!applications || !Array.isArray(applications) || applications.length === 0) {
-      return res.status(400).json({ ok: false, error: "No applications provided" });
+    if (
+      !applications ||
+      !Array.isArray(applications) ||
+      applications.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "No applications provided" });
     }
 
     if (!postId) {
@@ -497,7 +526,9 @@ router.post("/bulk-import", requireAuth, async (req, res) => {
         let studentUser = await db
           .select()
           .from(user)
-          .where(eq(user.email, app.email || `${app.roll_number}@placeholder.com`))
+          .where(
+            eq(user.email, app.email || `${app.roll_number}@placeholder.com`)
+          )
           .limit(1);
 
         let studentId;
@@ -543,7 +574,9 @@ router.post("/bulk-import", requireAuth, async (req, res) => {
           .limit(1);
 
         if (existingApplication.length > 0) {
-          errors.push(`Student ${app.full_name} (${app.roll_number}) already applied`);
+          errors.push(
+            `Student ${app.full_name} (${app.roll_number}) already applied`
+          );
           continue;
         }
 
@@ -599,7 +632,9 @@ router.post("/send-list/:postId", requireAuth, async (req, res) => {
     const { recruiterId } = req.body;
 
     if (!recruiterId) {
-      return res.status(400).json({ ok: false, error: "Recruiter ID is required" });
+      return res
+        .status(400)
+        .json({ ok: false, error: "Recruiter ID is required" });
     }
 
     // Check if list has already been sent for this post
@@ -610,7 +645,10 @@ router.post("/send-list/:postId", requireAuth, async (req, res) => {
       .limit(1);
 
     if (existingSentList.length > 0) {
-      return res.status(400).json({ ok: false, error: "Application list has already been sent for this post" });
+      return res.status(400).json({
+        ok: false,
+        error: "Application list has already been sent for this post",
+      });
     }
 
     // Verify post exists and belongs to the recruiter
@@ -621,7 +659,10 @@ router.post("/send-list/:postId", requireAuth, async (req, res) => {
       .limit(1);
 
     if (post.length === 0) {
-      return res.status(404).json({ ok: false, error: "Post not found or doesn't belong to recruiter" });
+      return res.status(404).json({
+        ok: false,
+        error: "Post not found or doesn't belong to recruiter",
+      });
     }
 
     // Get all applications for this post
@@ -632,7 +673,9 @@ router.post("/send-list/:postId", requireAuth, async (req, res) => {
       .orderBy(desc(student_applications.applied_at));
 
     if (applications.length === 0) {
-      return res.status(400).json({ ok: false, error: "No applications found for this post" });
+      return res
+        .status(400)
+        .json({ ok: false, error: "No applications found for this post" });
     }
 
     // Create sent list record
@@ -650,7 +693,7 @@ router.post("/send-list/:postId", requireAuth, async (req, res) => {
       ok: true,
       message: "Application list sent to recruiter successfully",
       sentList: sentList[0],
-      applicationsCount: applications.length
+      applicationsCount: applications.length,
     });
   } catch (e) {
     console.error("Error sending application list:", e);
@@ -698,11 +741,15 @@ router.get("/received-list/:listId", requireAuth, async (req, res) => {
       })
       .from(sent_lists)
       .leftJoin(posts, eq(sent_lists.post_id, posts.id))
-      .where(and(eq(sent_lists.id, listId), eq(sent_lists.sent_to, req.user.id)))
+      .where(
+        and(eq(sent_lists.id, listId), eq(sent_lists.sent_to, req.user.id))
+      )
       .limit(1);
 
     if (receivedList.length === 0) {
-      return res.status(404).json({ ok: false, error: "Received list not found" });
+      return res
+        .status(404)
+        .json({ ok: false, error: "Received list not found" });
     }
 
     res.json({ ok: true, list: receivedList[0] });
@@ -752,11 +799,15 @@ router.get("/received-list/:listId/download", requireAuth, async (req, res) => {
       })
       .from(sent_lists)
       .leftJoin(posts, eq(sent_lists.post_id, posts.id))
-      .where(and(eq(sent_lists.id, listId), eq(sent_lists.sent_to, req.user.id)))
+      .where(
+        and(eq(sent_lists.id, listId), eq(sent_lists.sent_to, req.user.id))
+      )
       .limit(1);
 
     if (receivedList.length === 0) {
-      return res.status(404).json({ ok: false, error: "Received list not found" });
+      return res
+        .status(404)
+        .json({ ok: false, error: "Received list not found" });
     }
 
     const listData = receivedList[0];
@@ -774,10 +825,10 @@ router.get("/received-list/:listId/download", requireAuth, async (req, res) => {
       "Company",
       "Position",
       "Status",
-      "Applied Date"
+      "Applied Date",
     ];
 
-    const csvRows = applications.map(app => [
+    const csvRows = applications.map((app) => [
       app.full_name,
       app.roll_number,
       app.branch,
@@ -788,16 +839,19 @@ router.get("/received-list/:listId/download", requireAuth, async (req, res) => {
       listData.post.company_name,
       listData.post.position,
       app.application_status,
-      new Date(app.applied_at).toLocaleDateString()
+      new Date(app.applied_at).toLocaleDateString(),
     ]);
 
     const csvContent = [csvHeaders, ...csvRows]
-      .map(row => row.map(field => `"${field}"`).join(","))
+      .map((row) => row.map((field) => `"${field}"`).join(","))
       .join("\n");
 
     // Set headers for CSV download
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="${listData.post.company_name}_${listData.post.position}_applications.csv"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${listData.post.company_name}_${listData.post.position}_applications.csv"`
+    );
 
     res.send(csvContent);
   } catch (e) {

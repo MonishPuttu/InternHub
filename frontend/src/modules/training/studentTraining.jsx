@@ -187,7 +187,7 @@ export default function StudentTraining() {
   const AssessmentCard = ({ assessment }) => (
     <Card
       sx={{
-        bgcolor: "#1e293b",
+        bgcolor: "background.paper",
         border: "1px solid #334155",
         borderRadius: 2,
         width: "100%",
@@ -219,7 +219,7 @@ export default function StudentTraining() {
           <Typography
             variant="h6"
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: "bold",
               flex: 1,
               minWidth: 0,
@@ -239,7 +239,7 @@ export default function StudentTraining() {
         <Typography
           variant="body2"
           sx={{
-            color: "#94a3b8",
+            color: "text.secondary",
             mb: 2,
             wordBreak: "break-word",
           }}
@@ -249,7 +249,7 @@ export default function StudentTraining() {
 
         <Box display="flex" alignItems="center" gap={2} mb={2}>
           <Schedule fontSize="small" sx={{ color: "#8b5cf6", flexShrink: 0 }} />
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Duration: {assessment.duration} minutes
           </Typography>
         </Box>
@@ -259,7 +259,7 @@ export default function StudentTraining() {
             fontSize="small"
             sx={{ color: "#8b5cf6", flexShrink: 0 }}
           />
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Total Marks: {assessment.totalMarks}
           </Typography>
         </Box>
@@ -313,10 +313,13 @@ export default function StudentTraining() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box mb={4}>
-        <Typography variant="h4" sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+        <Typography
+          variant="h4"
+          sx={{ color: "text.primary", fontWeight: "bold" }}
+        >
           Training & Assessments
         </Typography>
-        <Typography variant="body1" sx={{ color: "#94a3b8", mt: 1 }}>
+        <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
           Complete assessments to improve your placement readiness
         </Typography>
       </Box>
@@ -335,7 +338,7 @@ export default function StudentTraining() {
           borderBottom: "1px solid #334155",
           mb: 3,
           "& .MuiTab-root": {
-            color: "#64748b",
+            color: "text.secondary",
             textTransform: "none",
             fontSize: "1rem",
             "&.Mui-selected": {
@@ -366,7 +369,9 @@ export default function StudentTraining() {
 
       <TabPanel value={tabValue} index={0}>
         {assessments.new.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+          <Typography
+            sx={{ color: "text.secondary", textAlign: "center", py: 4 }}
+          >
             No recently posted assessments
           </Typography>
         ) : (
@@ -386,7 +391,9 @@ export default function StudentTraining() {
 
       <TabPanel value={tabValue} index={1}>
         {assessments.ongoing.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+          <Typography
+            sx={{ color: "text.secondary", textAlign: "center", py: 4 }}
+          >
             No ongoing assessments
           </Typography>
         ) : (
@@ -406,7 +413,9 @@ export default function StudentTraining() {
 
       <TabPanel value={tabValue} index={2}>
         {assessments.completed.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+          <Typography
+            sx={{ color: "text.secondary", textAlign: "center", py: 4 }}
+          >
             No completed assessments yet
           </Typography>
         ) : (
@@ -431,21 +440,21 @@ export default function StudentTraining() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
           },
         }}
       >
-        <DialogTitle sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+        <DialogTitle sx={{ color: "text.primary", fontWeight: "bold" }}>
           Start Assessment
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Typography sx={{ color: "#e2e8f0", mb: 2 }}>
+          <Typography sx={{ color: "text.primary", mb: 2 }}>
             Are you sure you want to start{" "}
             <strong>"{selectedAssessment?.title}"</strong>?
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 2 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
             Duration: {selectedAssessment?.duration} minutes
           </Typography>
           <Alert
@@ -460,7 +469,7 @@ export default function StudentTraining() {
           <Button
             onClick={() => setOpenDialog(false)}
             disabled={submitting}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>

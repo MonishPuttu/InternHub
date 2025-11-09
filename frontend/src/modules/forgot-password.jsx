@@ -11,17 +11,15 @@ import {
   Link,
 } from "@mui/material";
 import SchoolIcon from "@mui/icons-material/School";
-import BusinessIcon from "@mui/icons-material/Business";
-import WorkIcon from "@mui/icons-material/Work";
-import {
-  StyledTextField,
-} from "@/components/auth/authcomp";
+import { useTheme } from "@mui/material/styles";
+import { StyledTextField } from "@/components/auth/authcomp";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function ForgotPassword() {
   const router = useRouter();
+  const theme = useTheme();
   const [formData, setFormData] = useState({
     email: "",
   });
@@ -59,12 +57,18 @@ export default function ForgotPassword() {
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       {/* Left Side - Form */}
       <Box
         sx={{
           width: { xs: "100%", md: "45%" },
-          bgcolor: "#0f172a",
+          bgcolor: "background.default",
           p: 4,
           display: "flex",
           flexDirection: "column",
@@ -74,12 +78,13 @@ export default function ForgotPassword() {
         <Box sx={{ maxWidth: 450, mx: "auto", width: "100%" }}>
           <Typography
             variant="h4"
-            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 1 }}
+            sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
           >
             Forgot Password
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 4 }}>
-            Enter your email address and we'll send you a link to reset your password
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
+            Enter your email address and we'll send you a link to reset your
+            password
           </Typography>
 
           {error && (
@@ -134,7 +139,7 @@ export default function ForgotPassword() {
             </Button>
 
             <Box sx={{ textAlign: "center", mt: 3 }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Remember your password?{" "}
                 <Link
                   component={NextLink}

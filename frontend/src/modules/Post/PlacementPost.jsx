@@ -30,6 +30,7 @@ import {
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import axios from "axios";
 import {
   BACKEND_URL,
@@ -39,6 +40,7 @@ import {
 
 export default function PlacementPosts() {
   const router = useRouter();
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,11 +64,8 @@ export default function PlacementPosts() {
       const token = localStorage.getItem("token");
       const response = await axios.get(
         `${BACKEND_URL}/api/posts/applications?limit=1000`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (response.data.ok) {
         setApplications(response.data.applications);
       }
@@ -80,20 +79,17 @@ export default function PlacementPosts() {
 
   const handleApprove = async () => {
     if (!selectedApp) return;
-
     try {
       const token = localStorage.getItem("token");
       const payload = {
         approval_status: "approved",
         rejection_reason: null,
       };
-
       const response = await axios.put(
         `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (response.data.ok) {
         setSuccessMsg("Post approved successfully!");
         setActionDialogOpen(false);
@@ -107,7 +103,6 @@ export default function PlacementPosts() {
 
   const handleDisapprove = async () => {
     if (!selectedApp) return;
-
     try {
       const token = localStorage.getItem("token");
       const payload = {
@@ -115,13 +110,11 @@ export default function PlacementPosts() {
         status: "rejected",
         rejection_reason: rejectionReason || null,
       };
-
       const response = await axios.put(
         `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (response.data.ok) {
         setSuccessMsg("Post disapproved successfully");
         setActionDialogOpen(false);
@@ -149,23 +142,19 @@ export default function PlacementPosts() {
 
   const handleSaveEdit = async () => {
     if (!selectedApp) return;
-
     try {
       const token = localStorage.getItem("token");
       const updatePayload = { ...editFormData };
-
       Object.keys(updatePayload).forEach((key) => {
         if (updatePayload[key] === "" || updatePayload[key] === null) {
           delete updatePayload[key];
         }
       });
-
       await axios.put(
         `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
         updatePayload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setSuccessMsg("Post updated successfully!");
       setEditDialogOpen(false);
       setSelectedApp(null);
@@ -199,13 +188,13 @@ export default function PlacementPosts() {
     activeTab === 0
       ? pendingPosts
       : activeTab === 1
-        ? approvedPosts
-        : disapprovedPosts;
+      ? approvedPosts
+      : disapprovedPosts;
 
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>
+        <Typography sx={{ color: "text.primary" }}>
           Loading posts for review...
         </Typography>
       </Box>
@@ -218,16 +207,16 @@ export default function PlacementPosts() {
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="h4"
-          sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+          sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
         >
           Post Management
         </Typography>
-        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
           Review and manage posted opportunities
         </Typography>
         <Box sx={{ mt: 2, display: "flex", gap: 3 }}>
           <Box>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Pending Review
             </Typography>
             <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 700 }}>
@@ -235,7 +224,7 @@ export default function PlacementPosts() {
             </Typography>
           </Box>
           <Box>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Approved Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
@@ -243,10 +232,13 @@ export default function PlacementPosts() {
             </Typography>
           </Box>
           <Box>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Total Posts
             </Typography>
-            <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "text.primary", fontWeight: 700 }}
+            >
               {applications.length}
             </Typography>
           </Box>
@@ -254,13 +246,19 @@ export default function PlacementPosts() {
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: "#334155", mb: 3 }}>
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          mb: 3,
+        }}
+      >
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
           sx={{
             "& .MuiTab-root": {
-              color: "#94a3b8",
+              color: "text.secondary",
               textTransform: "none",
               fontSize: "1rem",
               fontWeight: 500,
@@ -281,17 +279,18 @@ export default function PlacementPosts() {
           sx={{
             textAlign: "center",
             py: 8,
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             borderRadius: 2,
-            border: "1px solid #334155",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
-          <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
+          <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
             {activeTab === 0
               ? "No pending posts"
               : activeTab === 1
-                ? "No approved posts yet"
-                : "No disapproved posts"}
+              ? "No approved posts yet"
+              : "No disapproved posts"}
           </Typography>
         </Box>
       ) : (
@@ -301,9 +300,14 @@ export default function PlacementPosts() {
               key={app.id}
               elevation={0}
               sx={{
-                bgcolor: "#1e293b",
-                border:
-                  activeTab === 0 ? "2px solid #fbbf24" : "1px solid #334155",
+                bgcolor: "background.paper",
+                border: activeTab === 0 ? "2px solid #fbbf24" : "1px solid",
+                borderColor:
+                  activeTab === 0
+                    ? "#fbbf24"
+                    : theme.palette.mode === "dark"
+                    ? "#334155"
+                    : "#e2e8f0",
                 borderRadius: 2,
                 p: 3,
                 transition: "all 0.2s",
@@ -325,7 +329,9 @@ export default function PlacementPosts() {
                       height: 280,
                       borderRadius: 2,
                       objectFit: "cover",
-                      border: "2px solid #334155",
+                      border: "2px solid",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                     }}
                   />
                 )}
@@ -400,13 +406,21 @@ export default function PlacementPosts() {
                       <Box>
                         <Typography
                           variant="h6"
-                          sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+                          sx={{
+                            color: "text.primary",
+                            fontWeight: 700,
+                            mb: 0.5,
+                          }}
                         >
                           {app.position}
                         </Typography>
                         <Typography
                           variant="body1"
-                          sx={{ color: "#94a3b8", fontWeight: 600, mb: 1 }}
+                          sx={{
+                            color: "text.secondary",
+                            fontWeight: 600,
+                            mb: 1,
+                          }}
                         >
                           {app.company_name}
                         </Typography>
@@ -416,7 +430,7 @@ export default function PlacementPosts() {
                     {app.notes && (
                       <Typography
                         variant="body2"
-                        sx={{ color: "#64748b", mb: 2, lineHeight: 1.6 }}
+                        sx={{ color: "text.secondary", mb: 2, lineHeight: 1.6 }}
                       >
                         {app.notes.length > 150
                           ? `${app.notes.substring(0, 150)}...`
@@ -436,9 +450,12 @@ export default function PlacementPosts() {
                           }}
                         >
                           <AttachMoneyIcon
-                            sx={{ fontSize: 18, color: "#64748b" }}
+                            sx={{ fontSize: 18, color: "text.secondary" }}
                           />
-                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "text.secondary" }}
+                          >
                             ₹{app.package_offered}L
                           </Typography>
                         </Box>
@@ -448,9 +465,12 @@ export default function PlacementPosts() {
                         sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
                         <LocationOnIcon
-                          sx={{ fontSize: 18, color: "#64748b" }}
+                          sx={{ fontSize: 18, color: "text.secondary" }}
                         />
-                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary" }}
+                        >
                           {app.industry}
                         </Typography>
                       </Box>
@@ -459,26 +479,41 @@ export default function PlacementPosts() {
                         sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
                         <AccessTimeIcon
-                          sx={{ fontSize: 18, color: "#64748b" }}
+                          sx={{ fontSize: 18, color: "text.secondary" }}
                         />
-                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary" }}
+                        >
                           Posted{" "}
                           {new Date(app.application_date).toLocaleDateString()}
                         </Typography>
                       </Box>
-                      {app.application_deadline && !isNaN(new Date(app.application_deadline).getTime()) && (
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                        >
-                          <AccessTimeIcon
-                            sx={{ fontSize: 18, color: "#ef4444" }}
-                          />
-                          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                            Deadline{" "}
-                            {new Date(app.application_deadline).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      )}
+                      {app.application_deadline &&
+                        !isNaN(
+                          new Date(app.application_deadline).getTime()
+                        ) && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <AccessTimeIcon
+                              sx={{ fontSize: 18, color: "#ef4444" }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Deadline{" "}
+                              {new Date(
+                                app.application_deadline
+                              ).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        )}
                     </Box>
                   </Box>
 
@@ -570,7 +605,20 @@ export default function PlacementPosts() {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", border: "1px solid #334155" },
+          sx: {
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            "& .MuiMenuItem-root": {
+              color: "text.primary",
+              "&:hover": {
+                bgcolor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "rgba(139, 92, 246, 0.05)",
+              },
+            },
+          },
         }}
       >
         <MenuItem onClick={() => handleEdit(selectedApp)}>
@@ -584,18 +632,29 @@ export default function PlacementPosts() {
         open={actionDialogOpen}
         onClose={() => setActionDialogOpen(false)}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0", borderRadius: 2 },
+          sx: {
+            bgcolor: "background.paper",
+            color: "text.primary",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          },
         }}
       >
         <DialogTitle
           component="div"
-          sx={{ fontWeight: 700, fontSize: "1.1rem" }}
+          sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}
         >
           {actionType === "approve" ? "Approve Post" : "Disapprove Post"}
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "#334155" }}>
+        <DialogContent
+          dividers
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
           <Stack spacing={2}>
-            <Typography sx={{ color: "#94a3b8" }}>
+            <Typography sx={{ color: "text.secondary" }}>
               {actionType === "approve"
                 ? `Are you sure you want to approve "${selectedApp?.position}" post from ${selectedApp?.company_name}?`
                 : `Are you sure you want to disapprove "${selectedApp?.position}" post from ${selectedApp?.company_name}?`}
@@ -611,21 +670,34 @@ export default function PlacementPosts() {
                 placeholder="Please provide a reason for disapproving this post..."
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#0f172a",
-                    color: "#e2e8f0",
-                    "& fieldset": { borderColor: "#334155" },
+                    backgroundColor: "background.default",
+                    color: "text.primary",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
                     "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "& .MuiInputLabel-root": { color: "#94a3b8" },
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
+                  },
                 }}
               />
             )}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
+        <DialogActions
+          sx={{
+            p: 2,
+            borderTop: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
           <Button
             onClick={() => setActionDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>
@@ -653,16 +725,27 @@ export default function PlacementPosts() {
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0", borderRadius: 2 },
+          sx: {
+            bgcolor: "background.paper",
+            color: "text.primary",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          },
         }}
       >
         <DialogTitle
           component="div"
-          sx={{ fontWeight: 700, fontSize: "1.1rem" }}
+          sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}
         >
           Edit Post
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "#334155" }}>
+        <DialogContent
+          dividers
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
           <Stack spacing={2.5}>
             <TextField
               fullWidth
@@ -676,12 +759,19 @@ export default function PlacementPosts() {
               }
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
                   "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
               }}
             />
 
@@ -694,12 +784,19 @@ export default function PlacementPosts() {
               }
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
                   "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
               }}
             />
 
@@ -717,12 +814,19 @@ export default function PlacementPosts() {
               inputProps={{ step: "0.01", min: "0" }}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
                   "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
               }}
             />
 
@@ -737,20 +841,33 @@ export default function PlacementPosts() {
               }
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#0f172a",
-                  color: "#e2e8f0",
-                  "& fieldset": { borderColor: "#334155" },
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
                   "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
               }}
             />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
+        <DialogActions
+          sx={{
+            p: 2,
+            borderTop: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
           <Button
             onClick={() => setEditDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>

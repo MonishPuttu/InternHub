@@ -172,12 +172,9 @@ router.get("/assessments", requireAuth, async (req, res) => {
 // Get assessment by ID with questions
 router.get("/assessments/:assessmentId", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "placement") {
-      return res.status(403).json({ ok: false, error: "Access denied" });
-    }
-
     const { assessmentId } = req.params;
 
+    // Get assessment details
     const [assessment] = await db
       .select()
       .from(assessments)
@@ -188,25 +185,63 @@ router.get("/assessments/:assessmentId", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Assessment not found" });
     }
 
-    const assessmentQuestions = await db
+    // Get questions
+    const questionsList = await db
       .select()
       .from(questions)
       .where(eq(questions.assessment_id, assessmentId))
       .orderBy(questions.order_index);
 
+    // ✅ Process questions to mark correct answers
+    const processedQuestions = questionsList.map((q) => {
+      let options = q.options || [];
+      let correctAnswerIds = q.correct_answer || [];
+
+      // Ensure correctAnswerIds is an array
+      if (!Array.isArray(correctAnswerIds)) {
+        correctAnswerIds = [correctAnswerIds];
+      }
+
+      // ✅ Mark correct options
+      const processedOptions = options.map((option) => ({
+        ...option,
+        isCorrect:
+          correctAnswerIds.includes(option.id) ||
+          correctAnswerIds.includes(String(option.id)) ||
+          correctAnswerIds.includes(option.text),
+      }));
+
+      return {
+        id: q.id,
+        text: q.question_text,
+        question: q.question_text,
+        type: q.question_type,
+        options: processedOptions,
+        correct_answer: correctAnswerIds,
+        marks: q.marks,
+        difficulty: q.difficulty,
+        tags: q.tags,
+        order_index: q.order_index,
+      };
+    });
+
     res.json({
       ok: true,
       data: {
         assessment,
-        questions: assessmentQuestions,
+        questions: processedQuestions,
       },
     });
   } catch (error) {
     console.error("Error fetching assessment:", error);
-    res.status(500).json({ ok: false, error: "Failed to fetch assessment" });
+    console.error("Error stack:", error.stack); // ✅ Log full error
+    res.status(500).json({
+      ok: false,
+      error: "Failed to fetch assessment",
+      details: error.message, // ✅ Send error details in development
+    });
   }
 });
-
 // Get leaderboard for specific assessment
 router.get(
   "/assessments/:assessmentId/leaderboard",
@@ -220,7 +255,14 @@ router.get(
       const { assessmentId } = req.params;
       const { branch } = req.query;
 
-      let query = db
+      // ✅ Build conditions array
+      let conditions = [eq(leaderboard.assessment_id, assessmentId)];
+
+      if (branch && branch !== "all") {
+        conditions.push(eq(student_profile.branch, branch));
+      }
+
+      const leaderboardData = await db
         .select({
           rank: leaderboard.rank,
           studentId: leaderboard.student_id,
@@ -235,13 +277,8 @@ router.get(
         .from(leaderboard)
         .innerJoin(user, eq(leaderboard.student_id, user.id))
         .innerJoin(student_profile, eq(user.id, student_profile.user_id))
-        .where(eq(leaderboard.assessment_id, assessmentId));
-
-      if (branch && branch !== "all") {
-        query = query.where(and(eq(student_profile.branch, branch)));
-      }
-
-      const leaderboardData = await query.orderBy(leaderboard.rank);
+        .where(and(...conditions)) // ✅ Use and() with conditions array
+        .orderBy(leaderboard.rank);
 
       res.json({ ok: true, data: leaderboardData });
     } catch (error) {

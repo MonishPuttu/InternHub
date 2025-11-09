@@ -20,9 +20,9 @@ import {
   AttachMoney as AttachMoneyIcon,
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
-  Close as CloseIcon,
 } from "@mui/icons-material";
 import axios from "axios";
+import { useTheme } from "@mui/material/styles";
 import { CreateApplicationModal } from "@/components/post/CreateApplicationModal";
 import {
   BACKEND_URL,
@@ -32,6 +32,7 @@ import {
 
 export default function RecruiterPost() {
   const router = useRouter();
+  const theme = useTheme();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -40,7 +41,6 @@ export default function RecruiterPost() {
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-
 
   useEffect(() => {
     fetchApplications();
@@ -66,7 +66,6 @@ export default function RecruiterPost() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       if (response.data.ok) {
         setApplications(response.data.applications);
       }
@@ -93,11 +92,8 @@ export default function RecruiterPost() {
       const token = localStorage.getItem("token");
       await axios.delete(
         `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setSuccessMsg("Application deleted successfully");
       fetchApplications();
     } catch (error) {
@@ -115,8 +111,6 @@ export default function RecruiterPost() {
     router.push(`/post/postdetails/${app.id}`);
   };
 
-
-
   const filteredApplications = applications.filter((app) => {
     if (filterStatus === "all") return true;
     if (filterStatus === "approved") return app.approval_status === "approved";
@@ -129,7 +123,7 @@ export default function RecruiterPost() {
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>
+        <Typography sx={{ color: "text.primary" }}>
           Loading opportunities...
         </Typography>
       </Box>
@@ -151,11 +145,11 @@ export default function RecruiterPost() {
           <Box>
             <Typography
               variant="h4"
-              sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+              sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
             >
               Post Opportunities
             </Typography>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Manage your internship and job applications
             </Typography>
           </Box>
@@ -176,94 +170,120 @@ export default function RecruiterPost() {
           </Button>
         </Box>
 
-        {/* Statistics Section - Similar to PlacementPosts */}
+        {/* Statistics Section */}
         <Box sx={{ mt: 2, display: "flex", gap: 3, flexWrap: "wrap" }}>
           <Box
             onClick={() => setFilterStatus("all")}
             sx={{
               cursor: "pointer",
-              p: 1,
+              p: 2,
               borderRadius: 1,
+              bgcolor: "background.paper",
+              border: "2px solid",
+              borderColor:
+                filterStatus === "all"
+                  ? "#8b5cf6"
+                  : theme.palette.mode === "dark"
+                  ? "#334155"
+                  : "#e2e8f0",
               transition: "all 0.2s",
               "&:hover": {
-                bgcolor: "rgba(139, 92, 246, 0.1)",
+                borderColor: "#8b5cf6",
+                transform: "translateY(-2px)",
               },
-              border:
-                filterStatus === "all"
-                  ? "2px solid #8b5cf6"
-                  : "2px solid transparent",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Total Opportunities
             </Typography>
-            <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "text.primary", fontWeight: 700 }}
+            >
               {stats.total}
             </Typography>
           </Box>
+
           <Box
             onClick={() => setFilterStatus("approved")}
             sx={{
               cursor: "pointer",
-              p: 1,
+              p: 2,
               borderRadius: 1,
+              bgcolor: "background.paper",
+              border: "2px solid",
+              borderColor:
+                filterStatus === "approved"
+                  ? "#10b981"
+                  : theme.palette.mode === "dark"
+                  ? "#334155"
+                  : "#e2e8f0",
               transition: "all 0.2s",
               "&:hover": {
-                bgcolor: "rgba(16, 185, 129, 0.1)",
+                borderColor: "#10b981",
+                transform: "translateY(-2px)",
               },
-              border:
-                filterStatus === "approved"
-                  ? "2px solid #10b981"
-                  : "2px solid transparent",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Approved Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
               {stats.approved}
             </Typography>
           </Box>
+
           <Box
             onClick={() => setFilterStatus("pending")}
             sx={{
               cursor: "pointer",
-              p: 1,
+              p: 2,
               borderRadius: 1,
+              bgcolor: "background.paper",
+              border: "2px solid",
+              borderColor:
+                filterStatus === "pending"
+                  ? "#fbbf24"
+                  : theme.palette.mode === "dark"
+                  ? "#334155"
+                  : "#e2e8f0",
               transition: "all 0.2s",
               "&:hover": {
-                bgcolor: "rgba(251, 191, 36, 0.1)",
+                borderColor: "#fbbf24",
+                transform: "translateY(-2px)",
               },
-              border:
-                filterStatus === "pending"
-                  ? "2px solid #fbbf24"
-                  : "2px solid transparent",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Pending Review
             </Typography>
             <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 700 }}>
               {stats.pending}
             </Typography>
           </Box>
+
           <Box
             onClick={() => setFilterStatus("disapproved")}
             sx={{
               cursor: "pointer",
-              p: 1,
+              p: 2,
               borderRadius: 1,
+              bgcolor: "background.paper",
+              border: "2px solid",
+              borderColor:
+                filterStatus === "disapproved"
+                  ? "#ef4444"
+                  : theme.palette.mode === "dark"
+                  ? "#334155"
+                  : "#e2e8f0",
               transition: "all 0.2s",
               "&:hover": {
-                bgcolor: "rgba(239, 68, 68, 0.1)",
+                borderColor: "#ef4444",
+                transform: "translateY(-2px)",
               },
-              border:
-                filterStatus === "disapproved"
-                  ? "2px solid #ef4444"
-                  : "2px solid transparent",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Disapproved Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#ef4444", fontWeight: 700 }}>
@@ -279,17 +299,18 @@ export default function RecruiterPost() {
           sx={{
             textAlign: "center",
             py: 8,
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             borderRadius: 2,
-            border: "1px solid #334155",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
-          <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
+          <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
             {filterStatus === "all"
               ? "No opportunities posted yet"
               : `No ${filterStatus} opportunities`}
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
             {filterStatus === "all"
               ? "Start by creating your first opportunity post"
               : "Try a different filter"}
@@ -314,7 +335,10 @@ export default function RecruiterPost() {
               sx={{
                 borderColor: "#8b5cf6",
                 color: "#8b5cf6",
-                "&:hover": { bgcolor: "#8b5cf610" },
+                "&:hover": {
+                  bgcolor: "rgba(139, 92, 246, 0.1)",
+                  borderColor: "#7c3aed",
+                },
                 textTransform: "none",
               }}
             >
@@ -329,8 +353,10 @@ export default function RecruiterPost() {
               key={app.id}
               elevation={0}
               sx={{
-                bgcolor: "#1e293b",
-                border: "1px solid #334155",
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                 borderRadius: 2,
                 p: 2.5,
                 transition: "all 0.2s",
@@ -352,7 +378,9 @@ export default function RecruiterPost() {
                       height: 180,
                       borderRadius: 2,
                       objectFit: "cover",
-                      border: "2px solid #334155",
+                      border: "2px solid",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                     }}
                   />
                 )}
@@ -368,7 +396,7 @@ export default function RecruiterPost() {
                     <Typography
                       variant="h6"
                       sx={{
-                        color: "#e2e8f0",
+                        color: "text.primary",
                         fontWeight: 700,
                         mb: 0.5,
                         fontSize: "1.1rem",
@@ -379,7 +407,7 @@ export default function RecruiterPost() {
                     <Typography
                       variant="body1"
                       sx={{
-                        color: "#94a3b8",
+                        color: "text.secondary",
                         fontWeight: 500,
                         fontSize: "0.95rem",
                       }}
@@ -390,7 +418,7 @@ export default function RecruiterPost() {
                   <IconButton
                     size="small"
                     onClick={(e) => handleMenuOpen(e, app)}
-                    sx={{ color: "#94a3b8" }}
+                    sx={{ color: "text.secondary" }}
                   >
                     <MoreVertIcon />
                   </IconButton>
@@ -404,17 +432,24 @@ export default function RecruiterPost() {
                     mt: 1,
                   }}
                 >
-                  <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 3,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {app.package_offered && (
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
                         <AttachMoneyIcon
-                          sx={{ fontSize: 16, color: "#64748b" }}
+                          sx={{ fontSize: 16, color: "text.secondary" }}
                         />
                         <Typography
                           variant="body2"
-                          sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                          sx={{ color: "text.secondary", fontSize: "0.85rem" }}
                         >
                           ₹{app.package_offered}L
                         </Typography>
@@ -424,10 +459,12 @@ export default function RecruiterPost() {
                     <Box
                       sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                     >
-                      <LocationOnIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                      <LocationOnIcon
+                        sx={{ fontSize: 16, color: "text.secondary" }}
+                      />
                       <Typography
                         variant="body2"
-                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                        sx={{ color: "text.secondary", fontSize: "0.85rem" }}
                       >
                         {app.industry}
                       </Typography>
@@ -436,26 +473,35 @@ export default function RecruiterPost() {
                     <Box
                       sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                     >
-                      <AccessTimeIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                      <AccessTimeIcon
+                        sx={{ fontSize: 16, color: "text.secondary" }}
+                      />
                       <Typography
                         variant="body2"
-                        sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
+                        sx={{ color: "text.secondary", fontSize: "0.85rem" }}
                       >
                         Posted{" "}
                         {new Date(app.application_date).toLocaleDateString()}
                       </Typography>
                     </Box>
-                    {app.application_deadline && !isNaN(new Date(app.application_deadline).getTime()) && (
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "#94a3b8", fontSize: "0.85rem" }}
-                        >
-                          Deadline{" "}
-                          {new Date(app.application_deadline).toLocaleDateString()}
-                        </Typography>
-                      </Box>
-                    )}
+
+                    {app.application_deadline &&
+                      !isNaN(new Date(app.application_deadline).getTime()) && (
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "text.secondary",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            Deadline{" "}
+                            {new Date(
+                              app.application_deadline
+                            ).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      )}
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -529,15 +575,26 @@ export default function RecruiterPost() {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", border: "1px solid #334155" },
+          sx: {
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            "& .MuiMenuItem-root": {
+              color: "text.primary",
+              "&:hover": {
+                bgcolor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(239, 68, 68, 0.1)"
+                    : "rgba(239, 68, 68, 0.05)",
+              },
+            },
+          },
         }}
       >
-        <MenuItem onClick={handleDelete} sx={{ color: "#ef4444" }}>
+        <MenuItem onClick={handleDelete} sx={{ color: "#ef4444 !important" }}>
           Delete
         </MenuItem>
       </Menu>
-
-
 
       {/* Create Modal */}
       <CreateApplicationModal open={openModal} onClose={handleModalClose} />

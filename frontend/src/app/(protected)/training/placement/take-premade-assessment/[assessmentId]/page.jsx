@@ -21,6 +21,7 @@ import {
   CardContent,
   Chip,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Timer, NavigateNext, NavigateBefore } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
@@ -31,6 +32,7 @@ export default function TakePremadeAssessment({ params }) {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const theme = useTheme();
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -195,12 +197,12 @@ export default function TakePremadeAssessment({ params }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
       >
-        <Typography variant="h6" sx={{ color: "#e2e8f0" }}>
+        <Typography variant="h6" sx={{ color: "text.primary" }}>
           Question {currentQuestionIndex + 1} of {questions.length}
         </Typography>
         <Box display="flex" alignItems="center" gap={1}>
@@ -247,7 +249,7 @@ export default function TakePremadeAssessment({ params }) {
         sx={{
           p: 3,
           mb: 3,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
@@ -256,7 +258,7 @@ export default function TakePremadeAssessment({ params }) {
           <Typography
             variant="h6"
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: "bold",
               wordBreak: "break-word",
               mb: 2,
@@ -314,7 +316,7 @@ export default function TakePremadeAssessment({ params }) {
                     option.text
                   }`}
                   sx={{
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     m: 0,
                     width: "100%",
                     "& .MuiFormControlLabel-label": {
@@ -346,7 +348,7 @@ export default function TakePremadeAssessment({ params }) {
             color: "#8b5cf6",
             borderColor: "#8b5cf6",
             "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf610" },
-            "&:disabled": { borderColor: "#334155", color: "#64748b" },
+            "&:disabled": { borderColor: "#334155", color: "text.secondary" },
           }}
         >
           Previous
@@ -361,7 +363,7 @@ export default function TakePremadeAssessment({ params }) {
               bgcolor: "#10b981",
               color: "#fff",
               "&:hover": { bgcolor: "#059669" },
-              "&:disabled": { bgcolor: "#64748b" },
+              "&:disabled": { bgcolor: "text.secondary" },
             }}
           >
             {submitting ? "Submitting..." : "Submit Assessment"}
@@ -376,7 +378,7 @@ export default function TakePremadeAssessment({ params }) {
               bgcolor: "#8b5cf6",
               color: "#fff",
               "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#64748b" },
+              "&:disabled": { bgcolor: "text.secondary" },
             }}
           >
             Next

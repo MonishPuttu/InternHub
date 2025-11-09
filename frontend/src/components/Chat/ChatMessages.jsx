@@ -18,6 +18,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   Send,
   AttachFile,
@@ -43,6 +44,7 @@ export default function ChatMessages({
   getUserName,
   onDeleteRoom,
 }) {
+  const theme = useTheme();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -129,10 +131,10 @@ export default function ChatMessages({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          bgcolor: "#0f172a",
+          bgcolor: "background.default",
         }}
       >
-        <Typography variant="h5" sx={{ color: "#64748b", mb: 1 }}>
+        <Typography variant="h5" sx={{ color: "text.secondary", mb: 1 }}>
           Select a chat to start messaging
         </Typography>
         <Typography variant="body2" sx={{ color: "#475569" }}>
@@ -149,14 +151,14 @@ export default function ChatMessages({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        bgcolor: "#0f172a",
+        bgcolor: "background.default",
       }}
     >
       {/* Chat Header */}
       <Box
         sx={{
           p: 2,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           borderBottom: "1px solid #334155",
           display: "flex",
           alignItems: "center",
@@ -170,16 +172,16 @@ export default function ChatMessages({
           <Box>
             <Typography
               variant="body1"
-              sx={{ color: "#e2e8f0", fontWeight: 600 }}
+              sx={{ color: "text.primary", fontWeight: 600 }}
             >
               {selectedRoom.name}
             </Typography>
-            <Typography variant="caption" sx={{ color: "#64748b" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {socketConnected ? "Online" : "Connecting..."}
             </Typography>
           </Box>
         </Stack>
-        <IconButton sx={{ color: "#94a3b8" }} onClick={handleMenuOpen}>
+        <IconButton sx={{ color: "text.secondary" }} onClick={handleMenuOpen}>
           <MoreVert />
         </IconButton>
 
@@ -190,8 +192,8 @@ export default function ChatMessages({
           onClose={handleMenuClose}
           PaperProps={{
             sx: {
-              bgcolor: "#1e293b",
-              color: "#e2e8f0",
+              bgcolor: "background.paper",
+              color: "text.primary",
               minWidth: 280,
               border: "1px solid #334155",
             },
@@ -202,12 +204,12 @@ export default function ChatMessages({
             sx={{ opacity: 1, "&.Mui-disabled": { opacity: 1 } }}
           >
             <Stack spacing={0.5} sx={{ width: "100%" }}>
-              <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Room Information
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "#e2e8f0", fontWeight: 600 }}
+                sx={{ color: "text.primary", fontWeight: 600 }}
               >
                 {selectedRoom.name}
               </Typography>
@@ -219,13 +221,13 @@ export default function ChatMessages({
             sx={{ opacity: 1, "&.Mui-disabled": { opacity: 1 } }}
           >
             <Stack spacing={0.5} sx={{ width: "100%" }}>
-              <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Room ID
               </Typography>
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   fontFamily: "monospace",
                   fontSize: "0.75rem",
                   wordBreak: "break-all",
@@ -267,7 +269,7 @@ export default function ChatMessages({
         {messages.length === 0 && (
           <Typography
             variant="body2"
-            sx={{ color: "#64748b", textAlign: "center", mt: 4 }}
+            sx={{ color: "text.secondary", textAlign: "center", mt: 4 }}
           >
             No messages yet. Start the conversation!
           </Typography>
@@ -275,7 +277,9 @@ export default function ChatMessages({
 
         {messages.map((msg, index) => {
           const isSender = msg.senderId === user?.id;
-          const senderName = msg.senderName || (getUserName ? getUserName(msg.senderId) : "Unknown");
+          const senderName =
+            msg.senderName ||
+            (getUserName ? getUserName(msg.senderId) : "Unknown");
 
           return (
             <Box
@@ -287,7 +291,6 @@ export default function ChatMessages({
                 gap: 1,
               }}
             >
-
               {!isSender && (
                 <Avatar sx={{ width: 32, height: 32, bgcolor: "#8b5cf6" }}>
                   {initials(senderName)}
@@ -304,7 +307,7 @@ export default function ChatMessages({
                     ? "12px 12px 0 12px"
                     : "12px 12px 12px 0",
                   bgcolor: isSender ? "#8b5cf6" : "#1e293b",
-                  color: "#e2e8f0",
+                  color: "text.primary",
                 }}
               >
                 {!isSender && (
@@ -334,15 +337,15 @@ export default function ChatMessages({
                 >
                   {msg.timestamp
                     ? new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                    : msg.createdAt
-                      ? new Date(msg.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                      : ""}
+                    : msg.createdAt
+                    ? new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
                 </Typography>
               </Paper>
 
@@ -361,13 +364,16 @@ export default function ChatMessages({
       <Box
         sx={{
           p: 2,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           borderTop: "1px solid #334155",
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
           {/* Emoji Button */}
-          <IconButton sx={{ color: "#94a3b8" }} onClick={handleEmojiClick}>
+          <IconButton
+            sx={{ color: "text.secondary" }}
+            onClick={handleEmojiClick}
+          >
             <EmojiEmotions />
           </IconButton>
 
@@ -385,7 +391,7 @@ export default function ChatMessages({
               horizontal: "left",
             }}
           >
-            <Box sx={{ bgcolor: "#1e293b" }}>
+            <Box sx={{ bgcolor: "background.paper" }}>
               <EmojiPicker
                 onEmojiClick={onEmojiClick}
                 theme="dark"
@@ -403,7 +409,10 @@ export default function ChatMessages({
             onChange={handleFileChange}
             accept="*/*"
           />
-          <IconButton sx={{ color: "#94a3b8" }} onClick={handleFileClick}>
+          <IconButton
+            sx={{ color: "text.secondary" }}
+            onClick={handleFileClick}
+          >
             <AttachFile />
           </IconButton>
 
@@ -423,8 +432,8 @@ export default function ChatMessages({
             maxRows={4}
             sx={{
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
-                bgcolor: "#0f172a",
+                color: "text.primary",
+                bgcolor: "background.default",
                 borderRadius: 3,
                 "& fieldset": { borderColor: "#334155" },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
@@ -441,7 +450,7 @@ export default function ChatMessages({
               bgcolor: "#8b5cf6",
               color: "#fff",
               "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#334155", color: "#64748b" },
+              "&:disabled": { bgcolor: "#334155", color: "text.secondary" },
             }}
           >
             <Send />
@@ -455,15 +464,15 @@ export default function ChatMessages({
         onClose={() => setDeleteDialogOpen(false)}
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
-            color: "#e2e8f0",
+            bgcolor: "background.paper",
+            color: "text.primary",
             border: "1px solid #334155",
           },
         }}
       >
-        <DialogTitle sx={{ color: "#e2e8f0" }}>Delete Room?</DialogTitle>
+        <DialogTitle sx={{ color: "text.primary" }}>Delete Room?</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Are you sure you want to delete "{selectedRoom.name}
             "? This will permanently delete the room and all its messages. This
             action cannot be undone.
@@ -472,7 +481,7 @@ export default function ChatMessages({
         <DialogActions sx={{ p: 2 }}>
           <Button
             onClick={() => setDeleteDialogOpen(false)}
-            sx={{ color: "#94a3b8", textTransform: "none" }}
+            sx={{ color: "text.secondary", textTransform: "none" }}
           >
             Cancel
           </Button>

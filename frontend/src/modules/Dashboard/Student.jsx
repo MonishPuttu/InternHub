@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Stack,
-  Button,
-  Paper,
-} from "@mui/material";
+import { Box, Typography, Stack, Button, Paper } from "@mui/material";
 import {
   Add,
   WorkOutline,
@@ -18,9 +12,9 @@ import {
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { getToken, getUser } from "@/lib/session";
+import { useTheme } from "@mui/material/styles";
 import RecentApplicationsCard from "@/components/dashboard/RecentApplicationsCard";
 import UpcomingEventsCard from "@/components/dashboard/UpcomingEventsCard";
-
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -31,6 +25,7 @@ export default function StudentDashboard() {
 
   const [applications, setApplications] = useState([]);
   const [events, setEvents] = useState([]);
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,7 +92,7 @@ export default function StudentDashboard() {
       subtitle: "Find new opportunities",
       icon: WorkOutline,
       color: "#8b5cf6",
-      path: getRoleBasedPath(userRole),  // Only this path changes
+      path: getRoleBasedPath(userRole), // Only this path changes
     },
     {
       title: "Update Profile",
@@ -153,12 +148,12 @@ export default function StudentDashboard() {
 
   const upcomingEvents = events.slice(0, 4);
 
-
-
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>Loading dashboard...</Typography>
+        <Typography sx={{ color: "text.primary" }}>
+          Loading dashboard...
+        </Typography>
       </Box>
     );
   }
@@ -174,15 +169,14 @@ export default function StudentDashboard() {
         <Box>
           <Typography
             variant="h4"
-            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+            sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
           >
             Welcome back, {user?.name || "User"}!
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Track your placement journey and discover new opportunities
           </Typography>
         </Box>
-
       </Stack>
 
       <Box
@@ -205,14 +199,14 @@ export default function StudentDashboard() {
               onClick={() => router.push(action.path)}
               sx={{
                 p: 2.5,
-                bgcolor: "#1e293b",
+                bgcolor: "background.paper",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 cursor: "pointer",
                 transition: "all 0.2s",
                 "&:hover": {
                   borderColor: action.color,
-                  bgcolor: "#0f172a",
+                  bgcolor: "background.default",
                   transform: "translateY(-2px)",
                 },
               }}
@@ -234,11 +228,14 @@ export default function StudentDashboard() {
                 <Box>
                   <Typography
                     variant="body1"
-                    sx={{ color: "#e2e8f0", fontWeight: 600, mb: 0.25 }}
+                    sx={{ color: "text.primary", fontWeight: 600, mb: 0.25 }}
                   >
                     {action.title}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "text.secondary" }}
+                  >
                     {action.subtitle}
                   </Typography>
                 </Box>
@@ -259,8 +256,6 @@ export default function StudentDashboard() {
         <RecentApplicationsCard applications={recentApplications} />
         <UpcomingEventsCard events={upcomingEvents} />
       </Box>
-
-
     </Box>
   );
 }

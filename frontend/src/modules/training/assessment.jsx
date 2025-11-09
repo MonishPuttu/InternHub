@@ -264,13 +264,13 @@ export default function TakeAssessment({ params }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
       >
         <Box>
-          <Typography variant="h6" sx={{ color: "#e2e8f0" }}>
+          <Typography variant="h6" sx={{ color: "text.primary" }}>
             Question {currentQuestionIndex + 1} of {questions.length}
           </Typography>
         </Box>
@@ -321,7 +321,7 @@ export default function TakeAssessment({ params }) {
         sx={{
           p: 3,
           mb: 3,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
@@ -337,7 +337,7 @@ export default function TakeAssessment({ params }) {
             <Typography
               variant="h6"
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 fontWeight: "bold",
                 wordBreak: "break-word",
               }}
@@ -411,7 +411,7 @@ export default function TakeAssessment({ params }) {
                       option.text
                     }`}
                     sx={{
-                      color: "#e2e8f0",
+                      color: "text.primary",
                       m: 0,
                       width: "100%",
                       "& .MuiFormControlLabel-label": {
@@ -474,7 +474,7 @@ export default function TakeAssessment({ params }) {
                     option.text
                   }`}
                   sx={{
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     m: 0,
                     width: "100%",
                     "& .MuiFormControlLabel-label": {
@@ -507,7 +507,7 @@ export default function TakeAssessment({ params }) {
             color: "#8b5cf6",
             borderColor: "#8b5cf6",
             "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf610" },
-            "&:disabled": { borderColor: "#334155", color: "#64748b" },
+            "&:disabled": { borderColor: "#334155", color: "text.secondary" },
           }}
         >
           Previous
@@ -522,7 +522,7 @@ export default function TakeAssessment({ params }) {
               bgcolor: "#10b981",
               color: "#fff",
               "&:hover": { bgcolor: "#059669" },
-              "&:disabled": { bgcolor: "#64748b" },
+              "&:disabled": { bgcolor: "text.secondary" },
             }}
           >
             {submitting ? "Submitting..." : "Submit Assessment"}
@@ -537,7 +537,7 @@ export default function TakeAssessment({ params }) {
               bgcolor: "#8b5cf6",
               color: "#fff",
               "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#64748b" },
+              "&:disabled": { bgcolor: "text.secondary" },
             }}
           >
             Next

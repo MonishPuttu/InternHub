@@ -22,12 +22,14 @@ import {
 } from "@mui/material";
 import { ArrowBack, Email, Phone } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+import { useTheme } from "@mui/material/styles";
 
 export default function StudentDetails({ params }) {
   const router = useRouter();
   const { studentId } = use(params); // ✅ FIXED: Use React.use()
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
 
   useEffect(() => {
     if (studentId) {
@@ -53,7 +55,7 @@ export default function StudentDetails({ params }) {
   if (!studentData) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Typography variant="h6" sx={{ color: "#94a3b8" }}>
+        <Typography variant="h6" sx={{ color: "text.secondary" }}>
           Student not found
         </Typography>
       </Container>
@@ -78,7 +80,7 @@ export default function StudentDetails({ params }) {
         sx={{
           p: 4,
           mb: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
@@ -87,7 +89,7 @@ export default function StudentDetails({ params }) {
           <Typography
             variant="h4"
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: "bold",
               mb: 3,
             }}
@@ -112,7 +114,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   mb: 0.5,
@@ -124,7 +126,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="h6"
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   fontWeight: "bold",
                   wordBreak: "break-word",
                 }}
@@ -137,7 +139,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   mb: 0.5,
@@ -148,7 +150,7 @@ export default function StudentDetails({ params }) {
               </Typography>
               <Typography
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   fontWeight: "500",
                   fontSize: "1.1rem",
                 }}
@@ -161,7 +163,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   mb: 0.5,
@@ -174,7 +176,7 @@ export default function StudentDetails({ params }) {
                 <Email sx={{ color: "#8b5cf6", fontSize: 18 }} />
                 <Typography
                   sx={{
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     wordBreak: "break-word",
                     fontSize: "0.95rem",
                   }}
@@ -188,7 +190,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   mb: 0.5,
@@ -220,7 +222,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   mb: 0.5,
@@ -233,7 +235,7 @@ export default function StudentDetails({ params }) {
                 <Phone sx={{ color: "#8b5cf6", fontSize: 18 }} />
                 <Typography
                   sx={{
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     fontSize: "0.95rem",
                   }}
                 >
@@ -246,7 +248,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
                   mb: 0.5,
@@ -277,7 +279,7 @@ export default function StudentDetails({ params }) {
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
             gap: 2,
-            bgcolor: "#0f172a",
+            bgcolor: "background.default",
             p: 3,
             borderRadius: 1,
             border: "1px solid #334155",
@@ -285,7 +287,7 @@ export default function StudentDetails({ params }) {
         >
           <Card
             sx={{
-              bgcolor: "#1e293b",
+              bgcolor: "background.paper",
               border: "1px solid #334155",
               borderRadius: 1,
               height: "100%",
@@ -305,7 +307,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.7rem",
                   fontWeight: "600",
@@ -318,7 +320,7 @@ export default function StudentDetails({ params }) {
 
           <Card
             sx={{
-              bgcolor: "#1e293b",
+              bgcolor: "background.paper",
               border: "1px solid #334155",
               borderRadius: 1,
               height: "100%",
@@ -338,7 +340,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.7rem",
                   fontWeight: "600",
@@ -351,7 +353,7 @@ export default function StudentDetails({ params }) {
 
           <Card
             sx={{
-              bgcolor: "#1e293b",
+              bgcolor: "background.paper",
               border: "1px solid #334155",
               borderRadius: 1,
               height: "100%",
@@ -371,7 +373,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.7rem",
                   fontWeight: "600",
@@ -384,7 +386,7 @@ export default function StudentDetails({ params }) {
 
           <Card
             sx={{
-              bgcolor: "#1e293b",
+              bgcolor: "background.paper",
               border: "1px solid #334155",
               borderRadius: 1,
               height: "100%",
@@ -412,7 +414,7 @@ export default function StudentDetails({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.7rem",
                   fontWeight: "600",
@@ -430,7 +432,7 @@ export default function StudentDetails({ params }) {
         elevation={3}
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
@@ -438,7 +440,7 @@ export default function StudentDetails({ params }) {
         <Typography
           variant="h5"
           sx={{
-            color: "#e2e8f0",
+            color: "text.primary",
             mb: 3,
             fontWeight: "bold",
           }}
@@ -447,7 +449,9 @@ export default function StudentDetails({ params }) {
         </Typography>
 
         {assessmentHistory.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 3 }}>
+          <Typography
+            sx={{ color: "text.secondary", textAlign: "center", py: 3 }}
+          >
             No assessment attempts yet
           </Typography>
         ) : (
@@ -455,30 +459,32 @@ export default function StudentDetails({ params }) {
             <Table>
               <TableHead>
                 <TableRow sx={{ borderBottom: "1px solid #334155" }}>
-                  <TableCell sx={{ color: "#94a3b8", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
+                  >
                     Assessment
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Score
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Percentage
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Status
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Date
                   </TableCell>
@@ -490,10 +496,10 @@ export default function StudentDetails({ params }) {
                     key={index}
                     sx={{
                       borderBottom: "1px solid #334155",
-                      "&:hover": { bgcolor: "#0f172a" },
+                      "&:hover": { bgcolor: "background.default" },
                     }}
                   >
-                    <TableCell sx={{ color: "#e2e8f0", py: 2 }}>
+                    <TableCell sx={{ color: "text.primary", py: 2 }}>
                       {attempt.assessmentTitle}
                     </TableCell>
                     <TableCell
@@ -525,7 +531,7 @@ export default function StudentDetails({ params }) {
                         }}
                       />
                     </TableCell>
-                    <TableCell align="center" sx={{ color: "#94a3b8" }}>
+                    <TableCell align="center" sx={{ color: "text.secondary" }}>
                       {new Date(attempt.attemptDate).toLocaleDateString()}
                     </TableCell>
                   </TableRow>

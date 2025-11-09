@@ -29,10 +29,12 @@ import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
 import ApplyDialog from "@/components/post/ApplyDialog";
 import useApplyToPost from "@/hooks/useApplyToPost";
+import { useTheme } from "@mui/material/styles";
 import { getUser } from "@/lib/session";
 
 export default function PostDetails({ postId, showApplyButtons = true }) {
   const router = useRouter();
+  const theme = useTheme();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,9 +64,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
       const token = localStorage.getItem("token");
       const response = await axios.get(
         `${BACKEND_URL}/api/posts/applications/${postId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.ok) {
@@ -106,7 +106,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
           startIcon={<ArrowBackIcon />}
           onClick={handleBack}
           sx={{
-            color: "#94a3b8",
+            color: "text.secondary",
             mb: 3,
             "&:hover": { bgcolor: "rgba(139, 92, 246, 0.1)" },
           }}
@@ -115,8 +115,9 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         </Button>
         <Card
           sx={{
-            bgcolor: "#1e293b",
-            border: "1px solid #334155",
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
             borderRadius: 2,
             p: 6,
             textAlign: "center",
@@ -125,7 +126,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
           <Typography variant="h6" sx={{ color: "#ef4444", mb: 2 }}>
             {error || "Post not found"}
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             The post you're looking for doesn't exist or has been removed.
           </Typography>
         </Card>
@@ -139,7 +140,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         startIcon={<ArrowBackIcon />}
         onClick={handleBack}
         sx={{
-          color: "#94a3b8",
+          color: "text.secondary",
           mb: 3,
           "&:hover": { bgcolor: "rgba(139, 92, 246, 0.1)" },
           textTransform: "none",
@@ -152,8 +153,9 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
       <Card
         elevation={0}
         sx={{
-          bgcolor: "#1e293b",
-          border: "1px solid #334155",
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           borderRadius: 2,
           overflow: "hidden",
         }}
@@ -167,7 +169,9 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
               width: "100%",
               maxHeight: 400,
               objectFit: "cover",
-              borderBottom: "2px solid #334155",
+              borderBottom: "2px solid",
+              borderColor:
+                theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
             }}
           />
         )}
@@ -178,13 +182,13 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
               <Box sx={{ flex: 1 }}>
                 <Typography
                   variant="h4"
-                  sx={{ color: "#e2e8f0", fontWeight: 700, mb: 1 }}
+                  sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
                 >
                   {post.position}
                 </Typography>
                 <Typography
                   variant="h6"
-                  sx={{ color: "#94a3b8", fontWeight: 600, mb: 2 }}
+                  sx={{ color: "text.secondary", fontWeight: 600, mb: 2 }}
                 >
                   {post.company_name}
                 </Typography>
@@ -228,7 +232,12 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             </Box>
           </Box>
 
-          <Divider sx={{ bgcolor: "#334155", mb: 4 }} />
+          <Divider
+            sx={{
+              bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+              mb: 4,
+            }}
+          />
 
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {post.industry && (
@@ -236,9 +245,11 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -250,11 +261,14 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     }}
                   >
                     <BusinessIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Industry
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     {post.industry}
                   </Typography>
                 </Box>
@@ -266,9 +280,11 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -280,11 +296,14 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     }}
                   >
                     <AttachMoneyIcon sx={{ fontSize: 20, color: "#10b981" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Package Offered
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     ₹{post.package_offered}L per annum
                   </Typography>
                 </Box>
@@ -296,9 +315,11 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -310,11 +331,14 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     }}
                   >
                     <LocationOnIcon sx={{ fontSize: 20, color: "#0ea5e9" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Location
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     {post.location}
                   </Typography>
                 </Box>
@@ -326,9 +350,11 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -340,11 +366,14 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     }}
                   >
                     <WorkIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Job Type
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     {post.job_type}
                   </Typography>
                 </Box>
@@ -356,9 +385,11 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -369,12 +400,17 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       mb: 1,
                     }}
                   >
-                    <CalendarIcon sx={{ fontSize: 20, color: "#64748b" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <CalendarIcon
+                      sx={{ fontSize: 20, color: "text.secondary" }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Posted Date
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     {new Date(post.application_date).toLocaleDateString(
                       "en-US",
                       {
@@ -388,51 +424,59 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
               </Grid>
             )}
 
-            {post.application_deadline && !isNaN(new Date(post.application_deadline).getTime()) && (
-              <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "#0f172a",
-                    borderRadius: 2,
-                    border: "1px solid #334155",
-                  }}
-                >
+            {post.application_deadline &&
+              !isNaN(new Date(post.application_deadline).getTime()) && (
+                <Grid item xs={12} sm={6} md={4}>
                   <Box
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
+                      p: 2,
+                      bgcolor: "background.default",
+                      borderRadius: 2,
+                      border: "1px solid",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                     }}
                   >
-                    <AccessTimeIcon sx={{ fontSize: 20, color: "#ef4444" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
-                      Application Deadline
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                      }}
+                    >
+                      <AccessTimeIcon sx={{ fontSize: 20, color: "#ef4444" }} />
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "text.secondary" }}
+                      >
+                        Application Deadline
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
+                      {new Date(post.application_deadline).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
-                    {new Date(post.application_deadline).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
+                </Grid>
+              )}
 
             {post.interview_date && (
               <Grid item xs={12} sm={6} md={4}>
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -444,11 +488,14 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     }}
                   >
                     <CalendarIcon sx={{ fontSize: 20, color: "#0ea5e9" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Interview Date
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     {new Date(post.interview_date).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
@@ -504,11 +551,17 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
 
           {(post.contact_person || post.contact_email) && (
             <>
-              <Divider sx={{ bgcolor: "#334155", mb: 3 }} />
+              <Divider
+                sx={{
+                  bgcolor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 3,
+                }}
+              />
               <Box sx={{ mb: 4 }}>
                 <Typography
                   variant="h6"
-                  sx={{ color: "#e2e8f0", fontWeight: 700, mb: 3 }}
+                  sx={{ color: "text.primary", fontWeight: 700, mb: 3 }}
                 >
                   Contact Information
                 </Typography>
@@ -518,9 +571,13 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       <Box
                         sx={{
                           p: 2,
-                          bgcolor: "#0f172a",
+                          bgcolor: "background.default",
                           borderRadius: 2,
-                          border: "1px solid #334155",
+                          border: "1px solid",
+                          borderColor:
+                            theme.palette.mode === "dark"
+                              ? "#334155"
+                              : "#e2e8f0",
                         }}
                       >
                         <Box
@@ -534,12 +591,14 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                           <PersonIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
                           <Typography
                             variant="caption"
-                            sx={{ color: "#64748b" }}
+                            sx={{ color: "text.secondary" }}
                           >
                             Contact Person
                           </Typography>
                         </Box>
-                        <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                        <Typography
+                          sx={{ color: "text.primary", fontWeight: 600 }}
+                        >
                           {post.contact_person}
                         </Typography>
                       </Box>
@@ -551,9 +610,13 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       <Box
                         sx={{
                           p: 2,
-                          bgcolor: "#0f172a",
+                          bgcolor: "background.default",
                           borderRadius: 2,
-                          border: "1px solid #334155",
+                          border: "1px solid",
+                          borderColor:
+                            theme.palette.mode === "dark"
+                              ? "#334155"
+                              : "#e2e8f0",
                         }}
                       >
                         <Box
@@ -567,7 +630,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                           <EmailIcon sx={{ fontSize: 20, color: "#10b981" }} />
                           <Typography
                             variant="caption"
-                            sx={{ color: "#64748b" }}
+                            sx={{ color: "text.secondary" }}
                           >
                             Contact Email
                           </Typography>
@@ -594,20 +657,28 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
 
           {post.job_link && (
             <>
-              <Divider sx={{ bgcolor: "#334155", mb: 3 }} />
+              <Divider
+                sx={{
+                  bgcolor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 3,
+                }}
+              />
               <Box sx={{ mb: 4 }}>
                 <Typography
                   variant="h6"
-                  sx={{ color: "#e2e8f0", fontWeight: 700, mb: 2 }}
+                  sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
                 >
                   Application Link
                 </Typography>
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                     display: "flex",
                     alignItems: "center",
                     gap: 2,
@@ -636,25 +707,33 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
 
           {post.notes && (
             <>
-              <Divider sx={{ bgcolor: "#334155", mb: 3 }} />
+              <Divider
+                sx={{
+                  bgcolor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 3,
+                }}
+              />
               <Box sx={{ mb: 4 }}>
                 <Typography
                   variant="h6"
-                  sx={{ color: "#e2e8f0", fontWeight: 700, mb: 2 }}
+                  sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
                 >
                   Description
                 </Typography>
                 <Box
                   sx={{
                     p: 3,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Typography
                     sx={{
-                      color: "#94a3b8",
+                      color: "text.secondary",
                       lineHeight: 1.8,
                       whiteSpace: "pre-wrap",
                     }}
@@ -668,11 +747,17 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
 
           {post.skills_required && post.skills_required.length > 0 && (
             <>
-              <Divider sx={{ bgcolor: "#334155", mb: 3 }} />
+              <Divider
+                sx={{
+                  bgcolor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 3,
+                }}
+              />
               <Box sx={{ mb: 4 }}>
                 <Typography
                   variant="h6"
-                  sx={{ color: "#e2e8f0", fontWeight: 700, mb: 2 }}
+                  sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
                 >
                   Skills Required
                 </Typography>
@@ -682,13 +767,20 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       key={index}
                       label={skill}
                       sx={{
-                        bgcolor: "#334155",
-                        color: "#e2e8f0",
+                        bgcolor:
+                          theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                        color: "text.primary",
                         fontWeight: 600,
                         fontSize: "0.875rem",
                         px: 1,
+                        border: "1px solid",
+                        borderColor:
+                          theme.palette.mode === "dark" ? "#475569" : "#cbd5e1",
                         "&:hover": {
-                          bgcolor: "#475569",
+                          bgcolor:
+                            theme.palette.mode === "dark"
+                              ? "#475569"
+                              : "#cbd5e1",
                         },
                       }}
                     />
@@ -698,11 +790,16 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             </>
           )}
 
-          <Divider sx={{ bgcolor: "#334155", mb: 3 }} />
+          <Divider
+            sx={{
+              bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+              mb: 3,
+            }}
+          />
           <Box>
             <Typography
               variant="h6"
-              sx={{ color: "#e2e8f0", fontWeight: 700, mb: 2 }}
+              sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
             >
               Additional Information
             </Typography>
@@ -711,18 +808,20 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Typography
                     variant="caption"
-                    sx={{ color: "#64748b", display: "block", mb: 0.5 }}
+                    sx={{ color: "text.secondary", display: "block", mb: 0.5 }}
                   >
                     Created At
                   </Typography>
-                  <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                     {new Date(
                       post.created_at || post.application_date
                     ).toLocaleString("en-US", {
@@ -741,18 +840,24 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                   <Box
                     sx={{
                       p: 2,
-                      bgcolor: "#0f172a",
+                      bgcolor: "background.default",
                       borderRadius: 2,
-                      border: "1px solid #334155",
+                      border: "1px solid",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                     }}
                   >
                     <Typography
                       variant="caption"
-                      sx={{ color: "#64748b", display: "block", mb: 0.5 }}
+                      sx={{
+                        color: "text.secondary",
+                        display: "block",
+                        mb: 0.5,
+                      }}
                     >
                       Last Updated
                     </Typography>
-                    <Typography sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+                    <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
                       {new Date(post.updated_at).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
@@ -797,8 +902,9 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             variant="outlined"
             onClick={handleBack}
             sx={{
-              borderColor: "#334155",
-              color: "#94a3b8",
+              borderColor:
+                theme.palette.mode === "dark" ? "#334155" : "#cbd5e1",
+              color: "text.secondary",
               "&:hover": {
                 borderColor: "#8b5cf6",
                 bgcolor: "rgba(139, 92, 246, 0.1)",

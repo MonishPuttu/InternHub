@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import { ArrowBack, Code } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+import { useTheme } from "@mui/material/styles";
 
 const SUBJECTS = [
   { id: "python", name: "Python Programming", icon: "🐍" },
@@ -35,6 +36,7 @@ const BRANCHES = ["CSE", "ECE", "EEE", "MECH", "CIVIL", "IT"];
 
 export default function PremadeAssessments() {
   const router = useRouter();
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
@@ -122,7 +124,7 @@ export default function PremadeAssessments() {
         elevation={3}
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
           mb: 4,
@@ -133,11 +135,14 @@ export default function PremadeAssessments() {
           <Box>
             <Typography
               variant="h4"
-              sx={{ color: "#e2e8f0", fontWeight: "bold" }}
+              sx={{ color: "text.primary", fontWeight: "bold" }}
             >
               Create Premade Assessment
             </Typography>
-            <Typography variant="body1" sx={{ color: "#94a3b8", mt: 0.5 }}>
+            <Typography
+              variant="body1"
+              sx={{ color: "text.secondary", mt: 0.5 }}
+            >
               Select a programming topic to create an assessment
             </Typography>
           </Box>
@@ -155,7 +160,7 @@ export default function PremadeAssessments() {
         elevation={3}
         sx={{
           p: 3,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
           mb: 4,
@@ -164,7 +169,7 @@ export default function PremadeAssessments() {
         <Typography
           variant="body2"
           sx={{
-            color: "#94a3b8",
+            color: "text.secondary",
             mb: 2,
             fontWeight: "600",
             textTransform: "uppercase",
@@ -206,7 +211,7 @@ export default function PremadeAssessments() {
           <Card
             key={subject.id}
             sx={{
-              bgcolor: "#1e293b",
+              bgcolor: "background.paper",
               border: "1px solid #334155",
               borderRadius: 2,
               cursor: "pointer",
@@ -222,12 +227,15 @@ export default function PremadeAssessments() {
                 <Typography variant="h3">{subject.icon}</Typography>
                 <Typography
                   variant="h6"
-                  sx={{ color: "#e2e8f0", fontWeight: "bold" }}
+                  sx={{ color: "text.primary", fontWeight: "bold" }}
                 >
                   {subject.name}
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 3 }}
+              >
                 10 Questions •{" "}
                 {selectedDifficulty.charAt(0).toUpperCase() +
                   selectedDifficulty.slice(1)}{" "}
@@ -259,13 +267,13 @@ export default function PremadeAssessments() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
           },
         }}
       >
-        <DialogTitle sx={{ color: "#e2e8f0", fontWeight: "bold", pb: 2 }}>
+        <DialogTitle sx={{ color: "text.primary", fontWeight: "bold", pb: 2 }}>
           Schedule Assessment
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
@@ -281,7 +289,7 @@ export default function PremadeAssessments() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   mb: 1,
                   fontWeight: "600",
                   textTransform: "uppercase",
@@ -299,14 +307,14 @@ export default function PremadeAssessments() {
                 InputLabelProps={{ shrink: true }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
+                    color: "text.primary",
+                    bgcolor: "background.default",
                     "& fieldset": { borderColor: "#334155" },
                     "&:hover fieldset": { borderColor: "#8b5cf6" },
                     "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
                   "& .MuiInputBase-input": {
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     "&::-webkit-calendar-picker-indicator": {
                       filter: "invert(1)",
                       cursor: "pointer",
@@ -321,7 +329,7 @@ export default function PremadeAssessments() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   mb: 1,
                   fontWeight: "600",
                   textTransform: "uppercase",
@@ -339,14 +347,14 @@ export default function PremadeAssessments() {
                 InputLabelProps={{ shrink: true }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
+                    color: "text.primary",
+                    bgcolor: "background.default",
                     "& fieldset": { borderColor: "#334155" },
                     "&:hover fieldset": { borderColor: "#8b5cf6" },
                     "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
                   "& .MuiInputBase-input": {
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     "&::-webkit-calendar-picker-indicator": {
                       filter: "invert(1)",
                       cursor: "pointer",
@@ -361,7 +369,7 @@ export default function PremadeAssessments() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   mb: 1,
                   fontWeight: "600",
                   textTransform: "uppercase",
@@ -379,14 +387,14 @@ export default function PremadeAssessments() {
                   renderValue={(selected) => {
                     if (selected.length === 0) {
                       return (
-                        <em style={{ color: "#64748b" }}>Select branches</em>
+                        <em style={{ color: "text.secondary" }}>Select branches</em>
                       );
                     }
                     return selected.join(", ");
                   }}
                   sx={{
-                    color: "#e2e8f0",
-                    bgcolor: "#0f172a",
+                    color: "text.primary",
+                    bgcolor: "background.default",
                     "& .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#334155",
                     },
@@ -396,15 +404,15 @@ export default function PremadeAssessments() {
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#8b5cf6",
                     },
-                    "& .MuiSvgIcon-root": { color: "#e2e8f0" },
+                    "& .MuiSvgIcon-root": { color: "text.primary" },
                   }}
                   MenuProps={{
                     PaperProps: {
                       sx: {
-                        bgcolor: "#1e293b",
+                        bgcolor: "background.paper",
                         border: "1px solid #334155",
                         "& .MuiMenuItem-root": {
-                          color: "#e2e8f0",
+                          color: "text.primary",
                           "&:hover": { bgcolor: "#334155" },
                           "&.Mui-selected": {
                             bgcolor: "#8b5cf620",
@@ -429,7 +437,7 @@ export default function PremadeAssessments() {
           <Button
             onClick={() => setDialogOpen(false)}
             sx={{
-              color: "#94a3b8",
+              color: "text.secondary",
               textTransform: "none",
               "&:hover": { bgcolor: "#334155" },
             }}
@@ -446,7 +454,7 @@ export default function PremadeAssessments() {
               textTransform: "none",
               px: 3,
               "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#64748b" },
+              "&:disabled": { bgcolor: "text.secondary" },
             }}
           >
             {loading ? "Creating..." : "Create"}

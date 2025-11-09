@@ -127,7 +127,7 @@ export default function ReportCard({ params: paramsPromise }) {
         elevation={3}
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
           width: "100%",
@@ -139,7 +139,7 @@ export default function ReportCard({ params: paramsPromise }) {
             variant="h4"
             gutterBottom
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: "bold",
               wordBreak: "break-word",
             }}
@@ -149,7 +149,7 @@ export default function ReportCard({ params: paramsPromise }) {
           <Typography
             variant="h6"
             sx={{
-              color: "#94a3b8",
+              color: "text.secondary",
               wordBreak: "break-word",
             }}
           >
@@ -170,7 +170,7 @@ export default function ReportCard({ params: paramsPromise }) {
           <Card
             elevation={2}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "2px solid #8b5cf6",
               borderRadius: 2,
             }}
@@ -186,7 +186,7 @@ export default function ReportCard({ params: paramsPromise }) {
               >
                 {reportCard.percentageScore}%
               </Typography>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Percentage
               </Typography>
             </CardContent>
@@ -196,7 +196,7 @@ export default function ReportCard({ params: paramsPromise }) {
           <Card
             elevation={2}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "2px solid #10b981",
               borderRadius: 2,
             }}
@@ -212,7 +212,7 @@ export default function ReportCard({ params: paramsPromise }) {
               >
                 {reportCard.overallScore}
               </Typography>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Score
               </Typography>
             </CardContent>
@@ -222,7 +222,7 @@ export default function ReportCard({ params: paramsPromise }) {
           <Card
             elevation={2}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "2px solid #f59e0b",
               borderRadius: 2,
             }}
@@ -238,7 +238,7 @@ export default function ReportCard({ params: paramsPromise }) {
               >
                 {reportCard.grade}
               </Typography>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Grade
               </Typography>
             </CardContent>
@@ -247,9 +247,9 @@ export default function ReportCard({ params: paramsPromise }) {
 
         {/* Generated Date */}
         <Box textAlign="center" mt={4}>
-          <Typography variant="caption" sx={{ color: "#64748b" }}>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
             Generated on:{" "}
-            <span style={{ color: "#94a3b8", fontWeight: "bold" }}>
+            <span style={{ color: "text.secondary", fontWeight: "bold" }}>
               {new Date(reportCard.generatedAt).toLocaleDateString()}
             </span>
           </Typography>

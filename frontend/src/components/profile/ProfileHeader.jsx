@@ -1,6 +1,9 @@
 import { Box, Typography, Button, Stack } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 export default function ProfileHeader({ onSave, showSave }) {
+  const theme = useTheme();
+
   return (
     <Stack
       direction="row"
@@ -9,10 +12,13 @@ export default function ProfileHeader({ onSave, showSave }) {
       sx={{ mb: 3 }}
     >
       <Box>
-        <Typography variant="h4" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+        <Typography
+          variant="h4"
+          sx={{ color: "text.primary", fontWeight: 700 }}
+        >
           Profile & Resume
         </Typography>
-        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
           Manage your profile information and build your professional resume
         </Typography>
       </Box>

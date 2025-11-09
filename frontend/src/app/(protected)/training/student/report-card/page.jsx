@@ -109,7 +109,7 @@ export default function AllReportCards() {
         elevation={3}
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
           mb: 4,
@@ -122,13 +122,16 @@ export default function AllReportCards() {
               <Typography
                 variant="h4"
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   fontWeight: "bold",
                 }}
               >
                 All Report Cards
               </Typography>
-              <Typography variant="body1" sx={{ color: "#94a3b8", mt: 0.5 }}>
+              <Typography
+                variant="body1"
+                sx={{ color: "text.secondary", mt: 0.5 }}
+              >
                 View all your assessment results and performance reports
               </Typography>
             </Box>
@@ -169,7 +172,7 @@ export default function AllReportCards() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
           },
@@ -177,7 +180,7 @@ export default function AllReportCards() {
       >
         <DialogTitle
           sx={{
-            color: "#e2e8f0",
+            color: "text.primary",
             fontWeight: "bold",
             display: "flex",
             justifyContent: "space-between",
@@ -187,7 +190,7 @@ export default function AllReportCards() {
           Filter Report Cards
           <IconButton
             onClick={() => setFilterDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             <Close fontSize="small" />
           </IconButton>
@@ -200,7 +203,7 @@ export default function AllReportCards() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   mb: 1,
                   fontWeight: "600",
                   textTransform: "uppercase",
@@ -219,7 +222,7 @@ export default function AllReportCards() {
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     "& fieldset": {
                       borderColor: "#334155",
                     },
@@ -231,7 +234,7 @@ export default function AllReportCards() {
                     },
                   },
                   "& .MuiOutlinedInput-input": {
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                   },
                 }}
               >
@@ -249,7 +252,7 @@ export default function AllReportCards() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   mb: 1,
                   fontWeight: "600",
                   textTransform: "uppercase",
@@ -268,7 +271,7 @@ export default function AllReportCards() {
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     "& fieldset": {
                       borderColor: "#334155",
                     },
@@ -280,7 +283,7 @@ export default function AllReportCards() {
                     },
                   },
                   "& .MuiOutlinedInput-input": {
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                   },
                 }}
               >
@@ -298,12 +301,12 @@ export default function AllReportCards() {
               <Box
                 sx={{
                   p: 2,
-                  bgcolor: "#0f172a",
+                  bgcolor: "background.default",
                   border: "1px solid #334155",
                   borderRadius: 1,
                 }}
               >
-                <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   Showing{" "}
                   <span style={{ color: "#8b5cf6", fontWeight: "bold" }}>
                     {filteredReportCards.length}
@@ -330,7 +333,7 @@ export default function AllReportCards() {
               color: "#8b5cf6",
               textTransform: "none",
               "&:disabled": {
-                color: "#64748b",
+                color: "text.secondary",
               },
             }}
           >
@@ -357,13 +360,13 @@ export default function AllReportCards() {
           elevation={3}
           sx={{
             p: 4,
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
             textAlign: "center",
           }}
         >
-          <Typography sx={{ color: "#94a3b8" }}>
+          <Typography sx={{ color: "text.secondary" }}>
             {reportCards.length === 0
               ? "No report cards available yet"
               : "No report cards found for the selected month and year"}
@@ -380,7 +383,7 @@ export default function AllReportCards() {
               elevation={3}
               sx={{
                 p: 4,
-                bgcolor: "#1e293b",
+                bgcolor: "background.paper",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 cursor: "pointer",
@@ -403,7 +406,7 @@ export default function AllReportCards() {
                   <Typography
                     variant="h5"
                     sx={{
-                      color: "#e2e8f0",
+                      color: "text.primary",
                       fontWeight: "bold",
                       wordBreak: "break-word",
                       mb: 1,
@@ -414,7 +417,7 @@ export default function AllReportCards() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#94a3b8",
+                      color: "text.secondary",
                       wordBreak: "break-word",
                     }}
                   >
@@ -439,7 +442,7 @@ export default function AllReportCards() {
                 <Card
                   elevation={2}
                   sx={{
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     border: "2px solid #8b5cf6",
                     borderRadius: 2,
                   }}
@@ -455,7 +458,10 @@ export default function AllReportCards() {
                     >
                       {report.percentageScore}%
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Percentage
                     </Typography>
                   </CardContent>
@@ -465,7 +471,7 @@ export default function AllReportCards() {
                 <Card
                   elevation={2}
                   sx={{
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     border: "2px solid #10b981",
                     borderRadius: 2,
                   }}
@@ -481,7 +487,10 @@ export default function AllReportCards() {
                     >
                       {report.overallScore}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Score
                     </Typography>
                   </CardContent>
@@ -491,7 +500,7 @@ export default function AllReportCards() {
                 <Card
                   elevation={2}
                   sx={{
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     border: "2px solid #f59e0b",
                     borderRadius: 2,
                   }}
@@ -507,7 +516,10 @@ export default function AllReportCards() {
                     >
                       {report.grade}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Grade
                     </Typography>
                   </CardContent>
@@ -516,9 +528,9 @@ export default function AllReportCards() {
 
               {/* Generated Date */}
               <Box textAlign="left">
-                <Typography variant="caption" sx={{ color: "#64748b" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   Generated on:{" "}
-                  <span style={{ color: "#94a3b8", fontWeight: "bold" }}>
+                  <span style={{ color: "text.secondary", fontWeight: "bold" }}>
                     {new Date(report.generatedAt).toLocaleDateString()}
                   </span>
                 </Typography>

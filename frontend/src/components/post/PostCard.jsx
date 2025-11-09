@@ -1,4 +1,13 @@
-import { Card, Box, Typography, Button, Chip, IconButton, Snackbar, Alert } from "@mui/material";
+import {
+  Card,
+  Box,
+  Typography,
+  Button,
+  Chip,
+  IconButton,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import {
   AttachMoney as AttachMoneyIcon,
   LocationOn as LocationOnIcon,
@@ -10,6 +19,7 @@ import {
 import { STATUS_COLORS, STATUS_LABELS } from "@/constants/postConstants";
 import useApplyToPost from "@/hooks/useApplyToPost";
 import ApplyDialog from "./ApplyDialog";
+import { useTheme } from "@mui/material/styles";
 
 export default function PostCard({
   post,
@@ -19,6 +29,7 @@ export default function PostCard({
   onViewDetails,
   onShare,
 }) {
+  const theme = useTheme();
   const {
     applyDialogOpen,
     setApplyDialogOpen,
@@ -27,12 +38,14 @@ export default function PostCard({
     snackbar,
     handleCloseSnackbar,
   } = useApplyToPost(post.id);
+
   return (
     <Card
       elevation={0}
       sx={{
-        bgcolor: "#1e293b",
-        border: "1px solid #334155",
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
         borderRadius: 2,
         p: 3,
         transition: "all 0.2s",
@@ -54,8 +67,14 @@ export default function PostCard({
               height: 220,
               borderRadius: 2,
               objectFit: "cover",
-              border: "2px solid #334155",
+              border: "2px solid",
+              borderColor:
+                theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
               cursor: "pointer",
+              transition: "all 0.2s",
+              "&:hover": {
+                borderColor: "#8b5cf6",
+              },
             }}
             onClick={onViewDetails}
           />
@@ -74,7 +93,7 @@ export default function PostCard({
               <Typography
                 variant="h6"
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   fontWeight: 700,
                   mb: 0.5,
                   cursor: "pointer",
@@ -87,7 +106,7 @@ export default function PostCard({
               <Typography
                 variant="body1"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontWeight: 600,
                   mb: 1,
                 }}
@@ -100,7 +119,7 @@ export default function PostCard({
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   mb: 2,
                   lineHeight: 1.6,
                 }}
@@ -114,27 +133,40 @@ export default function PostCard({
             <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
               {post.package_offered && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <AttachMoneyIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                  <AttachMoneyIcon
+                    sx={{ fontSize: 18, color: "text.secondary" }}
+                  />
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
                     ₹{post.package_offered}L
                   </Typography>
                 </Box>
               )}
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <LocationOnIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                <LocationOnIcon
+                  sx={{ fontSize: 18, color: "text.secondary" }}
+                />
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
                   {post.industry}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <AccessTimeIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                <AccessTimeIcon
+                  sx={{ fontSize: 18, color: "text.secondary" }}
+                />
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
                   Posted {new Date(post.application_date).toLocaleDateString()}
-                  {post.application_deadline && !isNaN(new Date(post.application_deadline).getTime()) && (
-                    <> | Deadline {new Date(post.application_deadline).toLocaleDateString()}</>
-                  )}
+                  {post.application_deadline &&
+                    !isNaN(new Date(post.application_deadline).getTime()) && (
+                      <>
+                        {" "}
+                        | Deadline{" "}
+                        {new Date(
+                          post.application_deadline
+                        ).toLocaleDateString()}
+                      </>
+                    )}
                 </Typography>
               </Box>
             </Box>
@@ -195,8 +227,10 @@ export default function PostCard({
                 onClick={onToggleSave}
                 sx={{
                   flex: 1,
-                  color: isSaved ? "#a78bfa" : "#64748b",
-                  border: "1px solid #334155",
+                  color: isSaved ? "#a78bfa" : "text.secondary",
+                  border: "1px solid",
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   borderRadius: 1,
                   "&:hover": {
                     borderColor: "#8b5cf6",
@@ -215,8 +249,10 @@ export default function PostCard({
                 onClick={onShare}
                 sx={{
                   flex: 1,
-                  color: "#64748b",
-                  border: "1px solid #334155",
+                  color: "text.secondary",
+                  border: "1px solid",
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   borderRadius: 1,
                   "&:hover": {
                     borderColor: "#8b5cf6",

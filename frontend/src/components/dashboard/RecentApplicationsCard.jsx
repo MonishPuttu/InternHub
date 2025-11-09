@@ -1,9 +1,11 @@
 import { Box, Typography, Stack, Chip, Button } from "@mui/material";
 import { Business, WorkOutline, ArrowForward } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@mui/material/styles";
 import { getUser } from "@/lib/session";
 
 export default function RecentApplicationsCard({ applications }) {
+  const theme = useTheme();
   const router = useRouter();
   const user = getUser();
 
@@ -36,7 +38,7 @@ export default function RecentApplicationsCard({ applications }) {
   return (
     <Box
       sx={{
-        bgcolor: "#1e293b",
+        bgcolor: "background.paper",
         borderRadius: 2,
         border: "1px solid #334155",
         p: 3,
@@ -49,10 +51,13 @@ export default function RecentApplicationsCard({ applications }) {
         sx={{ mb: 3 }}
       >
         <Box>
-          <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 600 }}>
+          <Typography
+            variant="h6"
+            sx={{ color: "text.primary", fontWeight: 600 }}
+          >
             Recent Applications
           </Typography>
-          <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
             Track your application status and progress
           </Typography>
         </Box>
@@ -64,7 +69,7 @@ export default function RecentApplicationsCard({ applications }) {
               color: "#8b5cf6",
               textTransform: "none",
               fontSize: "0.875rem",
-              "&:hover": { bgcolor: "#1e293b" },
+              "&:hover": { bgcolor: "background.paper" },
             }}
           >
             View All
@@ -80,7 +85,7 @@ export default function RecentApplicationsCard({ applications }) {
                 style={{
                   textAlign: "left",
                   padding: "12px 16px",
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontSize: "0.875rem",
                   fontWeight: 500,
                 }}
@@ -91,7 +96,7 @@ export default function RecentApplicationsCard({ applications }) {
                 style={{
                   textAlign: "left",
                   padding: "12px 16px",
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontSize: "0.875rem",
                   fontWeight: 500,
                 }}
@@ -102,7 +107,7 @@ export default function RecentApplicationsCard({ applications }) {
                 style={{
                   textAlign: "left",
                   padding: "12px 16px",
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontSize: "0.875rem",
                   fontWeight: 500,
                 }}
@@ -113,7 +118,7 @@ export default function RecentApplicationsCard({ applications }) {
                 style={{
                   textAlign: "left",
                   padding: "12px 16px",
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontSize: "0.875rem",
                   fontWeight: 500,
                 }}
@@ -124,7 +129,7 @@ export default function RecentApplicationsCard({ applications }) {
                 style={{
                   textAlign: "left",
                   padding: "12px 16px",
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontSize: "0.875rem",
                   fontWeight: 500,
                 }}
@@ -135,7 +140,7 @@ export default function RecentApplicationsCard({ applications }) {
                 style={{
                   textAlign: "left",
                   padding: "12px 16px",
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   fontSize: "0.875rem",
                   fontWeight: 500,
                 }}
@@ -165,18 +170,21 @@ export default function RecentApplicationsCard({ applications }) {
                     <Box>
                       <Typography
                         variant="body2"
-                        sx={{ color: "#e2e8f0", fontWeight: 600 }}
+                        sx={{ color: "text.primary", fontWeight: 600 }}
                       >
                         {app.company}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "text.secondary" }}
+                      >
                         {app.location}
                       </Typography>
                     </Box>
                   </Stack>
                 </td>
                 <td style={{ padding: "16px" }}>
-                  <Typography variant="body2" sx={{ color: "#e2e8f0" }}>
+                  <Typography variant="body2" sx={{ color: "text.primary" }}>
                     {app.position}
                   </Typography>
                 </td>
@@ -195,7 +203,7 @@ export default function RecentApplicationsCard({ applications }) {
                 <td style={{ padding: "16px" }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: "#e2e8f0", fontWeight: 600 }}
+                    sx={{ color: "text.primary", fontWeight: 600 }}
                   >
                     {app.stipend}
                   </Typography>
@@ -214,7 +222,10 @@ export default function RecentApplicationsCard({ applications }) {
                   />
                 </td>
                 <td style={{ padding: "16px" }}>
-                  <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "text.secondary" }}
+                  >
                     {app.applied}
                   </Typography>
                 </td>
@@ -227,7 +238,7 @@ export default function RecentApplicationsCard({ applications }) {
       {applications.length === 0 && (
         <Box sx={{ textAlign: "center", py: 6 }}>
           <WorkOutline sx={{ fontSize: 48, color: "#334155", mb: 1 }} />
-          <Typography variant="body2" sx={{ color: "#64748b", mb: 2 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
             No recent applications yet
           </Typography>
           <Button

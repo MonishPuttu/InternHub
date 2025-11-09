@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import {
   Dialog,
   DialogTitle,
@@ -12,6 +13,7 @@ import {
 } from "@mui/material";
 
 export default function ApplyDialog({ open, post, onClose, onSubmit }) {
+  const theme = useTheme();
   const [coverLetter, setCoverLetter] = useState("");
   const [resumeLink, setResumeLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -31,24 +33,43 @@ export default function ApplyDialog({ open, post, onClose, onSubmit }) {
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { bgcolor: "#1e293b", color: "#e2e8f0", borderRadius: 2 },
+        sx: {
+          bgcolor: "background.paper",
+          color: "text.primary",
+          borderRadius: 2,
+          border: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        },
       }}
     >
-      <DialogTitle component="div" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+      <DialogTitle
+        component="div"
+        sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}
+      >
         Apply to {post?.position}
       </DialogTitle>
-      <DialogContent dividers sx={{ borderColor: "#334155" }}>
+      <DialogContent
+        dividers
+        sx={{
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        }}
+      >
         <Stack spacing={2}>
           <Box
-            sx={{ bgcolor: "rgba(139, 92, 246, 0.1)", p: 2, borderRadius: 1 }}
+            sx={{
+              bgcolor: "rgba(139, 92, 246, 0.1)",
+              p: 2,
+              borderRadius: 1,
+              border: "1px solid rgba(139, 92, 246, 0.2)",
+            }}
           >
             <Typography
               variant="body1"
-              sx={{ color: "#e2e8f0", fontWeight: 600, mb: 0.5 }}
+              sx={{ color: "text.primary", fontWeight: 600, mb: 0.5 }}
             >
               {post?.position}
             </Typography>
-            <Typography sx={{ color: "#94a3b8", fontSize: "0.875rem" }}>
+            <Typography sx={{ color: "text.secondary", fontSize: "0.875rem" }}>
               {post?.company_name}
             </Typography>
           </Box>
@@ -61,12 +82,19 @@ export default function ApplyDialog({ open, post, onClose, onSubmit }) {
             onChange={(e) => setResumeLink(e.target.value)}
             sx={{
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
-                bgcolor: "#0f172a",
-                "& fieldset": { borderColor: "#334155" },
+                color: "text.primary",
+                bgcolor: "background.default",
+                "& fieldset": {
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
+                "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
               },
-              "& .MuiInputLabel-root": { color: "#94a3b8" },
+              "& .MuiInputLabel-root": {
+                color: "text.secondary",
+                "&.Mui-focused": { color: "#8b5cf6" },
+              },
             }}
           />
 
@@ -80,25 +108,38 @@ export default function ApplyDialog({ open, post, onClose, onSubmit }) {
             onChange={(e) => setCoverLetter(e.target.value)}
             sx={{
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
-                bgcolor: "#0f172a",
-                "& fieldset": { borderColor: "#334155" },
+                color: "text.primary",
+                bgcolor: "background.default",
+                "& fieldset": {
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
+                "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
               },
-              "& .MuiInputLabel-root": { color: "#94a3b8" },
+              "& .MuiInputLabel-root": {
+                color: "text.secondary",
+                "&.Mui-focused": { color: "#8b5cf6" },
+              },
             }}
           />
 
-          <Typography sx={{ color: "#64748b", fontSize: "0.875rem" }}>
+          <Typography sx={{ color: "text.secondary", fontSize: "0.875rem" }}>
             Your profile information will be automatically included with your
             application.
           </Typography>
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ p: 2, borderTop: "1px solid #334155" }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          borderTop: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        }}
+      >
         <Button
           onClick={onClose}
-          sx={{ color: "#94a3b8", textTransform: "none" }}
+          sx={{ color: "text.secondary", textTransform: "none" }}
         >
           Cancel
         </Button>

@@ -3,6 +3,7 @@
 import { use } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@mui/material/styles";
 import {
   Container,
   Paper,
@@ -23,6 +24,7 @@ import { apiRequest } from "@/lib/api";
 
 export default function ViewAssessment({ params }) {
   const router = useRouter();
+  const theme = useTheme();
   const { assessmentId } = use(params);
   const [assessmentData, setAssessmentData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function ViewAssessment({ params }) {
   if (!assessmentData) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Typography variant="h6" sx={{ color: "#94a3b8" }}>
+        <Typography variant="h6" sx={{ color: "text.secondary" }}>
           Assessment not found
         </Typography>
       </Container>
@@ -76,7 +78,7 @@ export default function ViewAssessment({ params }) {
         sx={{
           p: 4,
           mb: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
@@ -92,7 +94,7 @@ export default function ViewAssessment({ params }) {
             <Typography
               variant="h4"
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 wordBreak: "break-word",
                 fontWeight: "bold",
               }}
@@ -114,7 +116,7 @@ export default function ViewAssessment({ params }) {
         <Typography
           variant="body1"
           sx={{
-            color: "#94a3b8",
+            color: "text.secondary",
             mb: 3,
             wordBreak: "break-word",
           }}
@@ -128,7 +130,7 @@ export default function ViewAssessment({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#64748b",
+                  color: "text.secondary",
                   mb: 1,
                   textTransform: "uppercase",
                   fontSize: "0.75rem",
@@ -172,7 +174,7 @@ export default function ViewAssessment({ params }) {
           {/* Duration */}
           <Card
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "1px solid #334155",
               borderRadius: 1,
             }}
@@ -191,7 +193,7 @@ export default function ViewAssessment({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.65rem",
                   fontWeight: "600",
@@ -205,7 +207,7 @@ export default function ViewAssessment({ params }) {
           {/* Total Marks */}
           <Card
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "1px solid #334155",
               borderRadius: 1,
             }}
@@ -224,7 +226,7 @@ export default function ViewAssessment({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.65rem",
                   fontWeight: "600",
@@ -238,7 +240,7 @@ export default function ViewAssessment({ params }) {
           {/* Passing Marks */}
           <Card
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "1px solid #334155",
               borderRadius: 1,
             }}
@@ -257,7 +259,7 @@ export default function ViewAssessment({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.65rem",
                   fontWeight: "600",
@@ -271,7 +273,7 @@ export default function ViewAssessment({ params }) {
           {/* Questions Count */}
           <Card
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               border: "1px solid #334155",
               borderRadius: 1,
             }}
@@ -290,7 +292,7 @@ export default function ViewAssessment({ params }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "uppercase",
                   fontSize: "0.65rem",
                   fontWeight: "600",
@@ -310,7 +312,7 @@ export default function ViewAssessment({ params }) {
             display: "grid",
             gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
             gap: 2,
-            bgcolor: "#0f172a",
+            bgcolor: "background.default",
             p: 2.5,
             borderRadius: 1,
             border: "1px solid #334155",
@@ -320,7 +322,7 @@ export default function ViewAssessment({ params }) {
             <Typography
               variant="caption"
               sx={{
-                color: "#64748b",
+                color: "text.secondary",
                 mb: 1,
                 textTransform: "uppercase",
                 fontSize: "0.75rem",
@@ -332,7 +334,7 @@ export default function ViewAssessment({ params }) {
             </Typography>
             <Typography
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 fontWeight: "500",
                 fontSize: "0.95rem",
               }}
@@ -344,7 +346,7 @@ export default function ViewAssessment({ params }) {
             <Typography
               variant="caption"
               sx={{
-                color: "#64748b",
+                color: "text.secondary",
                 mb: 1,
                 textTransform: "uppercase",
                 fontSize: "0.75rem",
@@ -356,7 +358,7 @@ export default function ViewAssessment({ params }) {
             </Typography>
             <Typography
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 fontWeight: "500",
                 fontSize: "0.95rem",
               }}
@@ -367,38 +369,34 @@ export default function ViewAssessment({ params }) {
         </Box>
       </Paper>
 
-      {/* Questions Section */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          bgcolor: "#1e293b",
-          border: "1px solid #334155",
-          borderRadius: 2,
-        }}
-      >
-        <Typography
-          variant="h5"
+      {/* ✅ Questions Section - Only show if NOT premade OR has questions */}
+      {assessment.type !== "premade" && questions && questions.length > 0 && (
+        <Paper
+          elevation={3}
           sx={{
-            color: "#e2e8f0",
-            mb: 3,
-            fontWeight: "bold",
+            p: 4,
+            bgcolor: "background.paper",
+            border: "1px solid #334155",
+            borderRadius: 2,
           }}
         >
-          Questions ({questions?.length || 0})
-        </Typography>
-
-        {!questions || questions.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 3 }}>
-            No questions available
+          <Typography
+            variant="h5"
+            sx={{
+              color: "text.primary",
+              mb: 3,
+              fontWeight: "bold",
+            }}
+          >
+            Questions ({questions?.length || 0})
           </Typography>
-        ) : (
+
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {questions.map((question, index) => (
               <Accordion
                 key={question.id || index}
                 sx={{
-                  bgcolor: "#0f172a",
+                  bgcolor: "background.default",
                   border: "1px solid #334155",
                   borderRadius: 1,
                   "&:before": { display: "none" },
@@ -407,9 +405,9 @@ export default function ViewAssessment({ params }) {
                 <AccordionSummary
                   expandIcon={<ExpandMore sx={{ color: "#8b5cf6" }} />}
                   sx={{
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderBottom: "1px solid #334155",
-                    "&:hover": { bgcolor: "#1e293b" },
+                    "&:hover": { bgcolor: "background.paper" },
                   }}
                 >
                   <Box
@@ -440,7 +438,7 @@ export default function ViewAssessment({ params }) {
                     />
                     <Typography
                       sx={{
-                        color: "#e2e8f0",
+                        color: "text.primary",
                         flex: 1,
                         minWidth: 0,
                         wordBreak: "break-word",
@@ -452,7 +450,7 @@ export default function ViewAssessment({ params }) {
                   </Box>
                 </AccordionSummary>
 
-                <AccordionDetails sx={{ bgcolor: "#0f172a", p: 3 }}>
+                <AccordionDetails sx={{ bgcolor: "background.default", p: 3 }}>
                   {question.options && question.options.length > 0 ? (
                     <Box
                       sx={{
@@ -464,7 +462,7 @@ export default function ViewAssessment({ params }) {
                       <Typography
                         variant="caption"
                         sx={{
-                          color: "#64748b",
+                          color: "text.secondary",
                           textTransform: "uppercase",
                           fontWeight: "600",
                           mb: 1,
@@ -473,63 +471,63 @@ export default function ViewAssessment({ params }) {
                       >
                         Options:
                       </Typography>
-                      {question.options.map((option, optIndex) => (
-                        <Box
-                          key={optIndex}
-                          sx={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 2,
-                            p: 1.5,
-                            bgcolor: "#1e293b",
-                            borderRadius: 1,
-                            border:
-                              option.isCorrect || option.correct
+                      {question.options.map((option, optIndex) => {
+                        // ✅ FIXED: Moved const declaration INSIDE the map callback
+                        const isCorrectAnswer = option.isCorrect === true;
+
+                        return (
+                          <Box
+                            key={optIndex}
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 2,
+                              p: 1.5,
+                              bgcolor: "background.paper",
+                              borderRadius: 1,
+                              border: isCorrectAnswer
                                 ? "1px solid #10b98140"
                                 : "1px solid #334155",
-                          }}
-                        >
-                          <Typography
-                            sx={{
-                              color: "#8b5cf6",
-                              fontWeight: "600",
-                              minWidth: "24px",
-                              flexShrink: 0,
                             }}
                           >
-                            {String.fromCharCode(65 + optIndex)}.
-                          </Typography>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography
                               sx={{
-                                color:
-                                  option.isCorrect || option.correct
-                                    ? "#10b981"
-                                    : "#e2e8f0",
-                                fontWeight:
-                                  option.isCorrect || option.correct
-                                    ? "600"
-                                    : "400",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {option.text}
-                            </Typography>
-                          </Box>
-                          {(option.isCorrect || option.correct) && (
-                            <CheckCircle
-                              sx={{
-                                color: "#10b981",
-                                fontSize: 20,
+                                color: "#8b5cf6",
+                                fontWeight: "600",
+                                minWidth: "24px",
                                 flexShrink: 0,
                               }}
-                            />
-                          )}
-                        </Box>
-                      ))}
+                            >
+                              {String.fromCharCode(65 + optIndex)}.
+                            </Typography>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  color: isCorrectAnswer
+                                    ? "#10b981"
+                                    : "#e2e8f0",
+                                  fontWeight: isCorrectAnswer ? "600" : "400",
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {option.text}
+                              </Typography>
+                            </Box>
+                            {isCorrectAnswer && (
+                              <CheckCircle
+                                sx={{
+                                  color: "#10b981",
+                                  fontSize: 20,
+                                  flexShrink: 0,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        );
+                      })}
                     </Box>
                   ) : (
-                    <Typography sx={{ color: "#94a3b8" }}>
+                    <Typography sx={{ color: "text.secondary" }}>
                       No options available
                     </Typography>
                   )}
@@ -539,7 +537,7 @@ export default function ViewAssessment({ params }) {
                       <Typography
                         variant="caption"
                         sx={{
-                          color: "#64748b",
+                          color: "text.secondary",
                           textTransform: "uppercase",
                           fontWeight: "600",
                           display: "block",
@@ -550,7 +548,7 @@ export default function ViewAssessment({ params }) {
                       </Typography>
                       <Typography
                         sx={{
-                          color: "#94a3b8",
+                          color: "text.secondary",
                           fontSize: "0.9rem",
                           wordBreak: "break-word",
                         }}
@@ -563,8 +561,8 @@ export default function ViewAssessment({ params }) {
               </Accordion>
             ))}
           </Box>
-        )}
-      </Paper>
+        </Paper>
+      )}
     </Container>
   );
 }
