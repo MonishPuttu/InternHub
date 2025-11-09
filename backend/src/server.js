@@ -14,7 +14,7 @@ import postsRoutes from "./routes/posts.js"; // Post management routes
 import trainingRoutes from "./routes/training.js"; // Training part routes
 import placementAnalyticsRoutes from "./routes/placement_analytics.js";
 import timelineRoutes from "./routes/timeline.js";
-import { startTimelineUpdater } from "./jobs/timeline-updater.js";
+// import { startTimelineUpdater } from "./jobs/timeline-updater.js";
 
 const app = express();
 
@@ -54,7 +54,7 @@ const io = new Server(server, {
 
 chatSocket(io);
 
-startTimelineUpdater();
+// startTimelineUpdater();
 
 const port = process.env.PORT || 4000;
 
