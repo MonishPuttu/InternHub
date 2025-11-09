@@ -11,7 +11,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 const VIOLET_PRIMARY = '#8b5cf6';
 const TEXT_SECONDARY = '#94a3b8';
 const PAPER_BG = '#1e293b';
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 const INDUSTRIES = [
@@ -23,13 +23,7 @@ const DEPARTMENTS = [
   'CSE', 'IT', 'AIML', 'ECE', 'EEE', 'CIVIL', 'MECH', 'MBA', 'MCA'
 ];
 
-const STATUS_OPTIONS = [
-  { value: 'applied', label: 'Applied' },
-  { value: 'interview_scheduled', label: 'Interview Scheduled' },
-  { value: 'interviewed', label: 'Interviewed' },
-  { value: 'offer', label: 'Offer Received' },
-  { value: 'rejected', label: 'Rejected' }
-];
+
 
 const MediaPreview = ({ file, onDelete, preview }) => {
   const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
@@ -81,8 +75,6 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     company_name: '',
     position: '',
     industry: '',
-    application_date: '',
-    status: 'applied',
     package_offered: '',
     deadline: '',
     notes: '',
@@ -154,6 +146,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
       // Prepare data
       const payload = {
         ...formData,
+        application_date: new Date().toISOString().split('T')[0], // Set current date automatically
         application_deadline: formData.deadline, // Map deadline to application_deadline
         media: mediaPreview // Save base64 encoded image
       };
@@ -185,8 +178,6 @@ export const CreateApplicationModal = ({ open, onClose }) => {
           company_name: '',
           position: '',
           industry: '',
-          application_date: '',
-          status: 'applied',
           package_offered: '',
           deadline: '',
           notes: '',
@@ -247,6 +238,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                 onChange={handleInputChange}
                 disabled={loading}
                 InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
+                inputProps={{ maxLength: 30 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '8px',
@@ -266,6 +258,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                   onChange={handleInputChange}
                   disabled={loading}
                   InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
+                  inputProps={{ maxLength: 30 }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
                 />
                 <TextField
@@ -286,49 +279,26 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                 </TextField>
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Application Date"
-                  name="application_date"
-                  type="date"
-                  required
-                  value={formData.application_date}
-                  onChange={handleInputChange}
-                  disabled={loading}
-                  InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
-                />
-                <TextField
-                  fullWidth
-                  select
-                  label="Status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  disabled={loading}
-                  InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
-                >
-                  {STATUS_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                  ))}
-                </TextField>
-              </Box>
+
 
               <FormControl fullWidth disabled={loading}>
-                <InputLabel sx={{ color: 'white' }}>Target Departments</InputLabel>
                 <Select
                   multiple
                   value={formData.target_departments}
                   onChange={handleDepartmentChange}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} sx={{ backgroundColor: VIOLET_PRIMARY, color: 'white' }} />
-                      ))}
-                    </Box>
-                  )}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (selected.length === 0) {
+                      return <span style={{ color: '#94a3b8' }}>Target Departments</span>;
+                    }
+                    return (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => (
+                          <Chip key={value} label={value} sx={{ backgroundColor: VIOLET_PRIMARY, color: 'white' }} />
+                        ))}
+                      </Box>
+                    );
+                  }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '8px',
@@ -349,21 +319,21 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                 fullWidth
                 label="Package Offered (in Lakhs)"
                 name="package_offered"
-                type="number"
+                type="text"
                 value={formData.package_offered}
                 onChange={handleInputChange}
                 disabled={loading}
                 InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
-                inputProps={{ step: '0.01', min: '0' }}
+                inputProps={{ maxLength: 30 }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
               />
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
                 <TextField
                   fullWidth
-                  label="Deadline Date"
+                  label="Deadline Date and Time"
                   name="deadline"
-                  type="date"
+                  type="datetime-local"
                   value={formData.deadline}
                   onChange={handleInputChange}
                   disabled={loading}
@@ -382,6 +352,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                 onChange={handleInputChange}
                 disabled={loading}
                 InputLabelProps={{ shrink: true, sx: { color: 'white' } }}
+                inputProps={{ maxLength: 150 }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' } }}
               />
 

@@ -55,12 +55,14 @@ const navigationItems = [
   },
   { text: "Calendar", icon: <CalenderIcon />, path: "/calendar", roles: null },
 
+  /*
   {
     text: "Analytics",
     icon: <BarChartIcon />,
     path: "/analytics_rec",
     roles: ["recruiter"],
   },
+  */
 
   {
     text: "Analytics",

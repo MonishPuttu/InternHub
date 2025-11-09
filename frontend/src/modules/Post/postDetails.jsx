@@ -458,6 +458,48 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 </Box>
               </Grid>
             )}
+
+            {post.target_departments && post.target_departments.length > 0 && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: "#0f172a",
+                    borderRadius: 2,
+                    border: "1px solid #334155",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <PersonIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
+                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                      Targeted Departments
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {post.target_departments.map((dept, index) => (
+                      <Chip
+                        key={index}
+                        label={dept}
+                        size="small"
+                        sx={{
+                          bgcolor: "#334155",
+                          color: "#e2e8f0",
+                          fontSize: "0.75rem",
+                          height: 24,
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              </Grid>
+            )}
           </Grid>
 
           {(post.contact_person || post.contact_email) && (
@@ -749,7 +791,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         </Alert>
       </Snackbar>
 
-      {showApplyButtons && (
+      {showApplyButtons && user && user.role !== "recruiter" && user.role !== "placement" && (
         <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
           <Button
             variant="outlined"

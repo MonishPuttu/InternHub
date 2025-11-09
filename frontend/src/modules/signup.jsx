@@ -20,6 +20,7 @@ import {
   StyledSelect,
   roleOptions,
   genderOptions,
+  branchOptions,
 } from "@/components/auth/authcomp";
 
 const BACKEND_URL =

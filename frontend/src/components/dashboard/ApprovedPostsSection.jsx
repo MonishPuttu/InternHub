@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -38,7 +39,6 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
-import PostDetails from "@/modules/Post/postDetails";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -60,6 +60,7 @@ const statusLabels = {
 };
 
 export default function ApprovedPostsSection(props) {
+  const router = useRouter();
   const {
     page,
     rowsPerPage,
@@ -94,7 +95,6 @@ export default function ApprovedPostsSection(props) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [postApplications, setPostApplications] = useState([]);
   const [postAppLoading, setPostAppLoading] = useState(false);
-  const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
   const [sendListDialogOpen, setSendListDialogOpen] = useState(false);
   const [sentLists, setSentLists] = useState(new Set()); // Track sent posts
@@ -206,8 +206,7 @@ export default function ApprovedPostsSection(props) {
   };
 
   const handleViewPostDetails = (post) => {
-    setSelectedPost(post);
-    setViewPostDialogOpen(true);
+    router.push(`/post/postdetails/${post.id}`);
   };
 
   const handleViewApplications = async (post) => {
@@ -647,20 +646,7 @@ export default function ApprovedPostsSection(props) {
         </Box>
       </Box>
 
-      {/* View Post Details Dialog */}
-      <Dialog
-        open={viewPostDialogOpen}
-        onClose={() => setViewPostDialogOpen(false)}
-        maxWidth="xl"
-        fullWidth
-        PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
-        }}
-      >
-        <DialogContent sx={{ p: 0 }}>
-          {selectedPost && <PostDetails postId={selectedPost.id} showApplyButtons={false} />}
-        </DialogContent>
-      </Dialog>
+
 
       {/* Applications Dialog */}
       <Dialog

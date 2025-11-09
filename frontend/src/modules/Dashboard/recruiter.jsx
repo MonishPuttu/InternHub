@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -23,12 +24,12 @@ import {
   TablePagination,
 } from "@mui/material";
 import axios from "axios";
-import PostDetails from "@/modules/Post/postDetails";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function RecruiterDashboard() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPosts: 0,
@@ -40,7 +41,6 @@ export default function RecruiterDashboard() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [selectedPostForList, setSelectedPostForList] = useState(null);
   const [applicationsList, setApplicationsList] = useState([]);
-  const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
   const [viewListDialogOpen, setViewListDialogOpen] = useState(false);
   const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] = useState(false);
   const [receivedLists, setReceivedLists] = useState([]);
@@ -104,8 +104,7 @@ export default function RecruiterDashboard() {
   };
 
   const handleViewPostDetails = (post) => {
-    setSelectedPost(post);
-    setViewPostDialogOpen(true);
+    router.push(`/post/postdetails/${post.id}`);
   };
 
 
@@ -357,23 +356,13 @@ export default function RecruiterDashboard() {
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
             • Check applications from students
           </Typography>
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            • The 'View Applications' button is unclickable if no students have applied to your post yet
+          </Typography>
         </Stack>
       </Card>
 
-      {/* View Post Details Dialog */}
-      <Dialog
-        open={viewPostDialogOpen}
-        onClose={() => setViewPostDialogOpen(false)}
-        maxWidth="xl"
-        fullWidth
-        PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
-        }}
-      >
-        <DialogContent sx={{ p: 0 }}>
-          {selectedPost && <PostDetails postId={selectedPost.id} showApplyButtons={false} />}
-        </DialogContent>
-      </Dialog>
+
 
       {/* View Applications List Dialog */}
       <Dialog
