@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/session";
 import { Box, CircularProgress } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 export default function TrainingPage() {
   const router = useRouter();
   const user = getUser();
+  const theme = useTheme();
 
   useEffect(() => {
     if (!user) {
@@ -38,7 +40,7 @@ export default function TrainingPage() {
         justifyContent: "center",
         alignItems: "center",
         height: "100vh",
-        bgcolor: "#0f172a",
+        bgcolor: "background.default",
       }}
     >
       <CircularProgress sx={{ color: "#8b5cf6" }} />

@@ -14,16 +14,16 @@ import {
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { useTheme } from "@mui/material/styles";
 import SchoolIcon from "@mui/icons-material/School";
-import {
-  StyledTextField,
-} from "@/components/auth/authcomp";
+import { StyledTextField } from "@/components/auth/authcomp";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function ResetPassword() {
   const router = useRouter();
+  const theme = useTheme();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -97,12 +97,18 @@ export default function ResetPassword() {
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       {/* Left Side - Form */}
       <Box
         sx={{
           width: { xs: "100%", md: "45%" },
-          bgcolor: "#0f172a",
+          bgcolor: "background.default",
           p: 4,
           display: "flex",
           flexDirection: "column",
@@ -112,11 +118,11 @@ export default function ResetPassword() {
         <Box sx={{ maxWidth: 450, mx: "auto", width: "100%" }}>
           <Typography
             variant="h4"
-            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 1 }}
+            sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
           >
             Reset Password
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 4 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
             Enter your new password below
           </Typography>
 
@@ -148,7 +154,7 @@ export default function ResetPassword() {
                       <IconButton
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
-                        sx={{ color: "#94a3b8" }}
+                        sx={{ color: "text.secondary" }}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -173,9 +179,13 @@ export default function ResetPassword() {
                       <IconButton
                         onClick={() => setShowConfirmPassword((s) => !s)}
                         edge="end"
-                        sx={{ color: "#94a3b8" }}
+                        sx={{ color: "text.secondary" }}
                       >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -210,7 +220,7 @@ export default function ResetPassword() {
             </Button>
 
             <Box sx={{ textAlign: "center", mt: 3 }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Remember your password?{" "}
                 <Link
                   component={NextLink}

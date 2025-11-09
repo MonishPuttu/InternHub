@@ -11,18 +11,18 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-  StyledTextField,
-} from "@/components/auth/authcomp";
+import { StyledTextField } from "@/components/auth/authcomp";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function ChangePassword() {
   const router = useRouter();
+  const theme = useTheme();
 
   const [formData, setFormData] = useState({
     currentPassword: "",
@@ -115,11 +115,11 @@ export default function ChangePassword() {
 
       <Typography
         variant="h4"
-        sx={{ color: "#e2e8f0", fontWeight: 700, mb: 2 }}
+        sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
       >
         Change Password
       </Typography>
-      <Typography variant="body2" sx={{ color: "#94a3b8", mb: 4 }}>
+      <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
         Enter your current password and choose a new one
       </Typography>
 
@@ -151,7 +151,7 @@ export default function ChangePassword() {
                   <IconButton
                     onClick={() => setShowCurrentPassword((s) => !s)}
                     edge="end"
-                    sx={{ color: "#94a3b8" }}
+                    sx={{ color: "text.secondary" }}
                   >
                     {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -176,7 +176,7 @@ export default function ChangePassword() {
                   <IconButton
                     onClick={() => setShowNewPassword((s) => !s)}
                     edge="end"
-                    sx={{ color: "#94a3b8" }}
+                    sx={{ color: "text.secondary" }}
                   >
                     {showNewPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -201,7 +201,7 @@ export default function ChangePassword() {
                   <IconButton
                     onClick={() => setShowConfirmPassword((s) => !s)}
                     edge="end"
-                    sx={{ color: "#94a3b8" }}
+                    sx={{ color: "text.secondary" }}
                   >
                     {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>

@@ -27,6 +27,7 @@ import {
   ListItemText,
 } from "@mui/material";
 import { Add, Delete, ArrowBack, Save } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { apiRequest } from "@/lib/api";
 
 const BRANCH_OPTIONS = [
@@ -43,6 +44,7 @@ const BRANCH_OPTIONS = [
 
 export default function CreateAssessment() {
   const router = useRouter();
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -327,7 +329,7 @@ export default function CreateAssessment() {
         elevation={3}
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           maxWidth: "1200px",
           margin: "0 auto",
@@ -337,7 +339,7 @@ export default function CreateAssessment() {
           variant="h4"
           gutterBottom
           sx={{
-            color: "#e2e8f0",
+            color: "text.primary",
             wordBreak: "break-word",
           }}
         >
@@ -360,7 +362,7 @@ export default function CreateAssessment() {
           <Typography
             variant="h6"
             gutterBottom
-            sx={{ color: "#e2e8f0", mb: 3 }}
+            sx={{ color: "text.primary", mb: 3 }}
           >
             Assessment Details
           </Typography>
@@ -381,21 +383,21 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-                "& .MuiFormHelperText-root": { color: "#64748b" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
+                "& .MuiFormHelperText-root": { color: "text.secondary" },
               }}
             />
             <FormControl sx={{ flex: 1 }}>
-              <InputLabel sx={{ color: "#94a3b8" }}>Type</InputLabel>
+              <InputLabel sx={{ color: "text.secondary" }}>Type</InputLabel>
               <Select
                 value={assessment.type}
                 label="Type"
                 onChange={(e) => handleAssessmentChange("type", e.target.value)}
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& .MuiOutlinedInput-notchedOutline": {
                     borderColor: "#334155",
                   },
@@ -421,11 +423,11 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-                "& .MuiFormHelperText-root": { color: "#64748b" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
+                "& .MuiFormHelperText-root": { color: "text.secondary" },
               }}
             />
           </Box>
@@ -435,7 +437,7 @@ export default function CreateAssessment() {
             <FormControl fullWidth>
               <InputLabel
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 }}
               >
@@ -464,7 +466,7 @@ export default function CreateAssessment() {
                   </Box>
                 )}
                 sx={{
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& .MuiOutlinedInput-notchedOutline": {
                     borderColor: "#334155",
                   },
@@ -481,7 +483,7 @@ export default function CreateAssessment() {
                     <Checkbox
                       checked={assessment.allowedBranches.indexOf(branch) > -1}
                       sx={{
-                        color: "#94a3b8",
+                        color: "text.secondary",
                         "&.Mui-checked": { color: "#8b5cf6" },
                       }}
                     />
@@ -509,11 +511,11 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-                "& .MuiFormHelperText-root": { color: "#64748b" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
+                "& .MuiFormHelperText-root": { color: "text.secondary" },
               }}
             />
             <TextField
@@ -525,11 +527,11 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-                "& .MuiFormHelperText-root": { color: "#64748b" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
+                "& .MuiFormHelperText-root": { color: "text.secondary" },
               }}
             />
             <TextField
@@ -546,10 +548,10 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
               }}
             />
           </Box>
@@ -573,11 +575,11 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-                "& .MuiFormHelperText-root": { color: "#64748b" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
+                "& .MuiFormHelperText-root": { color: "text.secondary" },
               }}
             />
             <TextField
@@ -598,11 +600,11 @@ export default function CreateAssessment() {
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
+                  color: "text.primary",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
-                "& .MuiFormHelperText-root": { color: "#64748b" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
+                "& .MuiFormHelperText-root": { color: "text.secondary" },
               }}
             />
           </Box>
@@ -618,7 +620,7 @@ export default function CreateAssessment() {
             alignItems="center"
             mb={3}
           >
-            <Typography variant="h6" sx={{ color: "#e2e8f0" }}>
+            <Typography variant="h6" sx={{ color: "text.primary" }}>
               Questions ({questions.length})
             </Typography>
             <Button
@@ -636,7 +638,7 @@ export default function CreateAssessment() {
               key={qIndex}
               sx={{
                 mb: 3,
-                bgcolor: "#0f172a",
+                bgcolor: "background.default",
                 border: "1px solid #334155",
                 overflow: "hidden",
               }}
@@ -651,7 +653,7 @@ export default function CreateAssessment() {
                   <Typography
                     variant="h6"
                     sx={{
-                      color: "#e2e8f0",
+                      color: "text.primary",
                       wordBreak: "break-word",
                     }}
                   >
@@ -681,18 +683,20 @@ export default function CreateAssessment() {
                   sx={{
                     mb: 2,
                     "& .MuiOutlinedInput-root": {
-                      color: "#e2e8f0",
+                      color: "text.primary",
                       "& fieldset": { borderColor: "#334155" },
                     },
-                    "& .MuiInputLabel-root": { color: "#94a3b8" },
-                    "& .MuiFormHelperText-root": { color: "#64748b" },
+                    "& .MuiInputLabel-root": { color: "text.secondary" },
+                    "& .MuiFormHelperText-root": { color: "text.secondary" },
                   }}
                 />
 
                 {/* Type, Marks, Difficulty */}
                 <Box display="flex" gap={2} mb={2}>
                   <FormControl sx={{ flex: 1 }}>
-                    <InputLabel sx={{ color: "#94a3b8" }}>Type</InputLabel>
+                    <InputLabel sx={{ color: "text.secondary" }}>
+                      Type
+                    </InputLabel>
                     <Select
                       value={question.questionType}
                       label="Type"
@@ -704,7 +708,7 @@ export default function CreateAssessment() {
                         )
                       }
                       sx={{
-                        color: "#e2e8f0",
+                        color: "text.primary",
                         "& .MuiOutlinedInput-notchedOutline": {
                           borderColor: "#334155",
                         },
@@ -736,16 +740,16 @@ export default function CreateAssessment() {
                     sx={{
                       flex: 1,
                       "& .MuiOutlinedInput-root": {
-                        color: "#e2e8f0",
+                        color: "text.primary",
                         "& fieldset": { borderColor: "#334155" },
                       },
-                      "& .MuiInputLabel-root": { color: "#94a3b8" },
-                      "& .MuiFormHelperText-root": { color: "#64748b" },
+                      "& .MuiInputLabel-root": { color: "text.secondary" },
+                      "& .MuiFormHelperText-root": { color: "text.secondary" },
                     }}
                   />
 
                   <FormControl sx={{ flex: 1 }}>
-                    <InputLabel sx={{ color: "#94a3b8" }}>
+                    <InputLabel sx={{ color: "text.secondary" }}>
                       Difficulty
                     </InputLabel>
                     <Select
@@ -759,7 +763,7 @@ export default function CreateAssessment() {
                         )
                       }
                       sx={{
-                        color: "#e2e8f0",
+                        color: "text.primary",
                         "& .MuiOutlinedInput-notchedOutline": {
                           borderColor: "#334155",
                         },
@@ -780,7 +784,10 @@ export default function CreateAssessment() {
                     alignItems="center"
                     mb={1}
                   >
-                    <Typography variant="subtitle2" sx={{ color: "#94a3b8" }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ color: "text.secondary" }}
+                    >
                       Options
                     </Typography>
                     <Button
@@ -824,7 +831,7 @@ export default function CreateAssessment() {
                           inputProps={{ maxLength: 100 }}
                           sx={{
                             "& .MuiOutlinedInput-root": {
-                              color: "#e2e8f0",
+                              color: "text.primary",
                               "& fieldset": { borderColor: "#334155" },
                             },
                           }}
@@ -842,7 +849,7 @@ export default function CreateAssessment() {
                   </Box>
                   <Typography
                     variant="caption"
-                    sx={{ color: "#64748b", mt: 1, display: "block" }}
+                    sx={{ color: "text.secondary", mt: 1, display: "block" }}
                   >
                     Max 100 characters per option
                   </Typography>
@@ -852,7 +859,7 @@ export default function CreateAssessment() {
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    sx={{ color: "#94a3b8", mb: 1 }}
+                    sx={{ color: "text.secondary", mb: 1 }}
                   >
                     Correct Answer
                   </Typography>
@@ -885,7 +892,7 @@ export default function CreateAssessment() {
                           }
                           label={option.text || `Option ${option.id}`}
                           sx={{
-                            color: "#e2e8f0",
+                            color: "text.primary",
                             px: 2,
                             py: 0.5,
                             borderRadius: 1,
@@ -931,7 +938,7 @@ export default function CreateAssessment() {
                           }
                           label={option.text || `Option ${option.id}`}
                           sx={{
-                            color: "#e2e8f0",
+                            color: "text.primary",
                             px: 2,
                             py: 0.5,
                             borderRadius: 1,
@@ -959,7 +966,7 @@ export default function CreateAssessment() {
             variant="outlined"
             onClick={() => router.push("/training/placement")}
             disabled={loading}
-            sx={{ color: "#94a3b8", borderColor: "#334155" }}
+            sx={{ color: "text.secondary", borderColor: "#334155" }}
           >
             Cancel
           </Button>

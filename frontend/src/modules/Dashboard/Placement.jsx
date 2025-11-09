@@ -30,6 +30,7 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
+import { useTheme } from "@mui/material/styles";
 import ApprovedPostsSection from "@/components/dashboard/ApprovedPostsSection";
 
 const BACKEND_URL =
@@ -56,6 +57,7 @@ export default function PlacementDashboard() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedApp, setSelectedApp] = useState(null);
+  const theme = useTheme();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editStatus, setEditStatus] = useState("");
   const [editNotes, setEditNotes] = useState("");
@@ -141,18 +143,25 @@ export default function PlacementDashboard() {
           <Box>
             <Typography
               variant="h4"
-              sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+              sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
             >
               Placement Dashboard
             </Typography>
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               Manage student applications and track placement progress
             </Typography>
           </Box>
         </Box>
 
         {/* Search and Filters */}
-        <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 }, alignItems: "center", flexWrap: "wrap" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: { xs: 1, sm: 2 },
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <TextField
             size="small"
             placeholder="Search by post name..."
@@ -161,7 +170,7 @@ export default function PlacementDashboard() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#94a3b8" }} />
+                  <SearchIcon sx={{ color: "text.secondary" }} />
                 </InputAdornment>
               ),
             }}
@@ -169,12 +178,12 @@ export default function PlacementDashboard() {
               minWidth: { xs: 250, sm: 300 },
               width: { xs: "100%", sm: "auto" },
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
-                bgcolor: "#0f172a",
+                color: "text.primary",
+                bgcolor: "background.default",
                 "& fieldset": { borderColor: "#334155" },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
               },
-              "& .MuiInputBase-input::placeholder": { color: "#94a3b8" },
+              "& .MuiInputBase-input::placeholder": { color: "text.secondary" },
             }}
           />
 
@@ -184,29 +193,37 @@ export default function PlacementDashboard() {
             label="Posted Date"
             value={filterPostedDate}
             onChange={(e) => setFilterPostedDate(e.target.value)}
-            InputLabelProps={{ shrink: true, sx: { color: "#94a3b8" } }}
+            InputLabelProps={{ shrink: true, sx: { color: "text.secondary" } }}
             sx={{
               minWidth: { xs: 150, sm: 200 },
               width: { xs: "48%", sm: "auto" },
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
-                bgcolor: "#0f172a",
+                color: "text.primary",
+                bgcolor: "background.default",
                 "& fieldset": { borderColor: "#334155" },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
               },
             }}
           />
 
-          <FormControl size="small" sx={{ minWidth: { xs: 150, sm: 200 }, width: { xs: "48%", sm: "auto" } }}>
-            <InputLabel sx={{ color: "#94a3b8" }}>Industry</InputLabel>
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: { xs: 150, sm: 200 },
+              width: { xs: "48%", sm: "auto" },
+            }}
+          >
+            <InputLabel sx={{ color: "text.secondary" }}>Industry</InputLabel>
             <Select
               value={filterIndustry}
               onChange={(e) => setFilterIndustry(e.target.value)}
               label="Industry"
               sx={{
-                color: "#e2e8f0",
-                bgcolor: "#0f172a",
-                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                color: "text.primary",
+                bgcolor: "background.default",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#334155",
+                },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#8b5cf6",
                 },
@@ -262,7 +279,7 @@ export default function PlacementDashboard() {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", border: "1px solid #334155" },
+          sx: { bgcolor: "background.paper", border: "1px solid #334155" },
         }}
       >
         <MenuItem onClick={handleOpenEdit}>
@@ -282,21 +299,21 @@ export default function PlacementDashboard() {
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+          sx: { bgcolor: "background.paper", color: "text.primary" },
         }}
       >
         <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
             <FormControl fullWidth>
-              <InputLabel sx={{ color: "#94a3b8" }}>Status</InputLabel>
+              <InputLabel sx={{ color: "text.secondary" }}>Status</InputLabel>
               <Select
                 value={editStatus}
                 onChange={(e) => setEditStatus(e.target.value)}
                 label="Status"
                 sx={{
-                  color: "#e2e8f0",
-                  bgcolor: "#0f172a",
+                  color: "text.primary",
+                  bgcolor: "background.default",
                   "& .MuiOutlinedInput-notchedOutline": {
                     borderColor: "#334155",
                   },
@@ -320,11 +337,11 @@ export default function PlacementDashboard() {
               onChange={(e) => setEditNotes(e.target.value)}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  color: "#e2e8f0",
-                  bgcolor: "#0f172a",
+                  color: "text.primary",
+                  bgcolor: "background.default",
                   "& fieldset": { borderColor: "#334155" },
                 },
-                "& .MuiInputLabel-root": { color: "#94a3b8" },
+                "& .MuiInputLabel-root": { color: "text.secondary" },
               }}
             />
           </Stack>
@@ -332,7 +349,7 @@ export default function PlacementDashboard() {
         <DialogActions>
           <Button
             onClick={() => setEditDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>
@@ -353,20 +370,20 @@ export default function PlacementDashboard() {
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+          sx: { bgcolor: "background.paper", color: "text.primary" },
         }}
       >
         <DialogTitle>Confirm Removal</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to remove {selectedApp?.full_name} from this application?
-            This action cannot be undone.
+            Are you sure you want to remove {selectedApp?.full_name} from this
+            application? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button
             onClick={() => setRemoveDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>

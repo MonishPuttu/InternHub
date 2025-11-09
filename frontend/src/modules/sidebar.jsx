@@ -14,6 +14,7 @@ import {
   IconButton,
   alpha,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   Search as SearchIcon,
   Home as HomeIcon,
@@ -100,6 +101,7 @@ export default function Sidebar({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const theme = useTheme(); // Add theme hook
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleNavigation = (path) => {
@@ -127,8 +129,12 @@ export default function Sidebar({
         "& .MuiDrawer-paper": {
           width: drawerWidth,
           boxSizing: "border-box",
-          backgroundColor: "#0f172a",
-          borderRight: "1px solid rgba(255, 255, 255, 0.04)",
+          backgroundColor: "background.default", // Changed
+          borderRight: "1px solid",
+          borderColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.04)"
+              : "rgba(0, 0, 0, 0.08)", // Dynamic border
           position: { xs: "fixed", md: "relative" },
           height: { xs: "100%", md: "100vh" },
           overflow: "visible",
@@ -139,7 +145,7 @@ export default function Sidebar({
         <Box sx={{ px: 2, mb: 1 }}>
           <Box
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary", // Changed
               fontWeight: 700,
               fontSize: 18,
               px: 1,
@@ -158,20 +164,16 @@ export default function Sidebar({
               return item.roles.includes(userRole);
             })
             .map((item) => {
-              // ✅ Improved active state logic
               let isActive = false;
 
               if (item.path === "/training/student/report-card") {
-                // Report Cards - only active if on report card pages
                 isActive = pathname.startsWith("/training/student/report-card");
               } else if (item.path === "/training") {
-                // Training - active for training but NOT report cards
                 isActive =
                   pathname === "/training" ||
                   pathname.startsWith("/training/placement") ||
                   pathname.startsWith("/training/student/leaderboard");
               } else {
-                // Default - use startsWith
                 isActive = pathname.startsWith(item.path);
               }
 
@@ -186,7 +188,11 @@ export default function Sidebar({
                       backgroundColor: isActive
                         ? alpha("#8b5cf6", 0.12)
                         : "transparent",
-                      color: isActive ? "#a78bfa" : "#94a3b8",
+                      color: isActive
+                        ? "#a78bfa"
+                        : theme.palette.mode === "dark"
+                        ? "#94a3b8"
+                        : "#64748b", // Dynamic text color
                       "&:hover": {
                         backgroundColor: isActive
                           ? alpha("#8b5cf6", 0.18)
@@ -197,7 +203,11 @@ export default function Sidebar({
                     <ListItemIcon
                       sx={{
                         minWidth: 36,
-                        color: isActive ? "#a78bfa" : "#64748b",
+                        color: isActive
+                          ? "#a78bfa"
+                          : theme.palette.mode === "dark"
+                          ? "#64748b"
+                          : "#94a3b8", // Dynamic icon color
                       }}
                     >
                       {item.icon}

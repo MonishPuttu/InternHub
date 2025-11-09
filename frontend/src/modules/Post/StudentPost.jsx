@@ -18,10 +18,12 @@ import {
 import axios from "axios";
 import { BACKEND_URL, INDUSTRIES } from "@/constants/postConstants";
 import PostCard from "@/components/Post/PostCard";
+import { useTheme } from "@mui/material/styles";
 import ApplyDialog from "@/components/Post/ApplyDialog";
 
 export default function StudentPosts() {
   const router = useRouter();
+  const theme = useTheme();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState("");
@@ -33,7 +35,6 @@ export default function StudentPosts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [appliedPosts, setAppliedPosts] = useState([]);
-
   const [showAppliedOnly, setShowAppliedOnly] = useState(false);
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,7 +48,13 @@ export default function StudentPosts() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterIndustry, searchQuery, showSavedOnly, showAppliedOnly, showHistoryOnly]);
+  }, [
+    filterIndustry,
+    searchQuery,
+    showSavedOnly,
+    showAppliedOnly,
+    showHistoryOnly,
+  ]);
 
   useEffect(() => {
     if (posts.length > 0) {
@@ -61,11 +68,8 @@ export default function StudentPosts() {
       const token = localStorage.getItem("token");
       const response = await axios.get(
         `${BACKEND_URL}/api/posts/approved-posts?limit=1000`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (response.data.ok) {
         const approvedPosts = response.data.posts.filter(
           (post) => post.approval_status === "approved"
@@ -82,40 +86,34 @@ export default function StudentPosts() {
 
   const loadSavedPosts = () => {
     const saved = localStorage.getItem("savedPosts");
-    if (saved) {
-      setSavedPosts(JSON.parse(saved));
-    }
+    if (saved) setSavedPosts(JSON.parse(saved));
   };
 
   const loadAppliedPosts = () => {
     const applied = localStorage.getItem("appliedPosts");
-    if (applied) {
-      setAppliedPosts(JSON.parse(applied));
-    }
+    if (applied) setAppliedPosts(JSON.parse(applied));
   };
 
   const fetchAppliedPostsFromBackend = async () => {
     try {
       const token = localStorage.getItem("token");
       const appliedIds = [];
-
-      // Check each post if the student has applied
       for (const post of posts) {
         try {
           const response = await axios.get(
             `${BACKEND_URL}/api/student-applications/check-applied/${post.id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
           if (response.data.ok && response.data.hasApplied) {
             appliedIds.push(post.id);
           }
         } catch (error) {
-          console.error(`Error checking application for post ${post.id}:`, error);
+          console.error(
+            `Error checking application for post ${post.id}:`,
+            error
+          );
         }
       }
-
       setAppliedPosts(appliedIds);
       localStorage.setItem("appliedPosts", JSON.stringify(appliedIds));
     } catch (error) {
@@ -154,23 +152,15 @@ export default function StudentPosts() {
 
   const handleApplySubmit = async (coverLetter, resumeLink) => {
     if (!selectedPost) return;
-
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
         `${BACKEND_URL}/api/student-applications/apply/${selectedPost.id}`,
-        {
-          cover_letter: coverLetter,
-          resume_link: resumeLink,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { cover_letter: coverLetter, resume_link: resumeLink },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (response.data.ok) {
         setSuccessMsg("Application submitted successfully!");
-        // Add to applied posts
         const updatedApplied = [...appliedPosts, selectedPost.id];
         setAppliedPosts(updatedApplied);
         localStorage.setItem("appliedPosts", JSON.stringify(updatedApplied));
@@ -185,7 +175,7 @@ export default function StudentPosts() {
   };
 
   const isExpired = (post) => {
-    if (!post.application_deadline) return true; // null deadline means expired
+    if (!post.application_deadline) return true;
     const deadline = new Date(post.application_deadline);
     const now = new Date();
     return deadline < now;
@@ -193,22 +183,20 @@ export default function StudentPosts() {
 
   const getFilteredPosts = () => {
     let filtered = posts;
-
     if (showAppliedOnly) {
-      // Show only applied posts that are not expired
-      filtered = filtered.filter((post) => appliedPosts.includes(post.id) && !isExpired(post));
+      filtered = filtered.filter(
+        (post) => appliedPosts.includes(post.id) && !isExpired(post)
+      );
     } else if (showHistoryOnly) {
-      // Show only expired applied posts
-      filtered = filtered.filter((post) => appliedPosts.includes(post.id) && isExpired(post));
+      filtered = filtered.filter(
+        (post) => appliedPosts.includes(post.id) && isExpired(post)
+      );
     } else {
-      // Show all posts excluding applied ones (both active and expired)
       filtered = filtered.filter((post) => !appliedPosts.includes(post.id));
     }
-
     if (showSavedOnly) {
       filtered = filtered.filter((post) => savedPosts.includes(post.id));
     }
-
     return filtered.filter((post) => {
       const matchesIndustry =
         filterIndustry === "all" || post.industry === filterIndustry;
@@ -220,8 +208,6 @@ export default function StudentPosts() {
   };
 
   const filteredPosts = getFilteredPosts();
-
-  // Pagination logic
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;
   const endIndex = startIndex + postsPerPage;
@@ -234,7 +220,7 @@ export default function StudentPosts() {
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>
+        <Typography sx={{ color: "text.primary" }}>
           Loading available opportunities...
         </Typography>
       </Box>
@@ -247,11 +233,15 @@ export default function StudentPosts() {
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="h4"
-          sx={{ color: "#e2e8f0", fontWeight: 700, mb: 0.5 }}
+          sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
         >
-          {showAppliedOnly ? "Applied Posts" : showHistoryOnly ? "Application History" : "Available Opportunities"}
+          {showAppliedOnly
+            ? "Applied Posts"
+            : showHistoryOnly
+            ? "Application History"
+            : "Available Opportunities"}
         </Typography>
-        <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
           {showAppliedOnly
             ? "View and track your applied internship and job opportunities"
             : showHistoryOnly
@@ -260,15 +250,28 @@ export default function StudentPosts() {
         </Typography>
 
         {/* Stats */}
-        <Stack direction="row" spacing={3} sx={{ mb: 3 }}>
+        <Stack direction="row" spacing={3} sx={{ mb: 3, flexWrap: "wrap" }}>
           <Box
             sx={{
               cursor: "pointer",
               p: 2,
               borderRadius: 1,
-              border: !showAppliedOnly && !showSavedOnly && !showHistoryOnly ? "2px solid #8b5cf6" : "2px solid transparent",
-              boxShadow: !showAppliedOnly && !showSavedOnly && !showHistoryOnly ? "0 0 10px rgba(139, 92, 246, 0.5)" : "none",
+              border: "2px solid",
+              borderColor:
+                !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+                  ? "#8b5cf6"
+                  : theme.palette.mode === "dark"
+                  ? "#334155"
+                  : "#e2e8f0",
+              bgcolor: "background.paper",
+              boxShadow:
+                !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+                  ? "0 0 10px rgba(139, 92, 246, 0.5)"
+                  : "none",
               transition: "all 0.2s",
+              "&:hover": {
+                borderColor: "#8b5cf6",
+              },
             }}
             onClick={() => {
               setShowAppliedOnly(false);
@@ -279,28 +282,48 @@ export default function StudentPosts() {
             <Typography
               variant="body2"
               sx={{
-                color: !showAppliedOnly && !showSavedOnly && !showHistoryOnly ? "#8b5cf6" : "#94a3b8",
+                color:
+                  !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+                    ? "#8b5cf6"
+                    : "text.secondary",
               }}
             >
               Total Opportunities
             </Typography>
-            <Typography variant="h6" sx={{ color: "#e2e8f0", fontWeight: 700 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "text.primary", fontWeight: 700 }}
+            >
               {posts.filter((post) => !appliedPosts.includes(post.id)).length}
             </Typography>
           </Box>
+
           <Box
             sx={{
+              cursor: "pointer",
               p: 2,
               borderRadius: 1,
-              border: showSavedOnly ? "2px solid #a78bfa" : "2px solid transparent",
-              boxShadow: showSavedOnly ? "0 0 10px rgba(167, 139, 250, 0.5)" : "none",
+              border: "2px solid",
+              borderColor: showSavedOnly
+                ? "#a78bfa"
+                : theme.palette.mode === "dark"
+                ? "#334155"
+                : "#e2e8f0",
+              bgcolor: "background.paper",
+              boxShadow: showSavedOnly
+                ? "0 0 10px rgba(167, 139, 250, 0.5)"
+                : "none",
               transition: "all 0.2s",
+              "&:hover": {
+                borderColor: "#a78bfa",
+              },
             }}
+            onClick={() => setShowSavedOnly(!showSavedOnly)}
           >
             <Typography
               variant="body2"
               sx={{
-                color: showSavedOnly ? "#a78bfa" : "#94a3b8",
+                color: showSavedOnly ? "#a78bfa" : "text.secondary",
               }}
             >
               Saved Posts
@@ -309,14 +332,26 @@ export default function StudentPosts() {
               {savedPosts.length}
             </Typography>
           </Box>
+
           <Box
             sx={{
               cursor: "pointer",
               p: 2,
               borderRadius: 1,
-              border: showAppliedOnly ? "2px solid #10b981" : "2px solid transparent",
-              boxShadow: showAppliedOnly ? "0 0 10px rgba(16, 185, 129, 0.5)" : "none",
+              border: "2px solid",
+              borderColor: showAppliedOnly
+                ? "#10b981"
+                : theme.palette.mode === "dark"
+                ? "#334155"
+                : "#e2e8f0",
+              bgcolor: "background.paper",
+              boxShadow: showAppliedOnly
+                ? "0 0 10px rgba(16, 185, 129, 0.5)"
+                : "none",
               transition: "all 0.2s",
+              "&:hover": {
+                borderColor: "#10b981",
+              },
             }}
             onClick={() => {
               setShowAppliedOnly(true);
@@ -326,26 +361,40 @@ export default function StudentPosts() {
             <Typography
               variant="body2"
               sx={{
-                color: showAppliedOnly ? "#10b981" : "#94a3b8",
+                color: showAppliedOnly ? "#10b981" : "text.secondary",
               }}
             >
               Applied Posts
             </Typography>
             <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
-              {appliedPosts.filter(id => {
-                const post = posts.find(p => p.id === id);
-                return post && !isExpired(post);
-              }).length}
+              {
+                appliedPosts.filter((id) => {
+                  const post = posts.find((p) => p.id === id);
+                  return post && !isExpired(post);
+                }).length
+              }
             </Typography>
           </Box>
+
           <Box
             sx={{
               cursor: "pointer",
               p: 2,
               borderRadius: 1,
-              border: showHistoryOnly ? "2px solid #f59e0b" : "2px solid transparent",
-              boxShadow: showHistoryOnly ? "0 0 10px rgba(245, 158, 11, 0.5)" : "none",
+              border: "2px solid",
+              borderColor: showHistoryOnly
+                ? "#f59e0b"
+                : theme.palette.mode === "dark"
+                ? "#334155"
+                : "#e2e8f0",
+              bgcolor: "background.paper",
+              boxShadow: showHistoryOnly
+                ? "0 0 10px rgba(245, 158, 11, 0.5)"
+                : "none",
               transition: "all 0.2s",
+              "&:hover": {
+                borderColor: "#f59e0b",
+              },
             }}
             onClick={() => {
               setShowHistoryOnly(true);
@@ -355,16 +404,18 @@ export default function StudentPosts() {
             <Typography
               variant="body2"
               sx={{
-                color: showHistoryOnly ? "#f59e0b" : "#94a3b8",
+                color: showHistoryOnly ? "#f59e0b" : "text.secondary",
               }}
             >
               Application History
             </Typography>
             <Typography variant="h6" sx={{ color: "#f59e0b", fontWeight: 700 }}>
-              {appliedPosts.filter(id => {
-                const post = posts.find(p => p.id === id);
-                return post && isExpired(post);
-              }).length}
+              {
+                appliedPosts.filter((id) => {
+                  const post = posts.find((p) => p.id === id);
+                  return post && isExpired(post);
+                }).length
+              }
             </Typography>
           </Box>
         </Stack>
@@ -382,21 +433,25 @@ export default function StudentPosts() {
             sx={{
               flex: 1,
               "& .MuiOutlinedInput-root": {
-                backgroundColor: "#1e293b",
-                color: "#e2e8f0",
-                "& fieldset": { borderColor: "#334155" },
+                backgroundColor: "background.paper",
+                color: "text.primary",
+                "& fieldset": {
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
+                "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
               },
               "& .MuiOutlinedInput-input::placeholder": {
-                color: "#64748b",
-                opacity: 1,
+                color: "text.secondary",
+                opacity: 0.7,
               },
             }}
           />
           <FormControl sx={{ minWidth: 180 }}>
             <InputLabel
               sx={{
-                color: "#94a3b8",
+                color: "text.secondary",
                 "&.Mui-focused": { color: "#8b5cf6" },
               }}
             >
@@ -407,15 +462,44 @@ export default function StudentPosts() {
               onChange={(e) => setFilterIndustry(e.target.value)}
               label="Filter by Industry"
               sx={{
-                backgroundColor: "#1e293b",
-                color: "#e2e8f0",
+                backgroundColor: "background.paper",
+                color: "text.primary",
                 "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#334155",
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                 },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#8b5cf6",
                 },
-                "& .MuiSvgIcon-root": { color: "#94a3b8" },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#8b5cf6",
+                },
+                "& .MuiSvgIcon-root": { color: "text.secondary" },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    bgcolor: "background.paper",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    "& .MuiMenuItem-root": {
+                      color: "text.primary",
+                      "&:hover": {
+                        bgcolor:
+                          theme.palette.mode === "dark"
+                            ? "rgba(139, 92, 246, 0.1)"
+                            : "rgba(139, 92, 246, 0.05)",
+                      },
+                      "&.Mui-selected": {
+                        bgcolor: "rgba(139, 92, 246, 0.15)",
+                        "&:hover": {
+                          bgcolor: "rgba(139, 92, 246, 0.2)",
+                        },
+                      },
+                    },
+                  },
+                },
               }}
             >
               <MenuItem value="all">All Industries</MenuItem>
@@ -437,6 +521,7 @@ export default function StudentPosts() {
               fontWeight: 600,
               "&:hover": {
                 bgcolor: showSavedOnly ? "#7c3aed" : "rgba(139, 92, 246, 0.1)",
+                borderColor: "#7c3aed",
               },
             }}
           >
@@ -456,7 +541,7 @@ export default function StudentPosts() {
                 fontWeight: 600,
                 "&:hover": {
                   bgcolor: "rgba(16, 185, 129, 0.1)",
-                  borderColor: "#10b981",
+                  borderColor: "#059669",
                 },
               }}
             >
@@ -472,12 +557,13 @@ export default function StudentPosts() {
           sx={{
             textAlign: "center",
             py: 8,
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             borderRadius: 2,
-            border: "1px solid #334155",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
-          <Typography variant="h6" sx={{ color: "#e2e8f0", mb: 1 }}>
+          <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
             {showSavedOnly
               ? "No saved posts yet"
               : showAppliedOnly
@@ -486,7 +572,7 @@ export default function StudentPosts() {
               ? "No application history yet"
               : "No opportunities found"}
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             {showSavedOnly
               ? "Save posts to view them here"
               : showAppliedOnly
@@ -506,7 +592,9 @@ export default function StudentPosts() {
                 isSaved={savedPosts.includes(post.id)}
                 onToggleSave={() => toggleSavePost(post.id)}
                 onApply={() => handleApplyClick(post)}
-                onViewDetails={() => router.push(`/post/postdetails/${post.id}`)}
+                onViewDetails={() =>
+                  router.push(`/post/postdetails/${post.id}`)
+                }
                 onShare={() => handleShare(post)}
               />
             ))}
@@ -522,11 +610,16 @@ export default function StudentPosts() {
                 color="primary"
                 sx={{
                   "& .MuiPaginationItem-root": {
-                    color: "#e2e8f0",
+                    color: "text.primary",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   },
                   "& .Mui-selected": {
                     backgroundColor: "#8b5cf6 !important",
                     color: "white",
+                    "&:hover": {
+                      backgroundColor: "#7c3aed !important",
+                    },
                   },
                   "& .MuiPaginationItem-root:hover": {
                     backgroundColor: "rgba(139, 92, 246, 0.1)",
@@ -537,8 +630,6 @@ export default function StudentPosts() {
           )}
         </>
       )}
-
-
 
       {/* Apply Dialog */}
       <ApplyDialog

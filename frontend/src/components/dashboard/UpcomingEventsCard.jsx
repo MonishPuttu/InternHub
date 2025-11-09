@@ -1,7 +1,9 @@
 import { Box, Typography, Stack, Chip } from "@mui/material";
 import { CalendarMonth, LocationOn, Schedule } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 
 export default function UpcomingEventsCard({ events }) {
+  const theme = useTheme();
   const getEventColor = (type) => {
     const colors = {
       oncampus: "#8b5cf6",
@@ -43,7 +45,7 @@ export default function UpcomingEventsCard({ events }) {
   return (
     <Box
       sx={{
-        bgcolor: "#1e293b",
+        bgcolor: "background.paper",
         borderRadius: 2,
         border: "1px solid #334155",
         p: 3,
@@ -51,7 +53,7 @@ export default function UpcomingEventsCard({ events }) {
     >
       <Typography
         variant="h6"
-        sx={{ color: "#e2e8f0", fontWeight: 600, mb: 3 }}
+        sx={{ color: "text.primary", fontWeight: 600, mb: 3 }}
       >
         Upcoming Events
       </Typography>
@@ -64,7 +66,10 @@ export default function UpcomingEventsCard({ events }) {
               p: 2,
               borderRadius: 1.5,
               border: "1px solid #334155",
-              "&:hover": { borderColor: "#8b5cf6", bgcolor: "#0f172a" },
+              "&:hover": {
+                borderColor: "#8b5cf6",
+                bgcolor: "background.default",
+              },
               cursor: "pointer",
               transition: "all 0.2s",
             }}
@@ -81,7 +86,7 @@ export default function UpcomingEventsCard({ events }) {
               <Box sx={{ flex: 1 }}>
                 <Typography
                   variant="body2"
-                  sx={{ color: "#e2e8f0", fontWeight: 600, mb: 0.5 }}
+                  sx={{ color: "text.primary", fontWeight: 600, mb: 0.5 }}
                 >
                   {event.title}
                 </Typography>
@@ -92,23 +97,31 @@ export default function UpcomingEventsCard({ events }) {
                   sx={{ mb: 1 }}
                 >
                   <Stack direction="row" spacing={0.5} alignItems="center">
-                    <Schedule sx={{ fontSize: 14, color: "#94a3b8" }} />
-                    <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                    <Schedule sx={{ fontSize: 14, color: "text.secondary" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
                       {formatDate(event.eventDate)},{" "}
                       {formatTime(event.eventTime)}
                     </Typography>
                   </Stack>
                   {event.location && (
                     <Stack direction="row" spacing={0.5} alignItems="center">
-                      <LocationOn sx={{ fontSize: 14, color: "#94a3b8" }} />
-                      <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                      <LocationOn
+                        sx={{ fontSize: 14, color: "text.secondary" }}
+                      />
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "text.secondary" }}
+                      >
                         {event.location}
                       </Typography>
                     </Stack>
                   )}
                 </Stack>
                 {event.description && (
-                  <Typography variant="caption" sx={{ color: "#64748b" }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {event.description}
                   </Typography>
                 )}
@@ -121,7 +134,7 @@ export default function UpcomingEventsCard({ events }) {
       {events.length === 0 && (
         <Box sx={{ textAlign: "center", py: 4 }}>
           <CalendarMonth sx={{ fontSize: 48, color: "#334155", mb: 1 }} />
-          <Typography variant="body2" sx={{ color: "#64748b" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             No upcoming events
           </Typography>
         </Box>

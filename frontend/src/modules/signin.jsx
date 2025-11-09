@@ -16,6 +16,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import SchoolIcon from "@mui/icons-material/School";
 import BusinessIcon from "@mui/icons-material/Business";
+import { useTheme } from "@mui/material/styles";
 import WorkIcon from "@mui/icons-material/Work";
 import {
   StyledTextField,
@@ -49,6 +50,7 @@ const roleContent = {
 
 export default function SignIn() {
   const router = useRouter();
+  const theme = useTheme();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -111,12 +113,18 @@ export default function SignIn() {
   const IconComponent = currentRole.icon;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       {/* Left Side - Form */}
       <Box
         sx={{
           width: { xs: "100%", md: "45%" },
-          bgcolor: "#0f172a",
+          bgcolor: "background.default",
           p: 4,
           display: "flex",
           flexDirection: "column",
@@ -126,11 +134,11 @@ export default function SignIn() {
         <Box sx={{ maxWidth: 450, mx: "auto", width: "100%" }}>
           <Typography
             variant="h4"
-            sx={{ color: "#e2e8f0", fontWeight: 700, mb: 1 }}
+            sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
           >
             Login
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 4 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
             Enter your account details
           </Typography>
 
@@ -142,7 +150,10 @@ export default function SignIn() {
 
           <Box component="form" onSubmit={handleSubmit}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8", mb: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 1 }}
+              >
                 I am a...
               </Typography>
               <StyledSelect
@@ -183,7 +194,7 @@ export default function SignIn() {
                       <IconButton
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
-                        sx={{ color: "#94a3b8" }}
+                        sx={{ color: "text.secondary" }}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -230,7 +241,7 @@ export default function SignIn() {
             </Button>
 
             <Box sx={{ textAlign: "center", mt: 3 }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 Don't have an account?{" "}
                 <Link
                   component={NextLink}

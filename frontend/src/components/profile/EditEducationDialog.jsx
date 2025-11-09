@@ -11,6 +11,7 @@ import {
   Stack,
   Box,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 export default function EditEducationDialog({
   open,
@@ -18,6 +19,7 @@ export default function EditEducationDialog({
   education,
   onSave,
 }) {
+  const theme = useTheme();
   const [formData, setFormData] = useState(education || {});
 
   useEffect(() => {
@@ -30,14 +32,18 @@ export default function EditEducationDialog({
 
   const textFieldStyles = {
     "& .MuiOutlinedInput-root": {
-      color: "#e2e8f0",
-      bgcolor: "#1e293b",
-      "& fieldset": { borderColor: "#334155" },
+      color: "text.primary",
+      bgcolor: "background.default",
+      "& fieldset": {
+        borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+      },
       "&:hover fieldset": { borderColor: "#8b5cf6" },
       "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
     },
-    "& .MuiInputLabel-root": { color: "#94a3b8" },
-    "& .MuiInputLabel-root.Mui-focused": { color: "#8b5cf6" },
+    "& .MuiInputLabel-root": {
+      color: "text.secondary",
+      "&.Mui-focused": { color: "#8b5cf6" },
+    },
   };
 
   return (
@@ -48,21 +54,26 @@ export default function EditEducationDialog({
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: "#0f172a",
+          bgcolor: "background.paper",
           backgroundImage: "none",
+          border: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          borderRadius: 2,
         },
       }}
     >
       <DialogTitle
         sx={{
-          bgcolor: "#1e293b",
-          color: "#e2e8f0",
-          borderBottom: "1px solid #334155",
+          bgcolor: "background.paper",
+          color: "text.primary",
+          borderBottom: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          fontWeight: 600,
         }}
       >
         {education?.id ? "Edit Education" : "Add Education"}
       </DialogTitle>
-      <DialogContent sx={{ bgcolor: "#0f172a", pt: 3 }}>
+      <DialogContent sx={{ bgcolor: "background.paper", pt: 3 }}>
         <Stack spacing={3}>
           <TextField
             label="Degree"
@@ -143,14 +154,24 @@ export default function EditEducationDialog({
         </Stack>
       </DialogContent>
       <DialogActions
-        sx={{ bgcolor: "#0f172a", p: 2.5, borderTop: "1px solid #334155" }}
+        sx={{
+          bgcolor: "background.paper",
+          p: 2.5,
+          borderTop: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        }}
       >
         <Button
           onClick={onClose}
           sx={{
-            color: "#94a3b8",
+            color: "text.secondary",
             textTransform: "none",
-            "&:hover": { bgcolor: "#1e293b" },
+            "&:hover": {
+              bgcolor:
+                theme.palette.mode === "dark"
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "rgba(139, 92, 246, 0.05)",
+            },
           }}
         >
           Cancel

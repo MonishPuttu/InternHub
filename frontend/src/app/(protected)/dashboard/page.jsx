@@ -38,7 +38,7 @@ export default function DashboardPage() {
         justifyContent: "center",
         alignItems: "center",
         height: "100vh",
-        bgcolor: "#0f172a",
+        bgcolor: "background.default",
       }}
     >
       <CircularProgress sx={{ color: "#8b5cf6" }} />

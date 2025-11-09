@@ -9,6 +9,7 @@ import {
   Typography,
   Stack,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import MenuIcon from "@mui/icons-material/Menu";
 import Sidebar from "@/modules/sidebar";
 import UserMenu from "@/components/auth/userMenu";
@@ -19,6 +20,7 @@ const DRAWER_WIDTH = 240;
 
 export default function ProtectedLayout({ children }) {
   const router = useRouter();
+  const theme = useTheme(); // Add this
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -43,7 +45,13 @@ export default function ProtectedLayout({ children }) {
   if (!mounted) return null;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#0f172a" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default", // Changed from hardcoded color
+      }}
+    >
       {/* Sidebar */}
       <Box
         component="nav"
@@ -84,8 +92,9 @@ export default function ProtectedLayout({ children }) {
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: "#1e293b",
-            borderBottom: "1px solid #334155",
+            bgcolor: "background.paper", // Changed from hardcoded color
+            borderBottom: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
           <Toolbar>
@@ -93,13 +102,21 @@ export default function ProtectedLayout({ children }) {
               color="inherit"
               edge="start"
               onClick={() => setMobileOpen(true)}
-              sx={{ mr: 2, display: { md: "none" } }}
+              sx={{
+                mr: 2,
+                display: { md: "none" },
+                color: "text.primary", // Added for theme support
+              }}
             >
               <MenuIcon />
             </IconButton>
             <Typography
               variant="h6"
-              sx={{ fontWeight: 700, color: "#e2e8f0", flexGrow: 1 }}
+              sx={{
+                fontWeight: 700,
+                color: "text.primary", // Changed from hardcoded color
+                flexGrow: 1,
+              }}
             ></Typography>
             {/* User Menu */}
             <UserMenu />

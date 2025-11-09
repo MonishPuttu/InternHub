@@ -193,7 +193,7 @@ export default function PlacementTraining() {
   const AssessmentCard = ({ assessment }) => (
     <Card
       sx={{
-        bgcolor: "#1e293b",
+        bgcolor: "background.paper",
         border: "1px solid #334155",
         borderRadius: 2,
         width: "100%",
@@ -225,7 +225,7 @@ export default function PlacementTraining() {
             <Typography
               variant="h6"
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 fontWeight: "bold",
                 wordBreak: "break-word",
               }}
@@ -254,10 +254,10 @@ export default function PlacementTraining() {
                 size="small"
                 onClick={(e) => handleMenuToggle(e, assessment.id)}
                 sx={{
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   padding: "8px",
                   "&:hover": {
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     bgcolor: "#334155",
                   },
                 }}
@@ -272,7 +272,7 @@ export default function PlacementTraining() {
                     position: "absolute",
                     top: "100%",
                     right: 0,
-                    bgcolor: "#1e293b",
+                    bgcolor: "background.paper",
                     border: "1px solid #334155",
                     borderRadius: 1,
                     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
@@ -332,7 +332,7 @@ export default function PlacementTraining() {
         <Typography
           variant="body2"
           sx={{
-            color: "#94a3b8",
+            color: "text.secondary",
             mb: 2,
             wordBreak: "break-word",
           }}
@@ -358,7 +358,7 @@ export default function PlacementTraining() {
               "&:hover": {
                 bgcolor: "#8b5cf610",
                 borderColor: "#7c3aed",
-                color: "#e2e8f0",
+                color: "text.primary",
               },
             }}
           >
@@ -381,7 +381,7 @@ export default function PlacementTraining() {
               "&:hover": {
                 bgcolor: "#10b98110",
                 borderColor: "#059669",
-                color: "#e2e8f0",
+                color: "text.primary",
               },
             }}
           >
@@ -408,7 +408,10 @@ export default function PlacementTraining() {
         alignItems="center"
         mb={4}
       >
-        <Typography variant="h4" sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+        <Typography
+          variant="h4"
+          sx={{ color: "text.primary", fontWeight: "bold" }}
+        >
           Training & Assessments
         </Typography>
         <Button
@@ -454,7 +457,7 @@ export default function PlacementTraining() {
           borderBottom: "1px solid #334155",
           mb: 3,
           "& .MuiTab-root": {
-            color: "#64748b",
+            color: "text.secondary",
             textTransform: "none",
             fontSize: "1rem",
             "&.Mui-selected": {
@@ -488,14 +491,14 @@ export default function PlacementTraining() {
           {assessments.recentlyCreated.length === 0 ? (
             <Card
               sx={{
-                bgcolor: "#1e293b",
+                bgcolor: "background.paper",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 p: 4,
                 textAlign: "center",
               }}
             >
-              <Typography variant="h6" sx={{ color: "#94a3b8" }}>
+              <Typography variant="h6" sx={{ color: "text.secondary" }}>
                 No recently created assessments
               </Typography>
             </Card>
@@ -512,14 +515,14 @@ export default function PlacementTraining() {
           {assessments.ongoing.length === 0 ? (
             <Card
               sx={{
-                bgcolor: "#1e293b",
+                bgcolor: "background.paper",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 p: 4,
                 textAlign: "center",
               }}
             >
-              <Typography variant="h6" sx={{ color: "#94a3b8" }}>
+              <Typography variant="h6" sx={{ color: "text.secondary" }}>
                 No ongoing assessments
               </Typography>
             </Card>
@@ -536,14 +539,14 @@ export default function PlacementTraining() {
           {assessments.completed.length === 0 ? (
             <Card
               sx={{
-                bgcolor: "#1e293b",
+                bgcolor: "background.paper",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 p: 4,
                 textAlign: "center",
               }}
             >
-              <Typography variant="h6" sx={{ color: "#94a3b8" }}>
+              <Typography variant="h6" sx={{ color: "text.secondary" }}>
                 No completed assessments
               </Typography>
             </Card>
@@ -563,20 +566,20 @@ export default function PlacementTraining() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
           },
         }}
       >
-        <DialogTitle sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+        <DialogTitle sx={{ color: "text.primary", fontWeight: "bold" }}>
           Create Assessment
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Typography
             variant="body2"
             sx={{
-              color: "#94a3b8",
+              color: "text.secondary",
               mb: 3,
               textAlign: "center",
             }}
@@ -592,7 +595,7 @@ export default function PlacementTraining() {
                 router.push("/training/placement/premade-assessments");
               }}
               sx={{
-                bgcolor: "#0f172a",
+                bgcolor: "background.default",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 cursor: "pointer",
@@ -616,7 +619,7 @@ export default function PlacementTraining() {
                   <Typography
                     variant="h6"
                     sx={{
-                      color: "#e2e8f0",
+                      color: "text.primary",
                       fontWeight: "bold",
                       mb: 0.5,
                     }}
@@ -626,7 +629,7 @@ export default function PlacementTraining() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#94a3b8",
+                      color: "text.secondary",
                     }}
                   >
                     Choose from pre-built assessments based on specific topics
@@ -643,7 +646,7 @@ export default function PlacementTraining() {
                 router.push("/training/placement/create-assessment");
               }}
               sx={{
-                bgcolor: "#0f172a",
+                bgcolor: "background.default",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 cursor: "pointer",
@@ -667,7 +670,7 @@ export default function PlacementTraining() {
                   <Typography
                     variant="h6"
                     sx={{
-                      color: "#e2e8f0",
+                      color: "text.primary",
                       fontWeight: "bold",
                       mb: 0.5,
                     }}
@@ -677,7 +680,7 @@ export default function PlacementTraining() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#94a3b8",
+                      color: "text.secondary",
                     }}
                   >
                     Build your own assessment from scratch with custom questions
@@ -698,17 +701,17 @@ export default function PlacementTraining() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
           },
         }}
       >
-        <DialogTitle sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+        <DialogTitle sx={{ color: "text.primary", fontWeight: "bold" }}>
           Delete Assessment
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Typography sx={{ color: "#e2e8f0", mb: 2 }}>
+          <Typography sx={{ color: "text.primary", mb: 2 }}>
             Are you sure you want to delete{" "}
             <strong>"{deleteDialog.assessment?.title}"</strong>?
           </Typography>
@@ -723,7 +726,7 @@ export default function PlacementTraining() {
           <Button
             onClick={() => setDeleteDialog({ open: false, assessment: null })}
             disabled={deleting}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>

@@ -20,6 +20,7 @@ import {
   NavigateNext,
   Assignment,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { apiRequest } from "@/lib/api";
 
 const STATUS_CONFIG = {
@@ -33,6 +34,7 @@ const STATUS_CONFIG = {
 export default function TimelinePage() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const router = useRouter();
 
@@ -89,7 +91,10 @@ export default function TimelinePage() {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" alignItems="center" gap={2} mb={3}>
         <Assignment sx={{ fontSize: 32, color: "#8b5cf6" }} />
-        <Typography variant="h4" sx={{ color: "#e2e8f0", fontWeight: "bold" }}>
+        <Typography
+          variant="h4"
+          sx={{ color: "text.primary", fontWeight: "bold" }}
+        >
           My Applications
         </Typography>
       </Box>
@@ -98,13 +103,13 @@ export default function TimelinePage() {
         <Card
           sx={{
             p: 4,
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             borderRadius: 2,
             textAlign: "center",
           }}
         >
-          <Typography sx={{ color: "#94a3b8", mb: 2 }}>
+          <Typography sx={{ color: "text.secondary", mb: 2 }}>
             No applications yet. Apply to jobs to see them here!
           </Typography>
           <Button
@@ -126,7 +131,7 @@ export default function TimelinePage() {
               onChange={handleTabChange}
               sx={{
                 "& .MuiTab-root": {
-                  color: "#94a3b8",
+                  color: "text.secondary",
                   textTransform: "none",
                   fontSize: "1rem",
                   fontWeight: 500,
@@ -166,7 +171,7 @@ export default function TimelinePage() {
                       size="small"
                       sx={{
                         bgcolor: "#64748b20",
-                        color: "#94a3b8",
+                        color: "text.secondary",
                         height: 20,
                         fontSize: "0.75rem",
                       }}
@@ -182,13 +187,13 @@ export default function TimelinePage() {
             <Card
               sx={{
                 p: 4,
-                bgcolor: "#1e293b",
+                bgcolor: "background.paper",
                 border: "1px solid #334155",
                 borderRadius: 2,
                 textAlign: "center",
               }}
             >
-              <Typography sx={{ color: "#94a3b8" }}>
+              <Typography sx={{ color: "text.secondary" }}>
                 No {activeTab === 0 ? "ongoing" : "completed"} applications
               </Typography>
             </Card>
@@ -217,7 +222,7 @@ export default function TimelinePage() {
                     <Card
                       sx={{
                         p: 3,
-                        bgcolor: "#1e293b",
+                        bgcolor: "background.paper",
                         border: "1px solid #334155",
                         borderRadius: 2,
                         cursor: "pointer",
@@ -248,7 +253,7 @@ export default function TimelinePage() {
                           <Typography
                             variant="h6"
                             sx={{
-                              color: "#e2e8f0",
+                              color: "text.primary",
                               fontWeight: "bold",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -260,7 +265,7 @@ export default function TimelinePage() {
                           <Typography
                             variant="body2"
                             sx={{
-                              color: "#94a3b8",
+                              color: "text.secondary",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -282,8 +287,11 @@ export default function TimelinePage() {
                       </Box>
 
                       <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <Schedule sx={{ fontSize: 16, color: "#64748b" }} />
-                        <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                        <Schedule sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary" }}
+                        >
                           Applied{" "}
                           {new Date(
                             application.applied_at

@@ -18,6 +18,7 @@ import {
   EmojiEvents,
   AttachMoney,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import axios from "axios";
 import { Line, Pie } from "react-chartjs-2";
 import {
@@ -51,6 +52,7 @@ const BACKEND_URL =
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("6");
   const [stats, setStats] = useState(null);
+  const theme = useTheme();
   const [timeline, setTimeline] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -134,7 +136,7 @@ export default function AnalyticsPage() {
         display: true,
         position: "bottom",
         labels: {
-          color: "#94a3b8",
+          color: "text.secondary",
           padding: 20,
           font: { size: 12 },
           usePointStyle: true,
@@ -145,11 +147,11 @@ export default function AnalyticsPage() {
     scales: {
       x: {
         grid: { color: "#334155" },
-        ticks: { color: "#94a3b8" },
+        ticks: { color: "text.secondary" },
       },
       y: {
         grid: { color: "#334155" },
-        ticks: { color: "#94a3b8", precision: 0 },
+        ticks: { color: "text.secondary", precision: 0 },
         beginAtZero: true,
       },
     },
@@ -182,7 +184,7 @@ export default function AnalyticsPage() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#1e293b",
+        backgroundColor: "background.paper",
         callbacks: {
           label: (context) => {
             const label = context.label || "";
@@ -198,7 +200,9 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: "#e2e8f0" }}>Loading analytics...</Typography>
+        <Typography sx={{ color: "text.primary" }}>
+          Loading analytics...
+        </Typography>
       </Box>
     );
   }
@@ -216,14 +220,14 @@ export default function AnalyticsPage() {
           <Typography
             variant="h4"
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: 700,
               mb: 0.5,
             }}
           >
             Career Analytics
           </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Deep insights into your placement journey and performance metrics
           </Typography>
         </Box>
@@ -235,13 +239,13 @@ export default function AnalyticsPage() {
               setTimeRange(e.target.value);
             }}
             sx={{
-              bgcolor: "#1e293b",
-              color: "#e2e8f0",
+              bgcolor: "background.paper",
+              color: "text.primary",
               ".MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
               "&:hover .MuiOutlinedInput-notchedOutline": {
                 borderColor: "#8b5cf6",
               },
-              ".MuiSvgIcon-root": { color: "#94a3b8" },
+              ".MuiSvgIcon-root": { color: "text.secondary" },
             }}
           >
             <MenuItem value="3">Last 3 months</MenuItem>
@@ -320,7 +324,7 @@ export default function AnalyticsPage() {
         <Paper
           elevation={0}
           sx={{
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             borderRadius: 2,
             border: "1px solid #334155",
             p: 3,
@@ -329,7 +333,7 @@ export default function AnalyticsPage() {
           <Typography
             variant="h6"
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: 600,
               mb: 0.5,
             }}
@@ -339,7 +343,7 @@ export default function AnalyticsPage() {
           <Typography
             variant="body2"
             sx={{
-              color: "#94a3b8",
+              color: "text.secondary",
               mb: 3,
             }}
           >
@@ -354,7 +358,7 @@ export default function AnalyticsPage() {
         <Paper
           elevation={0}
           sx={{
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             borderRadius: 2,
             border: "1px solid #334155",
             p: 3,
@@ -363,7 +367,7 @@ export default function AnalyticsPage() {
           <Typography
             variant="h6"
             sx={{
-              color: "#e2e8f0",
+              color: "text.primary",
               fontWeight: 600,
               mb: 0.5,
             }}
@@ -373,7 +377,7 @@ export default function AnalyticsPage() {
           <Typography
             variant="body2"
             sx={{
-              color: "#94a3b8",
+              color: "text.secondary",
               mb: 3,
             }}
           >
@@ -389,7 +393,7 @@ export default function AnalyticsPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   height: "100%",
-                  color: "#64748b",
+                  color: "text.secondary",
                 }}
               >
                 <Typography variant="body2">No data available</Typography>
@@ -415,14 +419,14 @@ export default function AnalyticsPage() {
                   />
                   <Typography
                     variant="body2"
-                    sx={{ color: "#94a3b8", fontSize: "0.875rem" }}
+                    sx={{ color: "text.secondary", fontSize: "0.875rem" }}
                   >
                     {ind.industry}
                   </Typography>
                 </Stack>
                 <Typography
                   variant="body2"
-                  sx={{ color: "#e2e8f0", fontWeight: 600 }}
+                  sx={{ color: "text.primary", fontWeight: 600 }}
                 >
                   {ind.percentage}%
                 </Typography>
@@ -440,7 +444,7 @@ function StatsCard({ icon, value, label, subtitle }) {
     <Card
       elevation={0}
       sx={{
-        bgcolor: "#1e293b",
+        bgcolor: "background.paper",
         borderRadius: 2,
         border: "1px solid #334155",
         "&:hover": {
@@ -451,11 +455,11 @@ function StatsCard({ icon, value, label, subtitle }) {
       }}
     >
       <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ color: "#64748b", mb: 1.5 }}>{icon}</Box>
+        <Box sx={{ color: "text.secondary", mb: 1.5 }}>{icon}</Box>
         <Typography
           variant="h4"
           sx={{
-            color: "#e2e8f0",
+            color: "text.primary",
             fontWeight: 700,
             mb: 0.5,
             fontSize: "2rem",
@@ -466,14 +470,14 @@ function StatsCard({ icon, value, label, subtitle }) {
         <Typography
           variant="body2"
           sx={{
-            color: "#e2e8f0",
+            color: "text.primary",
             mb: 0.5,
             fontWeight: 500,
           }}
         >
           {label}
         </Typography>
-        <Typography variant="caption" sx={{ color: "#64748b" }}>
+        <Typography variant="caption" sx={{ color: "text.secondary" }}>
           {subtitle}
         </Typography>
       </CardContent>

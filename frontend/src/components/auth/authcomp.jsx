@@ -8,9 +8,9 @@ import {
 
 export const inputStyles = {
   "& .MuiOutlinedInput-root": {
-    bgcolor: "#1e293b",
+    bgcolor: "background.paper",
     borderRadius: 1.5,
-    color: "#e2e8f0",
+    color: "text.primary",
     "& fieldset": {
       borderColor: "#334155",
     },
@@ -22,13 +22,13 @@ export const inputStyles = {
     },
   },
   "& .MuiInputLabel-root": {
-    color: "#94a3b8",
+    color: "text.secondary",
   },
   "& .MuiSelect-select": {
-    color: "#e2e8f0",
+    color: "text.primary",
   },
   "& .MuiSvgIcon-root": {
-    color: "#94a3b8",
+    color: "text.secondary",
   },
 };
 
@@ -60,7 +60,7 @@ export const StyledSelect = ({
   required = false,
 }) => (
   <FormControl fullWidth sx={inputStyles}>
-    <InputLabel sx={{ color: "#94a3b8" }}>{label}</InputLabel>
+    <InputLabel sx={{ color: "text.secondary" }}>{label}</InputLabel>
     <Select
       value={value}
       onChange={(e) => onChange(e)}

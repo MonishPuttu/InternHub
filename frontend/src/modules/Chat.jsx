@@ -18,6 +18,7 @@ import axios from "axios";
 import ChatSidebar from "@/components/Chat/ChatSidebar";
 import ChatMessages from "@/components/Chat/ChatMessages";
 import useChat from "@/hooks/useChat";
+import { useTheme } from "@mui/material/styles";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -42,6 +43,7 @@ export default function ChatPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
+  const theme = useTheme();
   const [joinRoomId, setJoinRoomId] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -187,7 +189,11 @@ export default function ChatPage() {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0", minWidth: 400 },
+          sx: {
+            bgcolor: "background.paper",
+            color: "text.primary",
+            minWidth: 400,
+          },
         }}
       >
         <DialogTitle>Create New Room</DialogTitle>
@@ -206,18 +212,18 @@ export default function ChatPage() {
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
+                color: "text.primary",
                 "& fieldset": { borderColor: "#334155" },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
               },
-              "& .MuiInputLabel-root": { color: "#94a3b8" },
+              "& .MuiInputLabel-root": { color: "text.secondary" },
             }}
           />
         </DialogContent>
         <DialogActions>
           <Button
             onClick={() => setCreateDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>
@@ -236,12 +242,16 @@ export default function ChatPage() {
         open={joinDialogOpen}
         onClose={() => setJoinDialogOpen(false)}
         PaperProps={{
-          sx: { bgcolor: "#1e293b", color: "#e2e8f0", minWidth: 400 },
+          sx: {
+            bgcolor: "background.paper",
+            color: "text.primary",
+            minWidth: 400,
+          },
         }}
       >
         <DialogTitle>Join Existing Room</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: "#94a3b8", mb: 2 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
             Enter the Room ID to join an existing room
           </Typography>
           <TextField
@@ -259,19 +269,19 @@ export default function ChatPage() {
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                color: "#e2e8f0",
+                color: "text.primary",
                 fontFamily: "monospace",
                 "& fieldset": { borderColor: "#334155" },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
               },
-              "& .MuiInputLabel-root": { color: "#94a3b8" },
+              "& .MuiInputLabel-root": { color: "text.secondary" },
             }}
           />
         </DialogContent>
         <DialogActions>
           <Button
             onClick={() => setJoinDialogOpen(false)}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             Cancel
           </Button>

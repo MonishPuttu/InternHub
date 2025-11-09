@@ -31,6 +31,7 @@ import {
   Business,
   Numbers,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { apiRequest } from "@/lib/api";
 
 const BRANCH_OPTIONS = [
@@ -50,6 +51,7 @@ export default function Leaderboard({ params }) {
   const { assessmentId } = use(params);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
   const [assessmentTitle, setAssessmentTitle] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [anchorEl, setAnchorEl] = useState(null); // ✅ For filter menu
@@ -111,7 +113,7 @@ export default function Leaderboard({ params }) {
         sx={{
           p: 4,
           mb: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
@@ -127,7 +129,7 @@ export default function Leaderboard({ params }) {
             <Typography
               variant="h4"
               sx={{
-                color: "#e2e8f0",
+                color: "text.primary",
                 fontWeight: "bold",
               }}
             >
@@ -152,7 +154,7 @@ export default function Leaderboard({ params }) {
           <Typography
             variant="body1"
             sx={{
-              color: "#94a3b8",
+              color: "text.secondary",
             }}
           >
             {assessmentTitle}
@@ -182,13 +184,16 @@ export default function Leaderboard({ params }) {
         onClose={handleFilterClose}
         PaperProps={{
           sx: {
-            bgcolor: "#1e293b",
+            bgcolor: "background.paper",
             border: "1px solid #334155",
             minWidth: 220,
           },
         }}
       >
-        <MenuItem disabled sx={{ color: "#94a3b8", fontSize: "0.875rem" }}>
+        <MenuItem
+          disabled
+          sx={{ color: "text.secondary", fontSize: "0.875rem" }}
+        >
           Filter Options
         </MenuItem>
         <Divider sx={{ borderColor: "#334155" }} />
@@ -197,8 +202,8 @@ export default function Leaderboard({ params }) {
           onClick={() => handleBranchSelect("all")}
           selected={selectedBranch === "all"}
           sx={{
-            color: "#e2e8f0",
-            "&:hover": { bgcolor: "#0f172a" },
+            color: "text.primary",
+            "&:hover": { bgcolor: "background.default" },
             "&.Mui-selected": { bgcolor: "#8b5cf620" },
           }}
         >
@@ -216,8 +221,8 @@ export default function Leaderboard({ params }) {
             onClick={() => handleBranchSelect(branch)}
             selected={selectedBranch === branch}
             sx={{
-              color: "#e2e8f0",
-              "&:hover": { bgcolor: "#0f172a" },
+              color: "text.primary",
+              "&:hover": { bgcolor: "background.default" },
               "&.Mui-selected": { bgcolor: "#8b5cf620" },
             }}
           >
@@ -234,13 +239,15 @@ export default function Leaderboard({ params }) {
         elevation={3}
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
       >
         {leaderboardData.length === 0 ? (
-          <Typography sx={{ color: "#94a3b8", textAlign: "center", py: 3 }}>
+          <Typography
+            sx={{ color: "text.secondary", textAlign: "center", py: 3 }}
+          >
             No leaderboard data available
           </Typography>
         ) : (
@@ -250,43 +257,49 @@ export default function Leaderboard({ params }) {
                 <TableRow sx={{ borderBottom: "1px solid #334155" }}>
                   <TableCell
                     sx={{
-                      color: "#94a3b8",
+                      color: "text.secondary",
                       fontWeight: "bold",
                       textAlign: "center",
                     }}
                   >
                     Rank
                   </TableCell>
-                  <TableCell sx={{ color: "#94a3b8", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
+                  >
                     Student Name
                   </TableCell>
-                  <TableCell sx={{ color: "#94a3b8", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
+                  >
                     Roll Number
                   </TableCell>
-                  <TableCell sx={{ color: "#94a3b8", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
+                  >
                     Department
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Score
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Percentage
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Time Taken
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ color: "#94a3b8", fontWeight: "bold" }}
+                    sx={{ color: "text.secondary", fontWeight: "bold" }}
                   >
                     Date
                   </TableCell>
@@ -303,7 +316,10 @@ export default function Leaderboard({ params }) {
                     }
                     sx={{
                       borderBottom: "1px solid #334155",
-                      "&:hover": { bgcolor: "#0f172a", cursor: "pointer" },
+                      "&:hover": {
+                        bgcolor: "background.default",
+                        cursor: "pointer",
+                      },
                       backgroundColor:
                         index === 0
                           ? "#8b5cf610"
@@ -316,7 +332,7 @@ export default function Leaderboard({ params }) {
                   >
                     <TableCell
                       sx={{
-                        color: "#e2e8f0",
+                        color: "text.primary",
                         fontWeight: "bold",
                         textAlign: "center",
                         py: 2,
@@ -338,10 +354,10 @@ export default function Leaderboard({ params }) {
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ color: "#e2e8f0", py: 2 }}>
+                    <TableCell sx={{ color: "text.primary", py: 2 }}>
                       {student.studentName}
                     </TableCell>
-                    <TableCell sx={{ color: "#94a3b8", py: 2 }}>
+                    <TableCell sx={{ color: "text.secondary", py: 2 }}>
                       {student.rollNumber}
                     </TableCell>
                     <TableCell sx={{ py: 2 }}>
@@ -387,7 +403,7 @@ export default function Leaderboard({ params }) {
                     <TableCell
                       align="center"
                       sx={{
-                        color: "#94a3b8",
+                        color: "text.secondary",
                         py: 2,
                       }}
                     >

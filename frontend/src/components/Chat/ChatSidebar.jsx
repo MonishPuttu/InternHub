@@ -13,6 +13,7 @@ import {
   Button,
   Stack,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Search, Add, Login } from "@mui/icons-material";
 
 export default function ChatSidebar({
@@ -23,6 +24,7 @@ export default function ChatSidebar({
   onJoinRoom,
   user,
 }) {
+  const theme = useTheme();
   const initials = (name) => {
     if (!name) return "?";
     return name
@@ -38,7 +40,7 @@ export default function ChatSidebar({
       sx={{
         width: "100%",
         height: "100%",
-        bgcolor: "#0f172a",
+        bgcolor: "background.default",
         borderRight: "1px solid #1e293b",
         display: "flex",
         flexDirection: "column",
@@ -48,13 +50,13 @@ export default function ChatSidebar({
       <Box
         sx={{
           p: 2,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           borderBottom: "1px solid #334155",
         }}
       >
         <Typography
           variant="h6"
-          sx={{ color: "#e2e8f0", fontWeight: 600, mb: 2 }}
+          sx={{ color: "text.primary", fontWeight: 600, mb: 2 }}
         >
           Chats
         </Typography>
@@ -65,14 +67,14 @@ export default function ChatSidebar({
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Search sx={{ color: "#64748b" }} />
+                <Search sx={{ color: "text.secondary" }} />
               </InputAdornment>
             ),
           }}
           sx={{
             "& .MuiOutlinedInput-root": {
-              color: "#e2e8f0",
-              bgcolor: "#0f172a",
+              color: "text.primary",
+              bgcolor: "background.default",
               "& fieldset": { borderColor: "#334155" },
               "&:hover fieldset": { borderColor: "#8b5cf6" },
             },
@@ -95,7 +97,7 @@ export default function ChatSidebar({
                   selectedRoom?.id === room.id
                     ? "4px solid #8b5cf6"
                     : "4px solid transparent",
-                "&:hover": { bgcolor: "#1e293b" },
+                "&:hover": { bgcolor: "background.paper" },
               }}
             >
               <Avatar
@@ -112,7 +114,7 @@ export default function ChatSidebar({
                 <Typography
                   variant="body1"
                   sx={{
-                    color: "#e2e8f0",
+                    color: "text.primary",
                     fontWeight: 600,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -124,7 +126,7 @@ export default function ChatSidebar({
                 <Typography
                   variant="caption"
                   sx={{
-                    color: "#64748b",
+                    color: "text.secondary",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -140,7 +142,7 @@ export default function ChatSidebar({
 
         {rooms.length === 0 && (
           <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               No rooms yet
             </Typography>
           </Box>
@@ -169,7 +171,7 @@ export default function ChatSidebar({
             startIcon={<Login />}
             sx={{
               bgcolor: "#334155",
-              color: "#e2e8f0",
+              color: "text.primary",
               width: "100%",
               borderRadius: 2,
               textTransform: "none",

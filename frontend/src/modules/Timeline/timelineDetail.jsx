@@ -29,6 +29,7 @@ import {
   ArrowBack,
   Business,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { apiRequest } from "@/lib/api";
 
 const STATUS_CONFIG = {
@@ -53,6 +54,7 @@ export default function TimelineDetailPage({ params }) {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -117,7 +119,9 @@ export default function TimelineDetailPage({ params }) {
   if (!data) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Typography sx={{ color: "#94a3b8" }}>Timeline not found</Typography>
+        <Typography sx={{ color: "text.secondary" }}>
+          Timeline not found
+        </Typography>
       </Container>
     );
   }
@@ -139,7 +143,7 @@ export default function TimelineDetailPage({ params }) {
       <Card
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
           mb: 3,
@@ -152,11 +156,11 @@ export default function TimelineDetailPage({ params }) {
           <Box flex={1}>
             <Typography
               variant="h5"
-              sx={{ color: "#e2e8f0", fontWeight: "bold", mb: 0.5 }}
+              sx={{ color: "text.primary", fontWeight: "bold", mb: 0.5 }}
             >
               {post.position}
             </Typography>
-            <Typography variant="h6" sx={{ color: "#94a3b8" }}>
+            <Typography variant="h6" sx={{ color: "text.secondary" }}>
               {post.company_name}
             </Typography>
           </Box>
@@ -176,13 +180,13 @@ export default function TimelineDetailPage({ params }) {
         {post.package_offered && (
           <Box
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: "background.default",
               p: 2,
               borderRadius: 1,
               border: "1px solid #1e293b",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               <strong style={{ color: "#10b981" }}>Package Offered:</strong> ₹
               {post.package_offered} LPA
             </Typography>
@@ -194,14 +198,14 @@ export default function TimelineDetailPage({ params }) {
       <Card
         sx={{
           p: 4,
-          bgcolor: "#1e293b",
+          bgcolor: "background.paper",
           border: "1px solid #334155",
           borderRadius: 2,
         }}
       >
         <Typography
           variant="h6"
-          sx={{ color: "#e2e8f0", fontWeight: "bold", mb: 3 }}
+          sx={{ color: "text.primary", fontWeight: "bold", mb: 3 }}
         >
           Application Timeline
         </Typography>
@@ -228,7 +232,7 @@ export default function TimelineDetailPage({ params }) {
                   )}
                 >
                   <Box display="flex" alignItems="center" gap={2}>
-                    <Typography variant="h6" sx={{ color: "#e2e8f0" }}>
+                    <Typography variant="h6" sx={{ color: "text.primary" }}>
                       {event.title}
                     </Typography>
                     <Chip
@@ -247,7 +251,7 @@ export default function TimelineDetailPage({ params }) {
                   <Box sx={{ pl: 2, pt: 1 }}>
                     <Typography
                       variant="body2"
-                      sx={{ color: "#94a3b8", mb: 1 }}
+                      sx={{ color: "text.secondary", mb: 1 }}
                     >
                       <Schedule
                         sx={{
@@ -271,7 +275,7 @@ export default function TimelineDetailPage({ params }) {
                     {event.metadata && (
                       <Box
                         sx={{
-                          bgcolor: "#0f172a",
+                          bgcolor: "background.default",
                           p: 2,
                           borderRadius: 1,
                           border: "1px solid #1e293b",
@@ -281,7 +285,7 @@ export default function TimelineDetailPage({ params }) {
                           <Typography
                             key={key}
                             variant="body2"
-                            sx={{ color: "#94a3b8" }}
+                            sx={{ color: "text.secondary" }}
                           >
                             <strong style={{ textTransform: "capitalize" }}>
                               {key.replace(/_/g, " ")}:
@@ -305,14 +309,14 @@ export default function TimelineDetailPage({ params }) {
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { bgcolor: "#1e293b", border: "1px solid #334155" },
+          sx: { bgcolor: "background.paper", border: "1px solid #334155" },
         }}
       >
-        <DialogTitle sx={{ color: "#e2e8f0" }}>
+        <DialogTitle sx={{ color: "text.primary" }}>
           Interview Attendance Confirmation
         </DialogTitle>
         <DialogContent>
-          <Typography sx={{ color: "#94a3b8", mb: 2 }}>
+          <Typography sx={{ color: "text.secondary", mb: 2 }}>
             Did you attend the interview scheduled on{" "}
             <strong style={{ color: "#f59e0b" }}>
               {application.interview_date &&
@@ -325,7 +329,7 @@ export default function TimelineDetailPage({ params }) {
           <Button
             onClick={() => handleConfirmInterview(false)}
             disabled={confirming}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: "text.secondary" }}
           >
             No, I didn't attend
           </Button>

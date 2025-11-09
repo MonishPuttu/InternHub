@@ -12,13 +12,19 @@ import {
   Divider,
   ListItemIcon,
 } from "@mui/material";
-import { Person, Logout } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
+import { Person, Logout, Brightness4, Brightness7 } from "@mui/icons-material";
+import { useColorMode } from "@/lib/themeRegistry";
 import { getUser, logout } from "@/lib/session";
 
 export default function UserMenu() {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState(null);
   const user = getUser();
+
+  // Initialize theme hooks
+  const colorMode = useColorMode();
+  const theme = useTheme();
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -36,6 +42,11 @@ export default function UserMenu() {
   const handleLogout = async () => {
     handleClose();
     await logout();
+  };
+
+  const handleThemeToggle = () => {
+    colorMode.toggleColorMode();
+    // Don't close menu when toggling theme
   };
 
   // Get initials from name
@@ -74,17 +85,18 @@ export default function UserMenu() {
         PaperProps={{
           elevation: 0,
           sx: {
-            bgcolor: "#1e293b",
-            border: "1px solid #334155",
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
             mt: 1.5,
             minWidth: 220,
             borderRadius: 2,
             "& .MuiMenuItem-root": {
-              color: "#e2e8f0",
+              color: "text.primary",
               px: 2,
               py: 1.5,
               "&:hover": {
-                bgcolor: "#334155",
+                bgcolor: theme.palette.mode === "dark" ? "#334155" : "#f1f5f9",
               },
             },
           },
@@ -94,11 +106,11 @@ export default function UserMenu() {
         <Box sx={{ px: 2, py: 1.5 }}>
           <Typography
             variant="subtitle2"
-            sx={{ color: "#e2e8f0", fontWeight: 600 }}
+            sx={{ color: "text.primary", fontWeight: 600 }}
           >
             {user?.name || "User"}
           </Typography>
-          <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
             {user?.email}
           </Typography>
           <Typography
@@ -114,17 +126,46 @@ export default function UserMenu() {
           </Typography>
         </Box>
 
-        <Divider sx={{ borderColor: "#334155", my: 1 }} />
+        <Divider
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            my: 1,
+          }}
+        />
+
+        {/* Theme Toggle */}
+        <MenuItem onClick={handleThemeToggle}>
+          <ListItemIcon>
+            {theme.palette.mode === "dark" ? (
+              <Brightness7 fontSize="small" sx={{ color: "text.secondary" }} />
+            ) : (
+              <Brightness4 fontSize="small" sx={{ color: "text.secondary" }} />
+            )}
+          </ListItemIcon>
+          {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
+        </MenuItem>
+
+        <Divider
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            my: 1,
+          }}
+        />
 
         {/* View Profile */}
         <MenuItem onClick={handleProfile}>
           <ListItemIcon>
-            <Person fontSize="small" sx={{ color: "#94a3b8" }} />
+            <Person fontSize="small" sx={{ color: "text.secondary" }} />
           </ListItemIcon>
           View Profile
         </MenuItem>
 
-        <Divider sx={{ borderColor: "#334155", my: 1 }} />
+        <Divider
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            my: 1,
+          }}
+        />
 
         {/* Logout */}
         <MenuItem onClick={handleLogout}>
