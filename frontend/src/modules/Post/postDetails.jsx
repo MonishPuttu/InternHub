@@ -28,7 +28,10 @@ import {
 import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
 import ApplyDialog from "@/components/Post/ApplyDialog";
+<<<<<<< HEAD
+=======
 import { formatDate } from "@/lib/dateUtils";
+>>>>>>> a1142f70654233a13ea604ff7608805a7e6ee8c3
 import useApplyToPost from "@/hooks/useApplyToPost";
 import { useTheme } from "@mui/material/styles";
 import { getUser } from "@/lib/session";

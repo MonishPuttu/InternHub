@@ -260,6 +260,38 @@ export default function RecruiterDashboard() {
         </Grid>
       </Grid>
 
+      {/* Quick Actions */}
+      <Card
+        sx={{
+          bgcolor: "background.paper",
+          border: "1px solid #334155",
+          borderRadius: 2,
+          p: 3,
+          mb: 4,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ color: "text.primary", fontWeight: 600, mb: 2 }}
+        >
+          Quick Actions
+        </Typography>
+        <Stack spacing={2}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            • Go to Posts section to create new job opportunities
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            • View and manage your posted opportunities
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            • Check applications from students
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+            • The 'View Applications' button is unclickable if no students have applied to your post yet
+          </Typography>
+        </Stack>
+      </Card>
+
       {/* Approved Posts Section */}
       <Box sx={{ mb: 4 }}>
         <Typography
@@ -271,10 +303,7 @@ export default function RecruiterDashboard() {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(auto-fill, minmax(280px, 1fr))",
-              sm: "repeat(auto-fill, minmax(300px, 1fr))",
-            },
+            gridTemplateColumns: "repeat(2, 1fr)",
             gap: { xs: 2, sm: 3 },
           }}
         >
@@ -341,6 +370,8 @@ export default function RecruiterDashboard() {
         </Box>
       </Box>
 
+<<<<<<< HEAD
+=======
       {/* Quick Actions */}
       <Card
         sx={{
@@ -373,6 +404,7 @@ export default function RecruiterDashboard() {
         </Stack>
       </Card>
 
+>>>>>>> a1142f70654233a13ea604ff7608805a7e6ee8c3
       {/* View Post Details Dialog */}
       <Dialog
         open={viewPostDialogOpen}

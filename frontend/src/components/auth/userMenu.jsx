@@ -36,7 +36,11 @@ export default function UserMenu() {
 
   const handleProfile = () => {
     handleClose();
-    router.push("/profile");
+    if (user?.role === "placement" || user?.role === "recruiter") {
+      router.push("/settings");
+    } else {
+      router.push("/profile");
+    }
   };
 
   const handleLogout = async () => {
