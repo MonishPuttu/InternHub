@@ -370,8 +370,6 @@ export default function RecruiterDashboard() {
         </Box>
       </Box>
 
-<<<<<<< HEAD
-=======
       {/* Quick Actions */}
       <Card
         sx={{
@@ -404,7 +402,6 @@ export default function RecruiterDashboard() {
         </Stack>
       </Card>
 
->>>>>>> a1142f70654233a13ea604ff7608805a7e6ee8c3
       {/* View Post Details Dialog */}
       <Dialog
         open={viewPostDialogOpen}
