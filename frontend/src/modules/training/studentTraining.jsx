@@ -281,37 +281,6 @@ export default function StudentTraining() {
             Total Marks: {assessment.totalMarks}
           </Typography>
         </Box>
-
-        {/* ✅ ADDED: Display start and end dates */}
-        <Box
-          sx={{
-            mb: 3,
-            p: 2,
-            bgcolor: "rgba(139, 92, 246, 0.05)",
-            borderRadius: 1,
-            border: "1px solid rgba(139, 92, 246, 0.1)",
-          }}
-        >
-          <Box display="flex" alignItems="center" gap={1} mb={1}>
-            <CalendarToday fontSize="small" sx={{ color: "#8b5cf6" }} />
-            <Typography
-              variant="body2"
-              sx={{ color: "text.primary", fontWeight: 600 }}
-            >
-              Start: {formatDateUTC(assessment.startDate)}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <CalendarToday fontSize="small" sx={{ color: "#8b5cf6" }} />
-            <Typography
-              variant="body2"
-              sx={{ color: "text.primary", fontWeight: 600 }}
-            >
-              End: {formatDateUTC(assessment.endDate)}
-            </Typography>
-          </Box>
-        </Box>
-
         <Box mt="auto">
           {assessment.isAttempted && !assessment.hasInProgress ? (
             <Box display="flex" alignItems="center" gap={1}>

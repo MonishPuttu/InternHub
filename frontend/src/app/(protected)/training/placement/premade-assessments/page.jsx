@@ -315,11 +315,19 @@ export default function PremadeAssessments() {
                   },
                   "& .MuiInputBase-input": {
                     color: "text.primary",
-                    "&::-webkit-calendar-picker-indicator": {
-                      filter: "invert(1)",
-                      cursor: "pointer",
-                    },
                   },
+                  "& input[type='datetime-local']::-webkit-calendar-picker-indicator":
+                    {
+                      filter:
+                        "invert(48%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(118%) contrast(119%)",
+                      cursor: "pointer",
+                      opacity: 1,
+                    },
+                  "& input[type='datetime-local']::-webkit-calendar-picker-indicator:hover":
+                    {
+                      filter:
+                        "invert(42%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(108%) contrast(119%)",
+                    },
                 }}
               />
             </Box>
@@ -355,11 +363,19 @@ export default function PremadeAssessments() {
                   },
                   "& .MuiInputBase-input": {
                     color: "text.primary",
-                    "&::-webkit-calendar-picker-indicator": {
-                      filter: "invert(1)",
-                      cursor: "pointer",
-                    },
                   },
+                  "& input[type='datetime-local']::-webkit-calendar-picker-indicator":
+                    {
+                      filter:
+                        "invert(48%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(118%) contrast(119%)",
+                      cursor: "pointer",
+                      opacity: 1,
+                    },
+                  "& input[type='datetime-local']::-webkit-calendar-picker-indicator:hover":
+                    {
+                      filter:
+                        "invert(42%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(108%) contrast(119%)",
+                    },
                 }}
               />
             </Box>
@@ -387,7 +403,9 @@ export default function PremadeAssessments() {
                   renderValue={(selected) => {
                     if (selected.length === 0) {
                       return (
-                        <em style={{ color: "text.secondary" }}>Select branches</em>
+                        <em style={{ color: "text.secondary" }}>
+                          Select branches
+                        </em>
                       );
                     }
                     return selected.join(", ");

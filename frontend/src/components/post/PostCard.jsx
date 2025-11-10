@@ -16,7 +16,6 @@ import {
   Bookmark as BookmarkIcon,
   Share as ShareIcon,
 } from "@mui/icons-material";
-import { STATUS_COLORS, STATUS_LABELS } from "@/constants/postConstants";
 import useApplyToPost from "@/hooks/useApplyToPost";
 import ApplyDialog from "./ApplyDialog";
 import { useTheme } from "@mui/material/styles";

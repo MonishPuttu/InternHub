@@ -161,7 +161,7 @@ export default function Settings() {
       <Divider sx={{ borderColor: "#334155", mb: 4 }} />
 
       {/* Actions Section */}
-      <Stack spacing={2} sx={{ maxWidth: 400 }}>
+      <Stack spacing={2}>
         <Button
           variant="outlined"
           onClick={handleResetPassword}
@@ -175,6 +175,7 @@ export default function Settings() {
             textTransform: "none",
             fontSize: "1rem",
             py: 1.5,
+            width: '100%',
           }}
         >
           Reset Password
@@ -190,6 +191,7 @@ export default function Settings() {
             textTransform: "none",
             fontSize: "1rem",
             py: 1.5,
+            width: '100%',
           }}
         >
           Logout

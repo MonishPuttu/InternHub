@@ -114,7 +114,7 @@ export default function TimelinePage() {
           </Typography>
           <Button
             variant="contained"
-            onClick={() => router.push("/post")}
+            onClick={() => router.push("/Post")}
             sx={{
               bgcolor: "#8b5cf6",
               "&:hover": { bgcolor: "#7c3aed" },
@@ -287,7 +287,9 @@ export default function TimelinePage() {
                       </Box>
 
                       <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <Schedule sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Schedule
+                          sx={{ fontSize: 16, color: "text.secondary" }}
+                        />
                         <Typography
                           variant="body2"
                           sx={{ color: "text.secondary" }}
