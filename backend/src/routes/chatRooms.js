@@ -129,6 +129,7 @@ router.get("/messages", requireAuth, async (req, res) => {
   }
 });
 
+// FIXED: Check room membership before returning messages
 router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -267,6 +268,7 @@ router.get("/messages/:userId/:receiverId", requireAuth, async (req, res) => {
   }
 });
 
+// FIXED: Check room membership before returning users
 router.get("/rooms/:roomId/users", requireAuth, async (req, res) => {
   try {
     const { roomId } = req.params;
