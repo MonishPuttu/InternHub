@@ -270,7 +270,7 @@ export default function AdminCalendar() {
   const handleEventClick = (event) => {
     if (event.source === "post") {
       // Redirect to post details page
-      window.location.href = `/Posts/${event.postId}`;
+      window.location.href = `/Post/postdetails/${event.postId}`;
       return;
     }
 
