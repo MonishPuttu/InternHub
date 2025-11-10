@@ -4,6 +4,7 @@ import { use } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@mui/material/styles";
+import { formatDate } from "@/lib/dateUtils";
 import {
   Container,
   Paper,
@@ -339,7 +340,7 @@ export default function ViewAssessment({ params }) {
                 fontSize: "0.95rem",
               }}
             >
-              {new Date(assessment.start_date).toLocaleString()}
+              {formatDate(assessment.start_date)}
             </Typography>
           </Box>
           <Box>
@@ -363,7 +364,7 @@ export default function ViewAssessment({ params }) {
                 fontSize: "0.95rem",
               }}
             >
-              {new Date(assessment.end_date).toLocaleString()}
+              {formatDate(assessment.end_date)}
             </Typography>
           </Box>
         </Box>

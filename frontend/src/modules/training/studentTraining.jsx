@@ -24,6 +24,7 @@ import {
   Schedule,
   CheckCircle,
   PlayArrow,
+  CalendarToday,
 } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
@@ -41,6 +42,23 @@ function TabPanel(props) {
     </div>
   );
 }
+
+// ✅ Helper function to format dates without timezone conversion
+const formatDateUTC = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+
+  let hours = date.getUTCHours();
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+
+  return `${month}/${day}/${year}, ${hours}:${minutes} ${ampm}`;
+};
 
 export default function StudentTraining() {
   const [assessments, setAssessments] = useState({
@@ -254,7 +272,7 @@ export default function StudentTraining() {
           </Typography>
         </Box>
 
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
+        <Box display="flex" alignItems="center" gap={2} mb={2}>
           <Assignment
             fontSize="small"
             sx={{ color: "#8b5cf6", flexShrink: 0 }}
@@ -262,6 +280,36 @@ export default function StudentTraining() {
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Total Marks: {assessment.totalMarks}
           </Typography>
+        </Box>
+
+        {/* ✅ ADDED: Display start and end dates */}
+        <Box
+          sx={{
+            mb: 3,
+            p: 2,
+            bgcolor: "rgba(139, 92, 246, 0.05)",
+            borderRadius: 1,
+            border: "1px solid rgba(139, 92, 246, 0.1)",
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={1} mb={1}>
+            <CalendarToday fontSize="small" sx={{ color: "#8b5cf6" }} />
+            <Typography
+              variant="body2"
+              sx={{ color: "text.primary", fontWeight: 600 }}
+            >
+              Start: {formatDateUTC(assessment.startDate)}
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={1}>
+            <CalendarToday fontSize="small" sx={{ color: "#8b5cf6" }} />
+            <Typography
+              variant="body2"
+              sx={{ color: "text.primary", fontWeight: 600 }}
+            >
+              End: {formatDateUTC(assessment.endDate)}
+            </Typography>
+          </Box>
         </Box>
 
         <Box mt="auto">

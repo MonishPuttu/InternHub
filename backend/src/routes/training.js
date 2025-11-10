@@ -471,7 +471,6 @@ router.get("/student/assessments", requireAuth, async (req, res) => {
       .where(
         and(
           eq(assessments.is_active, true),
-          lte(assessments.start_date, currentDate),
           gte(assessments.end_date, currentDate)
         )
       )
