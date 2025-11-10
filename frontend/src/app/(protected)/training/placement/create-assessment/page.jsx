@@ -29,6 +29,11 @@ import {
 import { Add, Delete, ArrowBack, Save } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { apiRequest } from "@/lib/api";
+import {
+  dateTimeInputToUTC,
+  getCurrentISTForInput,
+  getCurrentISTDateTimeForInput,
+} from "@/lib/dateUtils";
 
 const BRANCH_OPTIONS = [
   "CSE",
@@ -290,6 +295,8 @@ export default function CreateAssessment() {
 
       const data = {
         ...assessment,
+        startDate: dateTimeInputToUTC(assessment.startDate),
+        endDate: dateTimeInputToUTC(assessment.endDate),
         questions: questions.map((q) => ({
           questionText: q.questionText,
           questionType: q.questionType,
@@ -567,7 +574,7 @@ export default function CreateAssessment() {
               }
               InputLabelProps={{ shrink: true }}
               inputProps={{
-                min: new Date().toISOString().slice(0, 16),
+                min: getCurrentISTDateTimeForInput(),
                 max: `${maxYear}-12-31T23:59`,
               }}
               helperText={`Year cannot exceed ${maxYear}`}

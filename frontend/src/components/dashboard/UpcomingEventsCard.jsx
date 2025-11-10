@@ -4,6 +4,7 @@ import { useTheme } from "@mui/material/styles";
 
 export default function UpcomingEventsCard({ events }) {
   const theme = useTheme();
+
   const getEventColor = (type) => {
     const colors = {
       oncampus: "#8b5cf6",
@@ -20,16 +21,49 @@ export default function UpcomingEventsCard({ events }) {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return "Tomorrow";
-    } else if (date.toDateString() === tomorrow.toDateString()) {
+    // Use UTC for comparisons to avoid timezone issues
+    const dateUTC = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+    );
+    const todayUTC = new Date(
+      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+    );
+    const tomorrowUTC = new Date(
+      Date.UTC(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate())
+    );
+
+    if (dateUTC.getTime() === todayUTC.getTime()) {
+      return "Today";
+    } else if (dateUTC.getTime() === tomorrowUTC.getTime()) {
       return "Tomorrow";
     } else {
-      return date.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "short",
-        day: "numeric",
-      });
+      const days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+
+      return `${days[date.getUTCDay()]}, ${
+        months[date.getUTCMonth()]
+      } ${date.getUTCDate()}`;
     }
   };
 
@@ -121,7 +155,10 @@ export default function UpcomingEventsCard({ events }) {
                   )}
                 </Stack>
                 {event.description && (
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "text.secondary" }}
+                  >
                     {event.description}
                   </Typography>
                 )}

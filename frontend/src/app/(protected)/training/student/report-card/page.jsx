@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { ArrowBack, Assessment, Tune, Close } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+import { formatDateOnly } from "@/lib/dateUtils";
 
 export default function AllReportCards() {
   const router = useRouter();
@@ -531,7 +532,7 @@ export default function AllReportCards() {
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   Generated on:{" "}
                   <span style={{ color: "text.secondary", fontWeight: "bold" }}>
-                    {new Date(report.generatedAt).toLocaleDateString()}
+                    {formatDateOnly(report.generatedAt)}
                   </span>
                 </Typography>
               </Box>

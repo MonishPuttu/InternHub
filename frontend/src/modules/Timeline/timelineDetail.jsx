@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { apiRequest } from "@/lib/api";
+import { formatDate } from "@/lib/dateUtils";
 
 const STATUS_CONFIG = {
   applied: { label: "Applied", color: "#3b82f6", icon: Assignment },
@@ -260,7 +261,7 @@ export default function TimelineDetailPage({ params }) {
                           verticalAlign: "middle",
                         }}
                       />
-                      {new Date(event.event_date).toLocaleString()}
+                      {formatDate(event.event_date)}
                     </Typography>
 
                     {event.description && (
@@ -320,7 +321,7 @@ export default function TimelineDetailPage({ params }) {
             Did you attend the interview scheduled on{" "}
             <strong style={{ color: "#f59e0b" }}>
               {application.interview_date &&
-                new Date(application.interview_date).toLocaleString()}
+                formatDate(application.interview_date)}
             </strong>
             ?
           </Typography>

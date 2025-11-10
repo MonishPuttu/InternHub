@@ -28,6 +28,7 @@ import {
 import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
 import ApplyDialog from "@/components/Post/ApplyDialog";
+import { formatDate } from "@/lib/dateUtils";
 import useApplyToPost from "@/hooks/useApplyToPost";
 import { useTheme } from "@mui/material/styles";
 import { getUser } from "@/lib/session";
@@ -822,15 +823,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     Created At
                   </Typography>
                   <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(
-                      post.created_at || post.application_date
-                    ).toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatDate(post.created_at || post.application_date)}
                   </Typography>
                 </Box>
               </Grid>
@@ -858,13 +851,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       Last Updated
                     </Typography>
                     <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                      {new Date(post.updated_at).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDate(post.updated_at)}
                     </Typography>
                   </Box>
                 </Grid>

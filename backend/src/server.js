@@ -44,7 +44,7 @@ app.use("/api/placement-analytics", placementAnalyticsRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 const server = http.createServer(app);
 
