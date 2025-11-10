@@ -587,6 +587,18 @@ export default function CreateAssessment() {
                 },
                 "& .MuiInputLabel-root": { color: "text.secondary" },
                 "& .MuiFormHelperText-root": { color: "text.secondary" },
+                "& input[type='datetime-local']::-webkit-calendar-picker-indicator":
+                  {
+                    filter:
+                      "invert(48%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(118%) contrast(119%)",
+                    cursor: "pointer",
+                    opacity: 1,
+                  },
+                "& input[type='datetime-local']::-webkit-calendar-picker-indicator:hover":
+                  {
+                    filter:
+                      "invert(42%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(108%) contrast(119%)",
+                  },
               }}
             />
             <TextField
@@ -612,6 +624,18 @@ export default function CreateAssessment() {
                 },
                 "& .MuiInputLabel-root": { color: "text.secondary" },
                 "& .MuiFormHelperText-root": { color: "text.secondary" },
+                "& input[type='datetime-local']::-webkit-calendar-picker-indicator":
+                  {
+                    filter:
+                      "invert(48%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(118%) contrast(119%)",
+                    cursor: "pointer",
+                    opacity: 1,
+                  },
+                "& input[type='datetime-local']::-webkit-calendar-picker-indicator:hover":
+                  {
+                    filter:
+                      "invert(42%) sepia(79%) saturate(2476%) hue-rotate(226deg) brightness(108%) contrast(119%)",
+                  },
               }}
             />
           </Box>

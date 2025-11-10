@@ -109,7 +109,7 @@ export default function RecruiterDashboard() {
   };
 
   const handleViewPostDetails = (post) => {
-    router.push(`/post/postdetails/${post.id}`);
+    router.push(`/Post/postdetails/${post.id}`);
   };
 
   const handleViewApplicationsList = async (post) => {
@@ -367,7 +367,8 @@ export default function RecruiterDashboard() {
             • Check applications from students
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            • The 'View Applications' button is unclickable if no students have applied to your post yet
+            • The 'View Applications' button is unclickable if no students have
+            applied to your post yet
           </Typography>
         </Stack>
       </Card>

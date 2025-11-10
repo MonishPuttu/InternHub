@@ -231,7 +231,7 @@ export default function ApprovedPostsSection(props) {
   };
 
   const handleViewPostDetails = (post) => {
-    router.push(`/post/postdetails/${post.id}`);
+    router.push(`/Post/postdetails/${post.id}`);
   };
 
   const handleViewApplications = async (post) => {

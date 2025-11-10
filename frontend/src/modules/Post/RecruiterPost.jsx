@@ -108,7 +108,7 @@ export default function RecruiterPost() {
   };
 
   const handleViewDetails = (app) => {
-    router.push(`/post/postdetails/${app.id}`);
+    router.push(`/Post/postdetails/${app.id}`);
   };
 
   const filteredApplications = applications.filter((app) => {

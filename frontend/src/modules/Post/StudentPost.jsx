@@ -140,7 +140,7 @@ export default function StudentPosts() {
   };
 
   const handleShare = async (post) => {
-    const url = `${window.location.origin}/post/postdetails/${post.id}`;
+    const url = `${window.location.origin}/Post/postdetails/${post.id}`;
     try {
       await navigator.clipboard.writeText(url);
       setSuccessMsg("Post link copied to clipboard!");
@@ -593,7 +593,7 @@ export default function StudentPosts() {
                 onToggleSave={() => toggleSavePost(post.id)}
                 onApply={() => handleApplyClick(post)}
                 onViewDetails={() =>
-                  router.push(`/post/postdetails/${post.id}`)
+                  router.push(`/Post/postdetails/${post.id}`)
                 }
                 onShare={() => handleShare(post)}
               />
