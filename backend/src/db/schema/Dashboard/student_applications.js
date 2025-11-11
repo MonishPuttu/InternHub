@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  boolean,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { user } from "../user.js";
 import { posts } from "../post.js";
 
@@ -31,6 +38,9 @@ export const student_applications = pgTable("student_applications", {
   // for timeline tracking
   interview_date: timestamp("interview_date"),
   interview_confirmed: boolean("interview_confirmed").default(false),
+
+  // for offer letter
+  offer_status: varchar("offer_status", { length: 50 }), // sent, rejected, accepted
 
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
