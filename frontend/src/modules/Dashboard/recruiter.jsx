@@ -369,6 +369,181 @@ export default function RecruiterDashboard() {
           ))}
         </Box>
       </Box>
+
+      {/* View Applications List Dialog */}
+      <Dialog
+        open={viewListDialogOpen}
+        onClose={() => setViewListDialogOpen(false)}
+        maxWidth="xl"
+        fullWidth
+        PaperProps={{
+          sx: { bgcolor: "#1e293b", color: "#e2e8f0" },
+        }}
+      >
+        <DialogTitle>
+          Applications for {selectedReceivedList?.post.company_name} - {selectedReceivedList?.post.position}
+        </DialogTitle>
+        <DialogContent>
+          {selectedReceivedList && selectedReceivedList.sent_list.list_data.length > 0 ? (
+            <TableContainer
+              component={Paper}
+              sx={{
+                bgcolor: "#0f172a",
+                border: "1px solid #334155",
+                borderRadius: 2,
+                overflowX: "auto",
+              }}
+            >
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    {[
+                      "Student Name",
+                      "Roll Number",
+                      "Branch",
+                      "Semester",
+                      "CGPA",
+                      "10th",
+                      "12th",
+                      "Company",
+                      "Position",
+                      "Status",
+                      "Applied Date",
+                    ].map((header) => (
+                      <TableCell
+                        key={header}
+                        sx={{
+                          bgcolor: "#0f172a",
+                          color: "#e2e8f0",
+                          fontWeight: 700,
+                          borderBottom: "1px solid #334155",
+                        }}
+                      >
+                        {header}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {selectedReceivedList.sent_list.list_data
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((app) => (
+                      <TableRow
+                        key={app.id}
+                        sx={{
+                          "&:hover": { bgcolor: "#1e293b80" },
+                        }}
+                      >
+                        <TableCell
+                          sx={{ color: "#e2e8f0", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.full_name}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.roll_number}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.branch}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.current_semester}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.cgpa}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.tenth_score}%
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {app.twelfth_score}%
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {selectedReceivedList?.post.company_name}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {selectedReceivedList?.post.position}
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid #334155" }}>
+                          <Chip
+                            label={app.application_status || "Applied"}
+                            size="small"
+                            sx={{
+                              bgcolor: "#64748b20",
+                              color: "#64748b",
+                              border: "1px solid #64748b40",
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: "#94a3b8", borderBottom: "1px solid #334155" }}
+                        >
+                          {new Date(app.applied_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+              <TablePagination
+                component="div"
+                count={selectedReceivedList.sent_list.list_data.length}
+                page={page}
+                onPageChange={(e, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                sx={{
+                  color: "#e2e8f0",
+                  borderTop: "1px solid #334155",
+                  "& .MuiTablePagination-select": { color: "#e2e8f0" },
+                }}
+              />
+            </TableContainer>
+          ) : (
+            <Typography variant="body2" sx={{ color: "#94a3b8", textAlign: "center", py: 4 }}>
+              No applications received for this post yet.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setViewListDialogOpen(false)}
+            sx={{ color: "#94a3b8" }}
+          >
+            Close
+          </Button>
+          {selectedReceivedList && selectedReceivedList.sent_list.list_data.length > 0 && (
+            <Button
+              onClick={handleDownloadApplications}
+              variant="contained"
+              sx={{
+                bgcolor: "#f59e0b",
+                color: "#1e293b",
+                "&:hover": { bgcolor: "#d97706" },
+              }}
+            >
+              Download CSV
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
