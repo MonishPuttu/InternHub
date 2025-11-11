@@ -91,12 +91,10 @@ router.post("/applications", requireAuth, async (req, res) => {
     } = req.body;
 
     if (!company_name || !position || !industry) {
-      return res
-        .status(400)
-        .json({
-          ok: false,
-          error: "Company name, position and industry are required",
-        });
+      return res.status(400).json({
+        ok: false,
+        error: "Company name, position and industry are required",
+      });
     }
 
     // ✅ Validate departments
@@ -107,12 +105,10 @@ router.post("/applications", requireAuth, async (req, res) => {
         (d) => !ALLOWED_DEPARTMENTS.includes(d)
       );
       if (invalid.length > 0) {
-        return res
-          .status(400)
-          .json({
-            ok: false,
-            error: `Invalid departments: ${invalid.join(", ")}`,
-          });
+        return res.status(400).json({
+          ok: false,
+          error: `Invalid departments: ${invalid.join(", ")}`,
+        });
       }
     }
 
@@ -160,12 +156,10 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
         (d) => !ALLOWED_DEPARTMENTS.includes(d)
       );
       if (invalid.length > 0) {
-        return res
-          .status(400)
-          .json({
-            ok: false,
-            error: `Invalid departments: ${invalid.join(", ")}`,
-          });
+        return res.status(400).json({
+          ok: false,
+          error: `Invalid departments: ${invalid.join(", ")}`,
+        });
       }
     }
 
@@ -256,6 +250,25 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/my-posts", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const myPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.user_id, req.user.id))
+      .orderBy(desc(posts.application_date));
+
+    res.json({ ok: true, posts: myPosts });
+  } catch (e) {
+    console.error("Error fetching recruiter posts:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "student" && req.user.role !== "placement")
@@ -263,6 +276,7 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
 
     const { limit = 200 } = req.query;
     const currentDate = new Date();
+
     let conditions = [
       eq(posts.approval_status, "approved"),
       or(
@@ -279,16 +293,19 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
         .limit(1);
 
       if (studentProfile.length === 0 || !studentProfile[0].branch) {
-        return res
-          .status(400)
-          .json({
-            ok: false,
-            error: "Student profile not found or branch not set",
-          });
+        return res.status(400).json({
+          ok: false,
+          error: "Student profile not found or branch not set",
+        });
       }
 
       const studentBranch = studentProfile[0].branch;
-      conditions.push(arrayContains(posts.target_departments, [studentBranch]));
+      conditions.push(
+        or(
+          isNull(posts.target_departments),
+          arrayContains(posts.target_departments, [studentBranch])
+        )
+      );
     } else if (req.user.role === "placement") {
       const placementProfile = await db
         .select()
@@ -298,12 +315,17 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
 
       if (placementProfile.length > 0) {
         const officerDepartment = placementProfile[0].department_branch;
-        conditions.push(
-          or(
-            isNull(posts.target_departments),
-            arrayContains(posts.target_departments, [officerDepartment])
-          )
-        );
+
+        // FIXED: Only filter if department_branch exists
+        if (officerDepartment) {
+          conditions.push(
+            or(
+              isNull(posts.target_departments),
+              arrayContains(posts.target_departments, [officerDepartment])
+            )
+          );
+        }
+        // If no department_branch, show all approved posts (no additional filter)
       }
     }
 
@@ -314,6 +336,7 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
       .orderBy(desc(posts.application_date))
       .limit(parseInt(limit));
 
+    console.log("Approved posts query result:", approvedPosts.length);
     res.json({ ok: true, posts: approvedPosts });
   } catch (e) {
     console.error("Error fetching approved posts:", e);

@@ -42,7 +42,9 @@ export const offer_letters = pgTable("offer_letters", {
   location: varchar("location", { length: 255 }).notNull(),
   bond_period: integer("bond_period").default(0),
   other_terms: text("other_terms"),
-  offer_letter_url: varchar("offer_letter_url", { length: 500 }),
+  offer_letter_url: text("offer_letter_url"),
+  file_name: varchar("file_name", { length: 255 }),
+  file_type: varchar("file_type", { length: 100 }),
   status: varchar("status", { length: 50 })
     .default("pending_placement_approval")
     .notNull(),

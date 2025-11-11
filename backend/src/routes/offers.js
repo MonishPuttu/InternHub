@@ -10,203 +10,163 @@ import {
 } from "../db/schema/index.js";
 import { eq, desc, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = "./uploads/offer-letters";
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+// Send offer letter (Recruiter only) - FIXED WITH BASE64 STORAGE
+router.post("/send", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
     }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `offer-${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
-      cb(null, true);
-    } else {
-      cb(new Error("Only PDF files are allowed"));
-    }
-  },
-});
+    const {
+      applicationId,
+      postId,
+      studentId,
+      position,
+      salary,
+      joiningDate,
+      location,
+      bondPeriod,
+      otherTerms,
+      offer_letter_base64,
+      file_name,
+      file_type,
+    } = req.body;
 
-// Send offer letter (Recruiter only)
-router.post(
-  "/send",
-  requireAuth,
-  upload.single("offerLetter"),
-  async (req, res) => {
-    try {
-      if (req.user.role !== "recruiter") {
-        return res.status(403).json({ ok: false, error: "Forbidden" });
-      }
+    console.log("Received offer data:", {
+      applicationId,
+      postId,
+      studentId,
+      position,
+      salary,
+      joiningDate,
+      location,
+    });
 
-      const {
-        applicationId,
-        postId,
-        position,
-        salary,
-        joiningDate,
-        location,
-        bondPeriod,
-        otherTerms,
-      } = req.body;
-
-      console.log("Received offer data:", {
-        applicationId,
-        postId,
-        position,
-        salary,
-        joiningDate,
-        location,
+    // Validate required fields
+    if (
+      !applicationId ||
+      !postId ||
+      !studentId ||
+      !position ||
+      !salary ||
+      !joiningDate ||
+      !location
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing required fields",
       });
+    }
 
-      // Validate required fields
-      if (
-        !applicationId ||
-        !postId ||
-        !position ||
-        !salary ||
-        !joiningDate ||
-        !location
-      ) {
-        return res.status(400).json({
-          ok: false,
-          error: "Missing required fields",
-        });
-      }
+    // Get the application to verify
+    const applicationResult = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
 
-      // Get the application to fetch student_id
-      const applicationResult = await db
-        .select()
-        .from(student_applications)
-        .where(eq(student_applications.id, applicationId))
-        .limit(1);
+    console.log("Application query result:", applicationResult);
 
-      console.log("Application query result:", applicationResult);
+    if (applicationResult.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Application not found",
+      });
+    }
 
-      if (applicationResult.length === 0) {
-        return res.status(404).json({
-          ok: false,
-          error: "Application not found",
-        });
-      }
+    const application = applicationResult[0];
 
-      const application = applicationResult[0];
-      const studentId = application.student_id;
+    // Verify the post belongs to this recruiter
+    const postResult = await db
+      .select()
+      .from(posts)
+      .where(and(eq(posts.id, postId), eq(posts.user_id, req.user.id)))
+      .limit(1);
 
-      console.log("Student ID from application:", studentId);
+    if (postResult.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Post not found or doesn't belong to you",
+      });
+    }
 
-      if (!studentId) {
-        return res.status(400).json({
-          ok: false,
-          error: "Student ID not found in application",
-        });
-      }
+    const post = postResult[0];
 
-      // Verify the post belongs to this recruiter
-      const postResult = await db
-        .select()
-        .from(posts)
-        .where(and(eq(posts.id, postId), eq(posts.user_id, req.user.id)))
-        .limit(1);
+    // Check if offer already sent for this application
+    const existingOffer = await db
+      .select()
+      .from(offer_letters)
+      .where(eq(offer_letters.application_id, applicationId))
+      .limit(1);
 
-      if (postResult.length === 0) {
-        return res.status(404).json({
-          ok: false,
-          error: "Post not found or doesn't belong to you",
-        });
-      }
+    if (existingOffer.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "Offer already sent for this application",
+      });
+    }
 
-      const post = postResult[0];
+    console.log("Inserting offer with:", {
+      application_id: applicationId,
+      student_id: studentId,
+      post_id: postId,
+      recruiter_id: req.user.id,
+    });
 
-      // Check if offer already sent for this application
-      const existingOffer = await db
-        .select()
-        .from(offer_letters)
-        .where(eq(offer_letters.application_id, applicationId))
-        .limit(1);
-
-      if (existingOffer.length > 0) {
-        return res.status(400).json({
-          ok: false,
-          error: "Offer already sent for this application",
-        });
-      }
-
-      console.log("Inserting offer with:", {
+    // Create offer letter record with base64
+    const offerLetter = await db
+      .insert(offer_letters)
+      .values({
         application_id: applicationId,
         student_id: studentId,
         post_id: postId,
         recruiter_id: req.user.id,
-      });
+        company_name: post.company_name,
+        position: position,
+        salary_package: parseFloat(salary),
+        joining_date: new Date(joiningDate),
+        location: location,
+        bond_period: bondPeriod ? parseInt(bondPeriod) : 0,
+        other_terms: otherTerms || null,
+        offer_letter_url: offer_letter_base64, // Store base64
+        file_name: file_name,
+        file_type: file_type,
+        status: "pending_placement_approval",
+      })
+      .returning();
 
-      // Create offer letter record
-      const offerLetter = await db
-        .insert(offer_letters)
-        .values({
-          application_id: applicationId,
-          student_id: studentId,
-          post_id: postId,
-          recruiter_id: req.user.id,
-          company_name: post.company_name,
-          position: position,
-          salary_package: parseFloat(salary),
-          joining_date: new Date(joiningDate),
-          location: location,
-          bond_period: bondPeriod ? parseInt(bondPeriod) : 0,
-          other_terms: otherTerms || null,
-          offer_letter_url: req.file
-            ? `/uploads/offer-letters/${req.file.filename}`
-            : null,
-          status: "pending_placement_approval",
-        })
-        .returning();
+    // Update application status - ONLY application_status, NO offer_status
+    await db
+      .update(student_applications)
+      .set({
+        application_status: "offer_pending", // Changed from "offer" to "offer_pending"
+        updated_at: new Date(),
+      })
+      .where(eq(student_applications.id, applicationId));
 
-      // Update application status
-      await db
-        .update(student_applications)
-        .set({
-          application_status: "offer",
-          offer_status: "pending_placement_approval",
-          updated_at: new Date(),
-        })
-        .where(eq(student_applications.id, applicationId));
+    // Add timeline event
+    await db.insert(application_timeline).values({
+      application_id: applicationId,
+      event_type: "offer_sent",
+      title: "Offer Letter Sent",
+      description: `Offer sent for ${position} position at ${post.company_name}. Awaiting placement cell approval.`,
+      event_date: new Date(),
+      visibility: "all",
+    });
 
-      // Add timeline event
-      await db.insert(application_timeline).values({
-        application_id: applicationId,
-        event_type: "offer_sent",
-        title: "Offer Letter Sent",
-        description: `Offer sent for ${position} position at ${post.company_name}`,
-        event_date: new Date(),
-        visibility: "all",
-      });
-
-      res.status(201).json({
-        ok: true,
-        message: "Offer letter sent successfully",
-        offer: offerLetter[0],
-      });
-    } catch (e) {
-      console.error("Error sending offer letter:", e);
-      res.status(500).json({ ok: false, error: String(e) });
-    }
+    res.status(201).json({
+      ok: true,
+      message: "Offer letter sent successfully",
+      offer: offerLetter[0],
+    });
+  } catch (e) {
+    console.error("Error sending offer letter:", e);
+    res.status(500).json({ ok: false, error: String(e) });
   }
-);
+});
 
 // Reject application (Recruiter only)
 router.post("/reject", requireAuth, async (req, res) => {
@@ -238,12 +198,11 @@ router.post("/reject", requireAuth, async (req, res) => {
       });
     }
 
-    // Update application status
+    // Update application status - ONLY application_status
     await db
       .update(student_applications)
       .set({
         application_status: "rejected",
-        offer_status: "rejected",
         placement_notes: rejectionReason || null,
         updated_at: new Date(),
       })
@@ -299,10 +258,10 @@ router.get("/all", requireAuth, async (req, res) => {
   }
 });
 
-// Get offer by application ID (Placement Cell only)
+// Get offer by application ID (Placement Cell and Recruiter)
 router.get("/by-application/:applicationId", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "placement") {
+    if (req.user.role !== "placement" && req.user.role !== "recruiter") {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
@@ -349,11 +308,11 @@ router.put("/approve/:offerId", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Offer not found" });
     }
 
-    // Update application offer_status
+    // Update application status - ONLY application_status
     await db
       .update(student_applications)
       .set({
-        offer_status: "approved",
+        application_status: "offer_approved",
         updated_at: new Date(),
       })
       .where(eq(student_applications.id, updatedOffer[0].application_id));
@@ -363,7 +322,7 @@ router.put("/approve/:offerId", requireAuth, async (req, res) => {
       application_id: updatedOffer[0].application_id,
       event_type: "offer_approved",
       title: "Offer Approved",
-      description: `Offer letter approved by placement cell`,
+      description: `Offer letter approved by placement cell and forwarded to student`,
       event_date: new Date(),
       visibility: "all",
     });
@@ -403,11 +362,11 @@ router.put("/reject-offer/:offerId", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Offer not found" });
     }
 
-    // Update application offer_status
+    // Update application status - ONLY application_status
     await db
       .update(student_applications)
       .set({
-        offer_status: "rejected_by_placement",
+        application_status: "offer_rejected",
         updated_at: new Date(),
       })
       .where(eq(student_applications.id, updatedOffer[0].application_id));
@@ -462,14 +421,11 @@ router.get("/my-offers", requireAuth, async (req, res) => {
   }
 });
 
-// Download offer letter (Students and Placement Officers)
+// Download offer letter (Students, Placement Officers, and Recruiters)
 router.get("/download/:offerId", requireAuth, async (req, res) => {
   try {
     const { offerId } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
 
-    // Fetch the offer
     const offer = await db
       .select()
       .from(offer_letters)
@@ -477,48 +433,26 @@ router.get("/download/:offerId", requireAuth, async (req, res) => {
       .limit(1);
 
     if (offer.length === 0) {
-      return res.status(404).json({ ok: false, error: "Offer not found" });
+      return res.status(404).json({ error: "Offer not found" });
     }
 
-    const offerData = offer[0];
-
-    // Authorization: Students can only access their own offers, Placement officers can access all
-    if (userRole === "student") {
-      if (offerData.student_id !== userId) {
-        return res.status(403).json({
-          ok: false,
-          error: "You can only download your own offer letters",
-        });
-      }
-    } else if (userRole !== "placement") {
-      // Only students and placement officers are allowed
-      return res.status(403).json({
-        ok: false,
-        error: "Insufficient permissions to download offer letters",
-      });
-    }
-    // Placement officers have unrestricted access (no additional check needed)
-
-    if (!offerData.offer_letter_url) {
-      return res.status(404).json({
-        ok: false,
-        error: "Offer letter file not found",
-      });
+    if (!offer[0].offer_letter_url) {
+      return res.status(404).json({ error: "File not found" });
     }
 
-    const filePath = path.join(process.cwd(), offerData.offer_letter_url);
+    // Decode base64 and send
+    const base64Data = offer[0].offer_letter_url.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
-        ok: false,
-        error: "Offer letter file not found on server",
-      });
-    }
-
-    res.download(filePath);
+    res.setHeader("Content-Type", offer[0].file_type || "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${offer[0].file_name || "offer_letter.pdf"}"`
+    );
+    res.send(buffer);
   } catch (e) {
-    console.error("Error downloading offer letter:", e);
-    res.status(500).json({ ok: false, error: String(e) });
+    console.error("Error downloading offer:", e);
+    res.status(500).json({ error: String(e) });
   }
 });
 

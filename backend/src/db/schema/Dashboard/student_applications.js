@@ -39,9 +39,6 @@ export const student_applications = pgTable("student_applications", {
   interview_date: timestamp("interview_date"),
   interview_confirmed: boolean("interview_confirmed").default(false),
 
-  // for offer letter
-  offer_status: varchar("offer_status", { length: 50 }), // sent, rejected, accepted
-
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
