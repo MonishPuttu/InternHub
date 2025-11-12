@@ -44,8 +44,8 @@ const statusColors = {
   applied: "#64748b",
   interview_scheduled: "#0ea5e9",
   interviewed: "#8b5cf6",
-  "offer-pending": "#f59e0b", // Fixed: with hyphen
-  offer_pending: "#f59e0b", // Support both formats
+  "offer-pending": "#f59e0b",
+  offer_pending: "#f59e0b",
   "offer-approved": "#10b981",
   offer_approved: "#10b981",
   hired: "#059669",
@@ -56,7 +56,7 @@ const statusLabels = {
   applied: "Applied",
   interview_scheduled: "Interview Scheduled",
   interviewed: "Interviewed",
-  "offer-pending": "Offer Pending", // Fixed: with hyphen
+  "offer-pending": "Offer Pending",
   offer_pending: "Offer Pending",
   "offer-approved": "Offer Approved",
   offer_approved: "Offer Approved",
@@ -83,10 +83,14 @@ export default function PlacementApplicationsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [selectedApp, setSelectedApp] = useState(null);
 
+  // ✅ New state for checking if list already sent
+  const [listAlreadySent, setListAlreadySent] = useState(false);
+
   useEffect(() => {
     if (postId) {
       fetchPostDetails();
       fetchApplications();
+      checkIfListSent(); // ✅ Check if list already sent
     }
   }, [postId]);
 
@@ -120,7 +124,6 @@ export default function PlacementApplicationsPage() {
         }
       );
       if (response.data.ok) {
-        console.log("Applications fetched:", response.data.applications); // Debug log
         setApplications(response.data.applications || []);
       }
     } catch (error) {
@@ -129,6 +132,27 @@ export default function PlacementApplicationsPage() {
       setTimeout(() => setErrorMsg(""), 3000);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Check if list has already been sent
+  const checkIfListSent = async () => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `${BACKEND_URL}/api/student-applications/sent-list/${postId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok && response.data.sentList) {
+        setListAlreadySent(true);
+      }
+    } catch (error) {
+      console.error("Error checking sent list:", error);
+      // If endpoint doesn't exist or returns error, assume not sent
+      setListAlreadySent(false);
     }
   };
 
@@ -256,6 +280,7 @@ export default function PlacementApplicationsPage() {
         );
         setTimeout(() => setSuccessMsg(""), 5000);
         setSendListDialogOpen(false);
+        setListAlreadySent(true); // ✅ Update state
         fetchPostDetails();
       } else {
         setErrorMsg(response.data.error || "Failed to send list");
@@ -311,12 +336,10 @@ export default function PlacementApplicationsPage() {
           return;
         }
 
-        // Extract base64 data
         const base64Data = offer.offer_letter_url.includes(",")
           ? offer.offer_letter_url.split(",")[1]
           : offer.offer_letter_url;
 
-        // Convert base64 to blob
         const byteCharacters = atob(base64Data);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -327,7 +350,6 @@ export default function PlacementApplicationsPage() {
           type: offer.file_type || "application/pdf",
         });
 
-        // Download
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -430,12 +452,10 @@ export default function PlacementApplicationsPage() {
     }
   };
 
-  // Helper function to check if status is offer-pending (supports both formats)
   const isOfferPending = (status) => {
     return status === "offer-pending" || status === "offer_pending";
   };
 
-  // Helper function to check if status is offer-approved (supports both formats)
   const isOfferApproved = (status) => {
     return status === "offer-approved" || status === "offer_approved";
   };
@@ -461,7 +481,6 @@ export default function PlacementApplicationsPage() {
           Back
         </Button>
 
-        {/* Title and Action Buttons Row */}
         <Box
           sx={{
             display: "flex",
@@ -488,9 +507,13 @@ export default function PlacementApplicationsPage() {
                 startIcon={<SendIcon />}
                 variant="contained"
                 onClick={handleSendListClick}
-                sx={{ bgcolor: "#3b82f6", "&:hover": { bgcolor: "#2563eb" } }}
+                disabled={listAlreadySent} // ✅ Disable if already sent
+                sx={{
+                  bgcolor: listAlreadySent ? "#gray" : "#3b82f6",
+                  "&:hover": { bgcolor: listAlreadySent ? "#gray" : "#2563eb" },
+                }}
               >
-                Send List
+                {listAlreadySent ? "List Already Sent" : "Send List"}
               </Button>
               <Button
                 startIcon={<DownloadIcon />}
@@ -531,7 +554,20 @@ export default function PlacementApplicationsPage() {
             </Stack>
           )}
         </Box>
+
+        {/* ✅ Alert when list already sent */}
+        {listAlreadySent && (
+          <Alert severity="info" icon={<CheckCircleIcon />} sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Application List Already Sent
+            </Typography>
+            <Typography variant="caption">
+              The application list for this post has been sent to the recruiter.
+            </Typography>
+          </Alert>
+        )}
       </Box>
+
       {/* Applications Table */}
       {applications.length > 0 ? (
         <TableContainer component={Paper}>
@@ -590,7 +626,6 @@ export default function PlacementApplicationsPage() {
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={0.5}>
-                        {/* Show View & Download for any offer status */}
                         {(isOfferPending(app.application_status) ||
                           isOfferApproved(app.application_status)) && (
                           <>
@@ -615,7 +650,6 @@ export default function PlacementApplicationsPage() {
                           </>
                         )}
 
-                        {/* Show Approve & Reject only for pending offers */}
                         {isOfferPending(app.application_status) && (
                           <>
                             <Tooltip title="Forward to Student">
@@ -624,7 +658,7 @@ export default function PlacementApplicationsPage() {
                                 onClick={() => handleApproveOffer(app)}
                                 sx={{ color: "#10b981" }}
                               >
-                                <CheckCircleIcon fontSize="small" />
+                                <SendIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Reject Offer">
@@ -663,6 +697,7 @@ export default function PlacementApplicationsPage() {
           </Typography>
         </Box>
       )}
+
       {/* Send List Dialog */}
       <Dialog
         open={sendListDialogOpen}
@@ -692,6 +727,7 @@ export default function PlacementApplicationsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
       {/* View Offer Dialog */}
       <Dialog
         open={offerDialogOpen}
@@ -761,6 +797,7 @@ export default function PlacementApplicationsPage() {
           )}
         </DialogActions>
       </Dialog>
+
       {/* Reject Offer Dialog */}
       <Dialog
         open={rejectOfferDialog}
@@ -798,6 +835,7 @@ export default function PlacementApplicationsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
       {/* Success/Error Messages */}
       {successMsg && (
         <Alert

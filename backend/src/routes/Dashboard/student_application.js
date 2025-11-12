@@ -1236,4 +1236,26 @@ router.get("/:applicationId", requireAuth, async (req, res) => {
   }
 });
 
+// GET check if list was sent for a post
+router.get("/sent-list/:postId", requireAuth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const [sentList] = await db
+      .select()
+      .from(sent_lists)
+      .where(eq(sent_lists.post_id, postId))
+      .limit(1);
+
+    if (sentList) {
+      return res.json({ ok: true, sentList });
+    } else {
+      return res.json({ ok: true, sentList: null });
+    }
+  } catch (error) {
+    console.error("Error checking sent list:", error);
+    res.status(500).json({ ok: false, error: "Failed to check sent list" });
+  }
+});
+
 export default router;
