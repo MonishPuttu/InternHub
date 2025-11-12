@@ -1211,4 +1211,29 @@ router.get("/:postId", requireAuth, async (req, res) => {
   }
 });
 
+// GET single application by ID (for recruiters)
+router.get("/:applicationId", requireAuth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const token = getToken();
+
+    const [application] = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
+
+    if (!application) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Application not found" });
+    }
+
+    res.json({ ok: true, application });
+  } catch (error) {
+    console.error("Error fetching application:", error);
+    res.status(500).json({ ok: false, error: "Failed to fetch application" });
+  }
+});
+
 export default router;

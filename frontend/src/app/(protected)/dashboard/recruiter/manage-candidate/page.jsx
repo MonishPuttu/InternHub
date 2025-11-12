@@ -12,11 +12,6 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  FormControl,
-  FormLabel,
 } from "@mui/material";
 import {
   Close,
@@ -24,9 +19,8 @@ import {
   Business,
   AttachFile,
   Send,
-  Event,
-  VideoCall,
-  LocationOn,
+  CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -48,26 +42,17 @@ export default function ManageCandidatePage() {
     notes: "",
   });
 
-  const [interviewData, setInterviewData] = useState({
-    interviewtype: "online",
-    interviewdate: "",
-    interviewtime: "",
-    location: "",
-    meetinglink: "",
-    notes: "",
-  });
-
   const [post, setPost] = useState(null);
   const [studentInfo, setStudentInfo] = useState(null);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [interviewLoading, setInterviewLoading] = useState(false);
   const [error, setError] = useState("");
   const [loadingData, setLoadingData] = useState(true);
-  const [interviewScheduled, setInterviewScheduled] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState(null);
+  const [offerSent, setOfferSent] = useState(false);
+  const [candidateRejected, setCandidateRejected] = useState(false);
 
-  // ✅ Fetch student & post details
   useEffect(() => {
     const fetchData = async () => {
       const studentId = searchParams.get("studentId");
@@ -82,44 +67,54 @@ export default function ManageCandidatePage() {
 
       try {
         const token = getToken();
-        const listsResponse = await axios.get(
-          `${BACKEND_URL}/api/student-applications/received-lists`,
+
+        // ✅ Fixed: Use correct endpoint for single application
+        const applicationResponse = await axios.get(
+          `${BACKEND_URL}/api/student-applications/application/${applicationId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        if (listsResponse.data.ok) {
-          const lists = listsResponse.data.lists || [];
-          const listForPost = lists.find(
-            (item) => String(item?.post?.id) === String(postId)
-          );
+        if (applicationResponse.data.ok) {
+          const appData = applicationResponse.data.application;
+          setStudentInfo(appData);
 
-          if (listForPost && listForPost.sent_list) {
-            const postData = listForPost.post;
-            const apps = listForPost.sent_list?.list_data || [];
+          const status = appData.application_status;
+          setApplicationStatus(status);
 
-            const studentApplication = apps.find(
-              (app) => String(app.id) === String(applicationId)
-            );
-
-            if (studentApplication) {
-              setStudentInfo(studentApplication);
-            }
-
-            setPost(postData);
-            setFormData((prev) => ({
-              ...prev,
-              companyname: postData.company_name || "",
-              position: postData.position || "",
-              packageoffered: postData.package_offered || "",
-              location: postData.location || "",
-            }));
-          } else {
-            setError("Post not found for this candidate.");
+          if (
+            status === "offer-pending" ||
+            status === "offer_pending" ||
+            status === "offer-approved" ||
+            status === "offer_approved"
+          ) {
+            setOfferSent(true);
           }
-        } else {
-          setError("Failed to load recruiter lists.");
+
+          if (status === "rejected") {
+            setCandidateRejected(true);
+          }
+        }
+
+        // ✅ Fixed: Use correct endpoint for single post
+        const postResponse = await axios.get(
+          `${BACKEND_URL}/api/student-applications/${postId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (postResponse.data.ok) {
+          const postData = postResponse.data.post;
+          setPost(postData);
+          setFormData((prev) => ({
+            ...prev,
+            companyname: postData.company_name || "",
+            position: postData.position || "",
+            packageoffered: postData.package_offered || "",
+            location: postData.location || "",
+          }));
         }
       } catch (err) {
         console.error("Error fetching candidate data:", err);
@@ -132,24 +127,9 @@ export default function ManageCandidatePage() {
     fetchData();
   }, [searchParams]);
 
-  // Input Handlers
   const handleInputChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleInterviewInputChange = (e) =>
-    setInterviewData({ ...interviewData, [e.target.name]: e.target.value });
-
-  const handleInterviewTypeChange = (e) => {
-    const type = e.target.value;
-    setInterviewData({
-      ...interviewData,
-      interviewtype: type,
-      location: type === "offline" ? interviewData.location : "",
-      meetinglink: type === "online" ? interviewData.meetinglink : "",
-    });
-  };
-
-  // Convert File → Base64
   const convertFileToBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -158,7 +138,6 @@ export default function ManageCandidatePage() {
       reader.onerror = (error) => reject(error);
     });
 
-  // File Upload Validation
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
@@ -177,7 +156,6 @@ export default function ManageCandidatePage() {
     setError("");
   };
 
-  // ❌ Reject Candidate
   const handleRejectCandidate = async () => {
     if (!window.confirm("Are you sure you want to reject this candidate?"))
       return;
@@ -189,12 +167,6 @@ export default function ManageCandidatePage() {
       const studentId = searchParams.get("studentId");
       const postId = searchParams.get("postId");
       const applicationId = searchParams.get("applicationId");
-
-      if (!studentId || !postId || !applicationId) {
-        setError("Missing required parameters");
-        setRejectLoading(false);
-        return;
-      }
 
       const payload = {
         applicationId,
@@ -225,7 +197,6 @@ export default function ManageCandidatePage() {
     }
   };
 
-  // ✅ Send Offer Letter
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -247,11 +218,13 @@ export default function ManageCandidatePage() {
         setLoading(false);
         return;
       }
+
       if (!formData.position.trim()) {
         setError("Position is required");
         setLoading(false);
         return;
       }
+
       if (
         !formData.packageoffered ||
         isNaN(parseFloat(formData.packageoffered))
@@ -260,16 +233,19 @@ export default function ManageCandidatePage() {
         setLoading(false);
         return;
       }
+
       if (!formData.joiningdate.trim()) {
         setError("Joining date is required");
         setLoading(false);
         return;
       }
+
       if (!formData.location.trim()) {
         setError("Location is required");
         setLoading(false);
         return;
       }
+
       if (!file) {
         setError("Please attach an offer letter file");
         setLoading(false);
@@ -292,8 +268,6 @@ export default function ManageCandidatePage() {
         file_type: file.type,
         notes: formData.notes || "",
       };
-
-      console.log("Sending offer payload:", payload);
 
       const token = getToken();
       const response = await axios.post(
@@ -318,8 +292,7 @@ export default function ManageCandidatePage() {
     }
   };
 
-  // ✅ UI Render
-  if (loadingData)
+  if (loadingData) {
     return (
       <Box
         sx={{
@@ -329,11 +302,12 @@ export default function ManageCandidatePage() {
           minHeight: "80vh",
         }}
       >
-        <CircularProgress sx={{ color: theme.palette.primary.main }} />
+        <CircularProgress />
       </Box>
     );
+  }
 
-  if (error && !post)
+  if (error && !post) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -342,224 +316,229 @@ export default function ManageCandidatePage() {
         <Button
           startIcon={<ArrowBack />}
           onClick={() => router.push("/dashboard/recruiter")}
-          sx={{ color: theme.palette.primary.main }}
         >
           Back to Dashboard
         </Button>
       </Box>
     );
+  }
 
   return (
     <Box sx={{ p: 3, maxWidth: 900, mx: "auto" }}>
-      {/* Back & Candidate Info */}
-      <Box sx={{ mb: 4 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => router.back()}
-          sx={{
-            color: theme.palette.primary.main,
-            mb: 2,
-            "&:hover": { bgcolor: theme.palette.action.hover },
-          }}
-        >
-          Back
-        </Button>
+      <Button
+        startIcon={<ArrowBack />}
+        onClick={() => router.back()}
+        sx={{ mb: 2 }}
+      >
+        Back
+      </Button>
 
-        {studentInfo && (
-          <Card sx={{ mb: 3, bgcolor: theme.palette.background.paper }}>
-            <CardContent>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: theme.palette.text.primary,
-                  fontWeight: 600,
-                  mb: 2,
-                }}
-              >
-                Candidate Information
-              </Typography>
-              <Box
-                sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
-              >
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.secondary }}
-                  >
-                    Name
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {studentInfo.full_name}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.secondary }}
-                  >
-                    Roll Number
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {studentInfo.roll_number}
-                  </Typography>
-                </Box>
+      {studentInfo && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Candidate Information
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Name
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {studentInfo.full_name}
+                </Typography>
               </Box>
-            </CardContent>
-          </Card>
-        )}
-      </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Roll Number
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {studentInfo.roll_number}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Department
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {studentInfo.branch || "N/A"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Email
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {studentInfo.email || "N/A"}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Offer Letter Form */}
-      <Card sx={{ bgcolor: theme.palette.background.paper }}>
+      {offerSent && (
+        <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Offer Letter Already Sent
+          </Typography>
+          <Typography variant="caption">
+            An offer letter has been sent to this candidate and is currently{" "}
+            {applicationStatus === "offer-approved" ||
+            applicationStatus === "offer_approved"
+              ? "approved by placement cell"
+              : "pending placement approval"}
+            .
+          </Typography>
+        </Alert>
+      )}
+
+      {candidateRejected && (
+        <Alert severity="error" icon={<Cancel />} sx={{ mb: 3 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Candidate Rejected
+          </Typography>
+          <Typography variant="caption">
+            This candidate has been rejected and cannot receive offer letters.
+          </Typography>
+        </Alert>
+      )}
+
+      <Card>
         <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <Business sx={{ color: theme.palette.primary.main, mr: 1 }} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+            <Business color="primary" />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Send Offer Letter
             </Typography>
           </Box>
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           <Box component="form" onSubmit={handleSubmit}>
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 3,
-                mb: 3,
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+                mb: 2,
               }}
             >
               <TextField
-                label="Company Name"
+                label="Company Name *"
                 name="companyname"
                 value={formData.companyname}
                 onChange={handleInputChange}
-                required
+                fullWidth
+                disabled={offerSent || candidateRejected}
               />
               <TextField
-                label="Position"
+                label="Position *"
                 name="position"
                 value={formData.position}
                 onChange={handleInputChange}
-                required
+                fullWidth
+                disabled={offerSent || candidateRejected}
               />
               <TextField
-                label="Package Offered (LPA)"
+                label="Package Offered (LPA) *"
                 name="packageoffered"
                 type="number"
                 value={formData.packageoffered}
                 onChange={handleInputChange}
-                required
+                fullWidth
+                disabled={offerSent || candidateRejected}
               />
               <TextField
-                label="Joining Date"
+                label="Joining Date *"
                 name="joiningdate"
                 type="date"
                 value={formData.joiningdate}
                 onChange={handleInputChange}
+                fullWidth
                 InputLabelProps={{ shrink: true }}
-                required
-              />
-              <TextField
-                label="Location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                required
-                sx={{ gridColumn: "1 / -1" }}
+                disabled={offerSent || candidateRejected}
               />
             </Box>
 
-            {/* File Upload */}
+            <TextField
+              label="Location *"
+              name="location"
+              value={formData.location}
+              onChange={handleInputChange}
+              fullWidth
+              sx={{ mb: 2 }}
+              disabled={offerSent || candidateRejected}
+            />
+
             <Box sx={{ mb: 3 }}>
               <Typography variant="body2" sx={{ mb: 1 }}>
                 Upload Offer Letter (PDF or PNG, max 5MB)
               </Typography>
-              <input
-                accept=".pdf,.png"
-                style={{ display: "none" }}
-                id="offer-letter-file"
-                type="file"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="offer-letter-file">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<AttachFile />}
-                  sx={{
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
-                    "&:hover": {
-                      borderColor: theme.palette.primary.dark,
-                      bgcolor: theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  Choose File
-                </Button>
-              </label>
-
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<AttachFile />}
+                disabled={offerSent || candidateRejected}
+              >
+                Choose File
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.png"
+                  onChange={handleFileChange}
+                  disabled={offerSent || candidateRejected}
+                />
+              </Button>
               {file && (
                 <Box
                   sx={{
-                    mt: 2,
-                    p: 2,
-                    borderRadius: 1,
-                    border: `1px solid ${theme.palette.divider}`,
                     display: "flex",
-                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 1,
+                    mt: 1,
+                    p: 1,
+                    bgcolor: "action.hover",
+                    borderRadius: 1,
                   }}
                 >
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {file.name}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: theme.palette.text.secondary }}
-                    >
-                      {(file.size / 1024).toFixed(1)} KB •{" "}
-                      {file.type.split("/")[1].toUpperCase()}
-                    </Typography>
-                  </Box>
+                  <Typography variant="body2">{file.name}</Typography>
                   <Close
                     onClick={() => setFile(null)}
-                    sx={{
-                      color: theme.palette.error.main,
-                      cursor: "pointer",
-                      "&:hover": { color: theme.palette.error.dark },
-                    }}
+                    sx={{ cursor: "pointer", color: "error.main" }}
                   />
                 </Box>
               )}
             </Box>
 
-            {/* Submit Buttons */}
-            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
               <Button
+                variant="contained"
+                color="error"
                 onClick={handleRejectCandidate}
-                startIcon={
-                  rejectLoading ? <CircularProgress size={16} /> : <Close />
+                disabled={
+                  rejectLoading || loading || offerSent || candidateRejected
                 }
-                disabled={rejectLoading || loading}
-                sx={{
-                  bgcolor: theme.palette.error.main,
-                  "&:hover": { bgcolor: theme.palette.error.dark },
-                  color: "white",
-                }}
               >
                 {rejectLoading ? "Rejecting..." : "Reject Candidate"}
               </Button>
-
               <Button
                 type="submit"
-                startIcon={loading ? <CircularProgress size={16} /> : <Send />}
-                disabled={loading || rejectLoading}
-                sx={{
-                  bgcolor: theme.palette.primary.main,
-                  "&:hover": { bgcolor: theme.palette.primary.dark },
-                  color: "white",
-                }}
+                variant="contained"
+                startIcon={<Send />}
+                disabled={
+                  loading || rejectLoading || offerSent || candidateRejected
+                }
               >
                 {loading ? "Sending..." : "Send Offer Letter"}
               </Button>
