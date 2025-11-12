@@ -70,6 +70,12 @@ export default function TakeAssessment({ params }) {
   }, [assessmentId, searchParams, router]);
 
   useEffect(() => {
+    if (attemptId && timeRemaining > 0) {
+      sessionStorage.setItem(`assessment_timer_${attemptId}`, timeRemaining.toString());
+    }
+  }, [timeRemaining, attemptId]);
+
+  useEffect(() => {
     if (!timeRemaining || timeRemaining <= 0) {
       if (
         timeRemaining === 0 &&
@@ -108,11 +114,12 @@ export default function TakeAssessment({ params }) {
         console.log("✅ Using cached data");
         const data = JSON.parse(cachedData);
 
-        sessionStorage.removeItem(storageKey);
+        // sessionStorage.removeItem(storageKey); // Removed this line
 
         setAttempt(data.attempt);
         setQuestions(data.questions);
-        setTimeRemaining(data.attempt.duration * 60);
+        const savedTime = sessionStorage.getItem(`assessment_timer_${attemptIdParam}`);
+        setTimeRemaining(savedTime ? parseInt(savedTime, 10) : data.attempt.duration * 60);
         setIsPremade(true); // ✅ Mark as premade
         setAnswers(
           data.questions.reduce((acc, q) => {
@@ -186,6 +193,7 @@ export default function TakeAssessment({ params }) {
       );
 
       if (response.ok) {
+        sessionStorage.removeItem(`assessment_timer_${attemptId}`); // Clear timer on successful submission
         router.push(`/training/student/report-card/${attemptId}`);
       } else {
         throw new Error(response.error || "Failed to submit assessment");
