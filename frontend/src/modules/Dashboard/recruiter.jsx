@@ -20,6 +20,21 @@ export default function RecruiterDashboard() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Offer letter states
+  const [offerDialogOpen, setOfferDialogOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [offerData, setOfferData] = useState({
+    position: "",
+    salary: "",
+    joiningDate: "",
+    location: "",
+    bondPeriod: "",
+    otherTerms: "",
+  });
+  const [offerFile, setOfferFile] = useState(null);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
   useEffect(() => {
     fetchRecruiterPosts();
   }, []);

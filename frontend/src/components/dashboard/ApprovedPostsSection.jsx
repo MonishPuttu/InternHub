@@ -28,7 +28,8 @@ export default function ApprovedPostsSection({
     fetchApprovedPosts();
   }, [searchQuery, filterPostedDate, filterIndustry]);
 
-  const fetchApprovedPosts = async () => {
+  // Import CSV function
+  const handleImportCSV = async (event) => {
     try {
       setLoading(true);
       const token = getToken();
