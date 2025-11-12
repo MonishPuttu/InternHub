@@ -31,6 +31,7 @@ import {
   Cancel as CancelIcon,
   Visibility as VisibilityIcon,
   Download as DownloadIcon,
+  Send as SendIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -119,32 +120,43 @@ export default function OfferManagementSection() {
   };
 
   const handleDownloadOffer = async (offer) => {
-    if (!offer.offer.offer_letter_url) {
-      setErrorMsg("No offer letter file available");
-      return;
-    }
-
     try {
-      const token = getToken();
-      const response = await axios.get(
-        `${BACKEND_URL}${offer.offer.offer_letter_url}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
-        }
-      );
+      if (!offer.offer.offer_letter_url) {
+        setErrorMsg("No offer letter file available");
+        return;
+      }
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Extract base64 data
+      const base64Data = offer.offer.offer_letter_url.includes(",")
+        ? offer.offer.offer_letter_url.split(",")[1]
+        : offer.offer.offer_letter_url;
+
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {
+        type: offer.offer.file_type || "application/pdf",
+      });
+
+      // Download
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute(
         "download",
-        `Offer_${offer.offer.company_name}_${offer.offer.position}.pdf`
+        offer.offer.file_name ||
+          `Offer_${offer.offer.company_name}_${offer.offer.position}.pdf`
       );
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
+      setSuccessMsg("Offer letter downloaded successfully");
     } catch (error) {
       console.error("Error downloading offer letter:", error);
       setErrorMsg("Failed to download offer letter");
@@ -324,8 +336,13 @@ export default function OfferManagementSection() {
                   >
                     {offer.offer.location}
                   </TableCell>
+
+                  {/* Status Column - Shows status chip */}
                   <TableCell
-                    sx={{ borderBottom: "1px solid", borderColor: "divider" }}
+                    sx={{
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                    }}
                   >
                     <Chip
                       label={
@@ -339,26 +356,21 @@ export default function OfferManagementSection() {
                       sx={{
                         bgcolor:
                           offer.offer.status === "pending_placement_approval"
-                            ? "#fbbf2420"
+                            ? "#f59e0b20"
                             : offer.offer.status === "approved"
                             ? "#10b98120"
                             : "#ef444420",
                         color:
                           offer.offer.status === "pending_placement_approval"
-                            ? "#fbbf24"
+                            ? "#f59e0b"
                             : offer.offer.status === "approved"
                             ? "#10b981"
                             : "#ef4444",
-                        border: "1px solid",
-                        borderColor:
-                          offer.offer.status === "pending_placement_approval"
-                            ? "#fbbf2440"
-                            : offer.offer.status === "approved"
-                            ? "#10b98140"
-                            : "#ef444440",
+                        fontWeight: 600,
                       }}
                     />
                   </TableCell>
+
                   <TableCell
                     sx={{
                       color: "text.secondary",
@@ -368,69 +380,63 @@ export default function OfferManagementSection() {
                   >
                     {new Date(offer.offer.created_at).toLocaleDateString()}
                   </TableCell>
+
+                  {/* Actions Column */}
                   <TableCell
-                    sx={{ borderBottom: "1px solid", borderColor: "divider" }}
+                    sx={{
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                    }}
                   >
-                    <Stack direction="row" spacing={1}>
+                    <Stack direction="row" spacing={0.5}>
+                      {/* View Button - Always visible */}
                       <Tooltip title="View Details">
                         <IconButton
-                          size="small"
                           onClick={() => handleViewOffer(offer)}
                           sx={{ color: "#8b5cf6" }}
+                          size="small"
                         >
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
 
+                      {/* Download Button - Always visible if file exists */}
                       {offer.offer.offer_letter_url && (
-                        <Tooltip title="Download Offer Letter">
+                        <Tooltip title="Download">
                           <IconButton
-                            size="small"
                             onClick={() => handleDownloadOffer(offer)}
                             sx={{ color: "#10b981" }}
+                            size="small"
                           >
                             <DownloadIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       )}
 
+                      {/* Approve/Reject Buttons - Only for pending offers */}
                       {offer.offer.status === "pending_placement_approval" && (
                         <>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<CheckCircleIcon />}
-                            onClick={() => handleApproveOffer(offer.offer.id)}
-                            sx={{
-                              bgcolor: "#10b981",
-                              "&:hover": { bgcolor: "#059669" },
-                              fontSize: "0.75rem",
-                              px: 1,
-                            }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<CancelIcon />}
-                            onClick={() => {
-                              setSelectedOffer(offer);
-                              setRejectDialog(true);
-                            }}
-                            sx={{
-                              color: "#ef4444",
-                              borderColor: "#ef4444",
-                              "&:hover": {
-                                borderColor: "#dc2626",
-                                bgcolor: "#ef444420",
-                              },
-                              fontSize: "0.75rem",
-                              px: 1,
-                            }}
-                          >
-                            Reject
-                          </Button>
+                          <Tooltip title="Forward to Student">
+                            <IconButton
+                              onClick={() => handleApproveOffer(offer.offer.id)}
+                              sx={{ color: "#10b981" }}
+                              size="small"
+                            >
+                              <SendIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Reject Offer">
+                            <IconButton
+                              onClick={() => {
+                                setSelectedOffer(offer);
+                                setRejectDialog(true);
+                              }}
+                              sx={{ color: "#ef4444" }}
+                              size="small"
+                            >
+                              <CancelIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </>
                       )}
                     </Stack>
@@ -519,8 +525,10 @@ export default function OfferManagementSection() {
                   Bond Period
                 </Typography>
                 <Typography variant="body1">
-                  {selectedOffer.offer.bond_period} years
-                  {selectedOffer.offer.bond_period === 0 && " (No Bond)"}
+                  {selectedOffer.offer.bond_period || 0} years
+                  {(selectedOffer.offer.bond_period === 0 ||
+                    !selectedOffer.offer.bond_period) &&
+                    " (No Bond)"}
                 </Typography>
               </Box>
 
@@ -553,14 +561,14 @@ export default function OfferManagementSection() {
                     bgcolor:
                       selectedOffer.offer.status ===
                       "pending_placement_approval"
-                        ? "#fbbf2420"
+                        ? "#f59e0b20"
                         : selectedOffer.offer.status === "approved"
                         ? "#10b98120"
                         : "#ef444420",
                     color:
                       selectedOffer.offer.status ===
                       "pending_placement_approval"
-                        ? "#fbbf24"
+                        ? "#f59e0b"
                         : selectedOffer.offer.status === "approved"
                         ? "#10b981"
                         : "#ef4444",

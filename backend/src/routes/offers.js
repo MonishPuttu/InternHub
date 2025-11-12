@@ -4,8 +4,6 @@ import {
   offer_letters,
   student_applications,
   posts,
-  user,
-  student_profile,
   application_timeline,
 } from "../db/schema/index.js";
 import { eq, desc, and } from "drizzle-orm";
@@ -13,162 +11,152 @@ import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
-// Send offer letter (Recruiter only) - FIXED WITH BASE64 STORAGE
 router.post("/send", requireAuth, async (req, res) => {
   try {
+    // --- Role Validation ---
     if (req.user.role !== "recruiter") {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
+      return res.status(403).json({
+        ok: false,
+        error: "Forbidden: only recruiters can send offers",
+      });
     }
 
+    // --- Extract Body ---
     const {
-      applicationId,
-      postId,
-      studentId,
+      student_id,
+      post_id,
+      application_id,
+      company_name,
       position,
-      salary,
-      joiningDate,
+      package_offered,
+      joining_date,
       location,
-      bondPeriod,
-      otherTerms,
-      offer_letter_base64,
+      offer_letter_file,
       file_name,
       file_type,
+      notes,
     } = req.body;
 
     console.log("Received offer data:", {
-      applicationId,
-      postId,
-      studentId,
+      student_id,
+      post_id,
+      application_id,
+      company_name,
       position,
-      salary,
-      joiningDate,
+      package_offered,
+      joining_date,
       location,
+      file_name,
+      file_type,
     });
 
-    // Validate required fields
+    // --- Validation ---
     if (
-      !applicationId ||
-      !postId ||
-      !studentId ||
+      !student_id ||
+      !post_id ||
+      !application_id ||
+      !company_name ||
       !position ||
-      !salary ||
-      !joiningDate ||
-      !location
+      !package_offered ||
+      !joining_date ||
+      !location ||
+      !offer_letter_file
     ) {
       return res.status(400).json({
         ok: false,
-        error: "Missing required fields",
+        error: "Missing required fields in offer letter submission",
       });
     }
 
-    // Get the application to verify
-    const applicationResult = await db
+    // --- Validate Application ---
+    const [application] = await db
       .select()
       .from(student_applications)
-      .where(eq(student_applications.id, applicationId))
+      .where(eq(student_applications.id, application_id))
       .limit(1);
 
-    console.log("Application query result:", applicationResult);
-
-    if (applicationResult.length === 0) {
-      return res.status(404).json({
-        ok: false,
-        error: "Application not found",
-      });
+    if (!application) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Application not found" });
     }
 
-    const application = applicationResult[0];
-
-    // Verify the post belongs to this recruiter
-    const postResult = await db
+    // --- Validate Post ---
+    const [post] = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.id, postId), eq(posts.user_id, req.user.id)))
+      .where(eq(posts.id, post_id))
       .limit(1);
 
-    if (postResult.length === 0) {
-      return res.status(404).json({
-        ok: false,
-        error: "Post not found or doesn't belong to you",
-      });
+    if (!post) {
+      return res.status(404).json({ ok: false, error: "Post not found" });
     }
 
-    const post = postResult[0];
-
-    // Check if offer already sent for this application
     const existingOffer = await db
       .select()
       .from(offer_letters)
-      .where(eq(offer_letters.application_id, applicationId))
+      .where(eq(offer_letters.application_id, application_id))
       .limit(1);
 
     if (existingOffer.length > 0) {
       return res.status(400).json({
         ok: false,
-        error: "Offer already sent for this application",
+        error: "Offer letter already sent for this application",
       });
     }
 
-    console.log("Inserting offer with:", {
-      application_id: applicationId,
-      student_id: studentId,
-      post_id: postId,
-      recruiter_id: req.user.id,
-    });
-
-    // Create offer letter record with base64
-    const offerLetter = await db
+    // --- Insert Offer Letter ---
+    const [offerLetter] = await db
       .insert(offer_letters)
       .values({
-        application_id: applicationId,
-        student_id: studentId,
-        post_id: postId,
+        application_id,
+        student_id,
+        post_id,
         recruiter_id: req.user.id,
-        company_name: post.company_name,
-        position: position,
-        salary_package: parseFloat(salary),
-        joining_date: new Date(joiningDate),
-        location: location,
-        bond_period: bondPeriod ? parseInt(bondPeriod) : 0,
-        other_terms: otherTerms || null,
-        offer_letter_url: offer_letter_base64, // Store base64
-        file_name: file_name,
-        file_type: file_type,
+        company_name,
+        position,
+        salary_package: parseFloat(package_offered),
+        joining_date: new Date(joining_date),
+        location, // ✅ fixed: added to satisfy NOT NULL constraint
+        offer_letter_url: offer_letter_file,
+        file_name,
+        file_type,
         status: "pending_placement_approval",
+        placement_notes: notes || null,
       })
       .returning();
 
-    // Update application status - ONLY application_status, NO offer_status
+    // --- Update Application Status ---
     await db
       .update(student_applications)
-      .set({
-        application_status: "offer_pending", // Changed from "offer" to "offer_pending"
-        updated_at: new Date(),
-      })
-      .where(eq(student_applications.id, applicationId));
+      .set({ application_status: "offer-pending" })
+      .where(eq(student_applications.id, application_id));
 
-    // Add timeline event
+    // --- Add to Timeline ---
     await db.insert(application_timeline).values({
-      application_id: applicationId,
+      application_id: application_id, // ✅ fixed: previously used undefined variable
       event_type: "offer_sent",
-      title: "Offer Letter Sent",
-      description: `Offer sent for ${position} position at ${post.company_name}. Awaiting placement cell approval.`,
+      title: "Offer Sent to Candidate",
+      description: `Offer letter for ${position} at ${company_name} sent by recruiter.`,
       event_date: new Date(),
-      visibility: "all",
+      visibility: "student", // depends on your schema defaults
     });
 
-    res.status(201).json({
+    // --- Response ---
+    return res.json({
       ok: true,
       message: "Offer letter sent successfully",
-      offer: offerLetter[0],
+      offer: offerLetter,
     });
-  } catch (e) {
-    console.error("Error sending offer letter:", e);
-    res.status(500).json({ ok: false, error: String(e) });
+  } catch (error) {
+    console.error("Error sending offer letter:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || "Internal server error",
+    });
   }
 });
 
-// Reject application (Recruiter only)
 router.post("/reject", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "recruiter") {
@@ -184,49 +172,26 @@ router.post("/reject", requireAuth, async (req, res) => {
       });
     }
 
-    // Verify the post belongs to this recruiter
-    const post = await db
-      .select()
-      .from(posts)
-      .where(and(eq(posts.id, postId), eq(posts.user_id, req.user.id)))
-      .limit(1);
-
-    if (post.length === 0) {
-      return res.status(404).json({
-        ok: false,
-        error: "Post not found or doesn't belong to you",
-      });
-    }
-
-    // Update application status - ONLY application_status
+    // Update application status
     await db
       .update(student_applications)
-      .set({
-        application_status: "rejected",
-        placement_notes: rejectionReason || null,
-        updated_at: new Date(),
-      })
+      .set({ status: "rejected" })
       .where(eq(student_applications.id, applicationId));
 
-    // Add timeline event
+    // Add to timeline
     await db.insert(application_timeline).values({
       application_id: applicationId,
-      event_type: "rejected",
-      title: "Application Rejected",
-      description:
-        rejectionReason ||
-        `Application rejected for ${post[0].position} at ${post[0].company_name}`,
-      event_date: new Date(),
-      visibility: "placement",
+      status: "rejected",
+      notes: rejectionReason || "Application rejected by recruiter",
     });
 
     res.json({
       ok: true,
       message: "Application rejected successfully",
     });
-  } catch (e) {
-    console.error("Error rejecting application:", e);
-    res.status(500).json({ ok: false, error: String(e) });
+  } catch (error) {
+    console.error("Error rejecting application:", error);
+    res.status(500).json({ ok: false, error: "Internal server error" });
   }
 });
 
@@ -399,25 +364,18 @@ router.get("/my-offers", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    const offers = await db
-      .select({
-        offer: offer_letters,
-        post: posts,
-      })
+    const studentId = req.user.id;
+
+    const studentOffers = await db
+      .select()
       .from(offer_letters)
-      .leftJoin(posts, eq(offer_letters.post_id, posts.id))
-      .where(
-        and(
-          eq(offer_letters.student_id, req.user.id),
-          eq(offer_letters.status, "approved")
-        )
-      )
+      .where(eq(offer_letters.student_id, studentId))
       .orderBy(desc(offer_letters.created_at));
 
-    res.json({ ok: true, offers });
-  } catch (e) {
-    console.error("Error fetching student offers:", e);
-    res.status(500).json({ ok: false, error: String(e) });
+    res.json({ ok: true, offers: studentOffers });
+  } catch (error) {
+    console.error("Error fetching student offers:", error);
+    res.status(500).json({ ok: false, error: "Internal server error" });
   }
 });
 

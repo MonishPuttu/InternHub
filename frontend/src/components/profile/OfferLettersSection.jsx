@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Button,
-  Stack,
   Card,
   CardContent,
   Chip,
+  Button,
+  Stack,
+  CircularProgress,
+  Alert,
   IconButton,
   Tooltip,
-  CircularProgress,
 } from "@mui/material";
 import {
   Download as DownloadIcon,
@@ -19,6 +20,7 @@ import {
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
   AttachMoney as MoneyIcon,
+  Business as BusinessIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -27,10 +29,30 @@ import { useTheme } from "@mui/material/styles";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
+const statusColors = {
+  approved: "#10b981",
+  pending: "#f59e0b",
+  "pending-placement-approval": "#f59e0b",
+  rejected: "#ef4444",
+  "rejected-by-placement": "#ef4444",
+  "offer-pending": "#3b82f6",
+};
+
+const statusLabels = {
+  approved: "Approved",
+  pending: "Pending",
+  "pending-placement-approval": "Pending Approval",
+  rejected: "Rejected",
+  "rejected-by-placement": "Rejected",
+  "offer-pending": "Offer Pending",
+};
+
 export default function OfferLettersSection() {
   const theme = useTheme();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     fetchOffers();
@@ -44,384 +66,313 @@ export default function OfferLettersSection() {
       });
 
       if (response.data.ok) {
-        setOffers(response.data.offers);
+        setOffers(response.data.offers || []);
       }
     } catch (error) {
       console.error("Error fetching offers:", error);
+      setErrorMsg("Failed to load offer letters");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownloadOffer = async (offerId) => {
+  const handleDownloadOffer = async (offer) => {
     try {
-      const token = getToken();
-      const response = await axios.get(
-        `${BACKEND_URL}/api/offers/download/${offerId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
-        }
-      );
+      if (!offer.offer_letter_url) {
+        setErrorMsg("Offer letter file not available");
+        setTimeout(() => setErrorMsg(""), 3000);
+        return;
+      }
 
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Extract base64 data (remove data:application/pdf;base64, prefix if exists)
+      const base64Data = offer.offer_letter_url.includes(",")
+        ? offer.offer_letter_url.split(",")[1]
+        : offer.offer_letter_url;
+
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {
+        type: offer.file_type || "application/pdf",
+      });
+
+      // Download
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Offer_Letter_${offerId}.pdf`);
+      link.setAttribute(
+        "download",
+        offer.file_name || `${offer.company_name}_${offer.position}_Offer.pdf`
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
+      setSuccessMsg("Offer letter downloaded successfully");
+      setTimeout(() => setSuccessMsg(""), 3000);
     } catch (error) {
-      console.error("Error downloading offer:", error);
-      alert("Failed to download offer letter");
+      console.error("Error downloading offer letter:", error);
+      setErrorMsg("Failed to download offer letter");
+      setTimeout(() => setErrorMsg(""), 3000);
     }
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-        <CircularProgress sx={{ color: "#8b5cf6" }} />
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "300px",
+        }}
+      >
+        <CircularProgress sx={{ color: theme.palette.primary.main }} />
       </Box>
     );
   }
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h5"
-            sx={{ color: "text.primary", fontWeight: 600, mb: 0.5 }}
-          >
-            Offer Letters
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            View and download your approved offer letters
-          </Typography>
-        </Box>
-      </Box>
+      {errorMsg && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErrorMsg("")}>
+          {errorMsg}
+        </Alert>
+      )}
+
+      {successMsg && (
+        <Alert
+          severity="success"
+          sx={{ mb: 3 }}
+          onClose={() => setSuccessMsg("")}
+        >
+          {successMsg}
+        </Alert>
+      )}
 
       {offers.length === 0 ? (
         <Card
           sx={{
-            bgcolor: "background.paper",
-            border: "1px solid",
-            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            bgcolor: theme.palette.background.paper,
             borderRadius: 2,
-            p: 4,
+            border: `1px solid ${theme.palette.divider}`,
+            p: 6,
             textAlign: "center",
           }}
         >
-          <WorkIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
-          <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
+          <BusinessIcon
+            sx={{ fontSize: 64, color: theme.palette.text.secondary, mb: 2 }}
+          />
+          <Typography
+            variant="h6"
+            sx={{ color: theme.palette.text.primary, mb: 1 }}
+          >
             No Offer Letters Yet
           </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Your approved offer letters will appear here once you receive them
-            from companies
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary }}
+          >
+            Your approved offer letters will appear here
           </Typography>
         </Card>
       ) : (
         <Stack spacing={3}>
-          {offers.map((offerData) => {
-            const offer = offerData.offer;
-            const post = offerData.post;
-
-            return (
-              <Card
-                key={offer.id}
-                sx={{
-                  bgcolor: "background.paper",
-                  border: "1px solid",
-                  borderColor:
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  borderRadius: 2,
-                  overflow: "hidden",
-                  transition: "all 0.3s",
-                  "&:hover": {
-                    borderColor: "#8b5cf6",
-                    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.15)",
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  {/* Header */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "start",
-                      mb: 2,
-                    }}
-                  >
-                    <Box sx={{ flex: 1 }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: "text.primary",
-                          fontWeight: 600,
-                          mb: 0.5,
-                        }}
-                      >
-                        {offer.position}
-                      </Typography>
-                      <Typography
-                        variant="body1"
-                        sx={{ color: "#8b5cf6", fontWeight: 500, mb: 1 }}
-                      >
-                        {offer.company_name}
-                      </Typography>
-                      <Chip
-                        label="Approved"
-                        size="small"
-                        sx={{
-                          bgcolor: "#10b98120",
-                          color: "#10b981",
-                          border: "1px solid #10b98140",
-                          fontWeight: 500,
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  {/* Offer Details Grid */}
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                      gap: 2,
-                      mt: 3,
-                      p: 2,
-                      bgcolor:
-                        theme.palette.mode === "dark"
-                          ? "#1e293b"
-                          : "rgba(139, 92, 246, 0.05)",
-                      borderRadius: 2,
-                    }}
-                  >
-                    {/* Salary */}
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
-                    >
-                      <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor:
-                            theme.palette.mode === "dark"
-                              ? "#8b5cf620"
-                              : "#8b5cf610",
-                        }}
-                      >
-                        <MoneyIcon sx={{ color: "#8b5cf6", fontSize: 20 }} />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "text.secondary", display: "block" }}
-                        >
-                          Salary Package
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.primary", fontWeight: 600 }}
-                        >
-                          ₹{offer.salary_package} LPA
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Joining Date */}
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
-                    >
-                      <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor:
-                            theme.palette.mode === "dark"
-                              ? "#10b98120"
-                              : "#10b98110",
-                        }}
-                      >
-                        <CalendarIcon sx={{ color: "#10b981", fontSize: 20 }} />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "text.secondary", display: "block" }}
-                        >
-                          Joining Date
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.primary", fontWeight: 600 }}
-                        >
-                          {new Date(offer.joining_date).toLocaleDateString(
-                            "en-US",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Location */}
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
-                    >
-                      <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor:
-                            theme.palette.mode === "dark"
-                              ? "#0ea5e920"
-                              : "#0ea5e910",
-                        }}
-                      >
-                        <LocationIcon sx={{ color: "#0ea5e9", fontSize: 20 }} />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "text.secondary", display: "block" }}
-                        >
-                          Location
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.primary", fontWeight: 600 }}
-                        >
-                          {offer.location}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Bond Period */}
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
-                    >
-                      <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor:
-                            theme.palette.mode === "dark"
-                              ? "#f59e0b20"
-                              : "#f59e0b10",
-                        }}
-                      >
-                        <WorkIcon sx={{ color: "#f59e0b", fontSize: 20 }} />
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "text.secondary", display: "block" }}
-                        >
-                          Bond Period
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.primary", fontWeight: 600 }}
-                        >
-                          {offer.bond_period === 0
-                            ? "No Bond"
-                            : `${offer.bond_period} years`}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  {/* Other Terms */}
-                  {offer.other_terms && (
-                    <Box
+          {offers.map((offer) => (
+            <Card
+              key={offer.id}
+              sx={{
+                bgcolor: theme.palette.background.paper,
+                borderRadius: 2,
+                border: `2px solid ${theme.palette.divider}`,
+                transition: "all 0.3s",
+                "&:hover": {
+                  borderColor: theme.palette.primary.main,
+                  boxShadow: 3,
+                },
+              }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    mb: 3,
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="h6"
                       sx={{
-                        mt: 3,
-                        p: 2,
-                        bgcolor:
-                          theme.palette.mode === "dark" ? "#1e293b" : "#f8fafc",
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor:
-                          theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                        color: theme.palette.text.primary,
+                        fontWeight: 700,
+                        mb: 0.5,
                       }}
                     >
+                      {offer.position}
+                    </Typography>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        color: theme.palette.primary.main,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {offer.company_name}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={statusLabels[offer.status] || offer.status}
+                    sx={{
+                      bgcolor: statusColors[offer.status] || "#64748b",
+                      color: "white",
+                      fontWeight: 600,
+                    }}
+                  />
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 2,
+                    mb: 3,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <MoneyIcon
+                      sx={{ color: theme.palette.primary.main, fontSize: 24 }}
+                    />
+                    <Box>
                       <Typography
                         variant="caption"
-                        sx={{
-                          color: "text.secondary",
-                          display: "block",
-                          mb: 1,
-                        }}
+                        sx={{ color: theme.palette.text.secondary }}
                       >
-                        Additional Terms & Conditions
+                        Salary Package
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "text.primary", whiteSpace: "pre-wrap" }}
-                      >
-                        {offer.other_terms}
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        ₹
+                        {offer.salary_package
+                          ? parseFloat(offer.salary_package).toFixed(2)
+                          : "N/A"}{" "}
+                        LPA
                       </Typography>
                     </Box>
-                  )}
+                  </Box>
 
-                  {/* Footer */}
-                  <Box
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <CalendarIcon
+                      sx={{ color: theme.palette.primary.main, fontSize: 24 }}
+                    />
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        Joining Date
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {offer.joining_date
+                          ? new Date(offer.joining_date).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )
+                          : "N/A"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <LocationIcon
+                      sx={{ color: theme.palette.primary.main, fontSize: 24 }}
+                    />
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        Location
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {offer.location || "N/A"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <WorkIcon
+                      sx={{ color: theme.palette.primary.main, fontSize: 24 }}
+                    />
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        Bond Period
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {offer.bond_period
+                          ? `${offer.bond_period} years`
+                          : "No Bond"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    display: "block",
+                    mb: 2,
+                  }}
+                >
+                  Received on{" "}
+                  {offer.created_at
+                    ? new Date(offer.created_at).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "N/A"}
+                </Typography>
+
+                {offer.status === "approved" && offer.offer_letter_url && (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<DownloadIcon />}
+                    onClick={() => handleDownloadOffer(offer)}
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mt: 3,
-                      pt: 2,
-                      borderTop: "1px solid",
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                      bgcolor: theme.palette.primary.main,
+                      "&:hover": { bgcolor: theme.palette.primary.dark },
+                      py: 1.5,
+                      fontWeight: 600,
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Received on{" "}
-                      {new Date(offer.created_at).toLocaleDateString()}
-                    </Typography>
-                    {offer.offer_letter_url && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<DownloadIcon />}
-                        onClick={() => handleDownloadOffer(offer.id)}
-                        sx={{
-                          color: "#8b5cf6",
-                          borderColor: "#8b5cf6",
-                          "&:hover": {
-                            borderColor: "#7c3aed",
-                            bgcolor: "#8b5cf620",
-                          },
-                        }}
-                      >
-                        Download PDF
-                      </Button>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    Download Offer Letter
+                  </Button>
+                )}
+
+                {!offer.offer_letter_url && (
+                  <Alert severity="info">
+                    Offer letter document will be available once approved by
+                    placement cell
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </Stack>
       )}
     </Box>

@@ -22,8 +22,8 @@ import {
   DialogActions,
   TextField,
   Alert,
-  Menu,
-  MenuItem,
+  Stack,
+  Tooltip,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -33,7 +33,6 @@ import {
   Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-  MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -45,7 +44,9 @@ const statusColors = {
   applied: "#64748b",
   interview_scheduled: "#0ea5e9",
   interviewed: "#8b5cf6",
-  offer_pending: "#f59e0b",
+  "offer-pending": "#f59e0b", // Fixed: with hyphen
+  offer_pending: "#f59e0b", // Support both formats
+  "offer-approved": "#10b981",
   offer_approved: "#10b981",
   hired: "#059669",
   rejected: "#ef4444",
@@ -55,7 +56,9 @@ const statusLabels = {
   applied: "Applied",
   interview_scheduled: "Interview Scheduled",
   interviewed: "Interviewed",
+  "offer-pending": "Offer Pending", // Fixed: with hyphen
   offer_pending: "Offer Pending",
+  "offer-approved": "Offer Approved",
   offer_approved: "Offer Approved",
   hired: "Hired",
   rejected: "Rejected",
@@ -73,15 +76,12 @@ export default function PlacementApplicationsPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-
   const [sendListDialogOpen, setSendListDialogOpen] = useState(false);
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [rejectOfferDialog, setRejectOfferDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedApp, setSelectedApp] = useState(null);
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [selectedMenuApp, setSelectedMenuApp] = useState(null);
 
   useEffect(() => {
     if (postId) {
@@ -99,7 +99,6 @@ export default function PlacementApplicationsPage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       if (response.data.ok) {
         setPost(response.data.application);
       }
@@ -120,8 +119,8 @@ export default function PlacementApplicationsPage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       if (response.data.ok) {
+        console.log("Applications fetched:", response.data.applications); // Debug log
         setApplications(response.data.applications || []);
       }
     } catch (error) {
@@ -217,7 +216,6 @@ export default function PlacementApplicationsPage() {
         setTimeout(() => setSuccessMsg(""), 3000);
         fetchApplications();
       };
-
       reader.readAsText(file);
     } catch (error) {
       console.error("Error importing CSV:", error);
@@ -233,7 +231,6 @@ export default function PlacementApplicationsPage() {
   const handleConfirmSendList = async () => {
     try {
       const token = getToken();
-
       if (!post || !post.id) {
         setErrorMsg("Missing post information");
         setTimeout(() => setErrorMsg(""), 3000);
@@ -271,21 +268,11 @@ export default function PlacementApplicationsPage() {
     }
   };
 
-  const handleMenuOpen = (event, app) => {
-    setMenuAnchor(event.currentTarget);
-    setSelectedMenuApp(app);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchor(null);
-    setSelectedMenuApp(null);
-  };
-
-  const handleViewOffer = async () => {
+  const handleViewOffer = async (app) => {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${BACKEND_URL}/api/offers/by-application/${selectedMenuApp.id}`,
+        `${BACKEND_URL}/api/offers/by-application/${app.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -294,7 +281,6 @@ export default function PlacementApplicationsPage() {
       if (response.data.ok && response.data.offer) {
         setSelectedOffer(response.data.offer);
         setOfferDialogOpen(true);
-        handleMenuClose();
       } else {
         setErrorMsg("No offer found for this application");
         setTimeout(() => setErrorMsg(""), 3000);
@@ -306,11 +292,72 @@ export default function PlacementApplicationsPage() {
     }
   };
 
-  const handleApproveOffer = async () => {
+  const handleDownloadOffer = async (app) => {
+    try {
+      const token = getToken();
+      const response = await axios.get(
+        `${BACKEND_URL}/api/offers/by-application/${app.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok && response.data.offer) {
+        const offer = response.data.offer;
+
+        if (!offer.offer_letter_url) {
+          setErrorMsg("No offer letter file available");
+          setTimeout(() => setErrorMsg(""), 3000);
+          return;
+        }
+
+        // Extract base64 data
+        const base64Data = offer.offer_letter_url.includes(",")
+          ? offer.offer_letter_url.split(",")[1]
+          : offer.offer_letter_url;
+
+        // Convert base64 to blob
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {
+          type: offer.file_type || "application/pdf",
+        });
+
+        // Download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute(
+          "download",
+          offer.file_name || `Offer_${offer.company_name}_${offer.position}.pdf`
+        );
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        setSuccessMsg("Offer letter downloaded successfully");
+        setTimeout(() => setSuccessMsg(""), 3000);
+      } else {
+        setErrorMsg("No offer found for this application");
+        setTimeout(() => setErrorMsg(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error downloading offer:", error);
+      setErrorMsg("Failed to download offer letter");
+      setTimeout(() => setErrorMsg(""), 3000);
+    }
+  };
+
+  const handleApproveOffer = async (app) => {
     try {
       const token = getToken();
       const offerResponse = await axios.get(
-        `${BACKEND_URL}/api/offers/by-application/${selectedMenuApp.id}`,
+        `${BACKEND_URL}/api/offers/by-application/${app.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -323,6 +370,7 @@ export default function PlacementApplicationsPage() {
       }
 
       const offerId = offerResponse.data.offer.id;
+
       await axios.put(
         `${BACKEND_URL}/api/offers/approve/${offerId}`,
         {},
@@ -332,7 +380,6 @@ export default function PlacementApplicationsPage() {
       setSuccessMsg("Offer approved and forwarded to student");
       setTimeout(() => setSuccessMsg(""), 3000);
       fetchApplications();
-      handleMenuClose();
     } catch (error) {
       console.error("Error approving offer:", error);
       setErrorMsg("Failed to approve offer");
@@ -340,10 +387,9 @@ export default function PlacementApplicationsPage() {
     }
   };
 
-  const handleRejectOfferClick = () => {
-    setSelectedApp(selectedMenuApp);
+  const handleRejectOfferClick = (app) => {
+    setSelectedApp(app);
     setRejectOfferDialog(true);
-    handleMenuClose();
   };
 
   const handleRejectOffer = async () => {
@@ -363,6 +409,7 @@ export default function PlacementApplicationsPage() {
       }
 
       const offerId = offerResponse.data.offer.id;
+
       await axios.put(
         `${BACKEND_URL}/api/offers/reject-offer/${offerId}`,
         { reason: rejectReason },
@@ -383,28 +430,49 @@ export default function PlacementApplicationsPage() {
     }
   };
 
+  // Helper function to check if status is offer-pending (supports both formats)
+  const isOfferPending = (status) => {
+    return status === "offer-pending" || status === "offer_pending";
+  };
+
+  // Helper function to check if status is offer-approved (supports both formats)
+  const isOfferApproved = (status) => {
+    return status === "offer-approved" || status === "offer_approved";
+  };
+
   if (loading) {
     return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
+      <Box sx={{ textAlign: "center", py: 4 }}>
         <Typography>Loading applications...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 4 }}>
-      {/* Header with Proper Alignment */}
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => router.back()}
-            variant="outlined"
-          >
-            Back
-          </Button>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => router.back()}
+          variant="outlined"
+          sx={{ mb: 2 }}
+        >
+          Back
+        </Button>
+
+        {/* Title and Action Buttons Row */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 1,
+          }}
+        >
+          {/* Left Side - Title */}
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 600, mb: 0.5 }}>
               Applications for {post?.company_name} - {post?.position}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -412,122 +480,170 @@ export default function PlacementApplicationsPage() {
               {applications.length !== 1 ? "s" : ""} received
             </Typography>
           </Box>
+
+          {/* Right Side - Action Buttons */}
+          {applications.length > 0 && (
+            <Stack direction="row" spacing={2}>
+              <Button
+                startIcon={<SendIcon />}
+                variant="contained"
+                onClick={handleSendListClick}
+                sx={{ bgcolor: "#3b82f6", "&:hover": { bgcolor: "#2563eb" } }}
+              >
+                Send List
+              </Button>
+              <Button
+                startIcon={<DownloadIcon />}
+                variant="outlined"
+                onClick={handleExportCSV}
+                sx={{
+                  color: "#10b981",
+                  borderColor: "#10b981",
+                  "&:hover": {
+                    borderColor: "#059669",
+                    bgcolor: "rgba(16, 185, 129, 0.08)",
+                  },
+                }}
+              >
+                Download CSV
+              </Button>
+              <Button
+                component="label"
+                startIcon={<UploadIcon />}
+                variant="outlined"
+                sx={{
+                  color: "#8b5cf6",
+                  borderColor: "#8b5cf6",
+                  "&:hover": {
+                    borderColor: "#7c3aed",
+                    bgcolor: "rgba(139, 92, 246, 0.08)",
+                  },
+                }}
+              >
+                Upload CSV
+                <input
+                  type="file"
+                  hidden
+                  accept=".csv"
+                  onChange={handleImportCSV}
+                />
+              </Button>
+            </Stack>
+          )}
         </Box>
-
-        {/* Action Buttons - Below Title */}
-        {applications.length > 0 && (
-          <Box sx={{ display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={handleSendListClick}
-              sx={{ bgcolor: "#3b82f6", "&:hover": { bgcolor: "#2563eb" } }}
-            >
-              Send List
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={handleExportCSV}
-              sx={{
-                color: "#10b981",
-                borderColor: "#10b981",
-                "&:hover": {
-                  borderColor: "#059669",
-                  bgcolor: "rgba(16, 185, 129, 0.08)",
-                },
-              }}
-            >
-              Download CSV
-            </Button>
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<UploadIcon />}
-              sx={{
-                color: "#8b5cf6",
-                borderColor: "#8b5cf6",
-                "&:hover": {
-                  borderColor: "#7c3aed",
-                  bgcolor: "rgba(139, 92, 246, 0.08)",
-                },
-              }}
-            >
-              Upload CSV
-              <input
-                type="file"
-                hidden
-                accept=".csv"
-                onChange={handleImportCSV}
-              />
-            </Button>
-          </Box>
-        )}
       </Box>
-
       {/* Applications Table */}
       {applications.length > 0 ? (
-        <Paper>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  {[
-                    "Student Name",
-                    "Roll Number",
-                    "Branch",
-                    "Semester",
-                    "CGPA",
-                    "10th",
-                    "12th",
-                    "Status",
-                    "Applied Date",
-                    "Actions",
-                  ].map((header) => (
-                    <TableCell key={header} sx={{ fontWeight: 600 }}>
-                      {header}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {[
+                  "Student Name",
+                  "Roll Number",
+                  "Branch",
+                  "Semester",
+                  "CGPA",
+                  "10th",
+                  "12th",
+                  "Status",
+                  "Applied Date",
+                  "Actions",
+                ].map((header) => (
+                  <TableCell key={header} sx={{ fontWeight: 700 }}>
+                    {header}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {applications
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((app) => (
+                  <TableRow key={app.id}>
+                    <TableCell>{app.full_name}</TableCell>
+                    <TableCell>{app.roll_number}</TableCell>
+                    <TableCell>{app.branch}</TableCell>
+                    <TableCell>{app.current_semester}</TableCell>
+                    <TableCell>{app.cgpa}</TableCell>
+                    <TableCell>{app.tenth_score}%</TableCell>
+                    <TableCell>{app.twelfth_score}%</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={
+                          statusLabels[app.application_status] ||
+                          app.application_status
+                        }
+                        size="small"
+                        sx={{
+                          bgcolor: `${
+                            statusColors[app.application_status] || "#64748b"
+                          }20`,
+                          color:
+                            statusColors[app.application_status] || "#64748b",
+                          fontWeight: 600,
+                        }}
+                      />
                     </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {applications
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((app) => (
-                    <TableRow key={app.id}>
-                      <TableCell>{app.full_name}</TableCell>
-                      <TableCell>{app.roll_number}</TableCell>
-                      <TableCell>{app.branch}</TableCell>
-                      <TableCell>{app.current_semester}</TableCell>
-                      <TableCell>{app.cgpa}</TableCell>
-                      <TableCell>{app.tenth_score}%</TableCell>
-                      <TableCell>{app.twelfth_score}%</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={
-                            statusLabels[app.application_status] ||
-                            app.application_status
-                          }
-                          sx={{
-                            bgcolor:
-                              statusColors[app.application_status] || "#64748b",
-                            color: "#fff",
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {new Date(app.applied_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton onClick={(e) => handleMenuOpen(e, app)}>
-                          <MoreVertIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                    <TableCell>
+                      {new Date(app.applied_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={0.5}>
+                        {/* Show View & Download for any offer status */}
+                        {(isOfferPending(app.application_status) ||
+                          isOfferApproved(app.application_status)) && (
+                          <>
+                            <Tooltip title="View Offer">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleViewOffer(app)}
+                                sx={{ color: "#8b5cf6" }}
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Download Offer">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDownloadOffer(app)}
+                                sx={{ color: "#10b981" }}
+                              >
+                                <DownloadIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+
+                        {/* Show Approve & Reject only for pending offers */}
+                        {isOfferPending(app.application_status) && (
+                          <>
+                            <Tooltip title="Forward to Student">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleApproveOffer(app)}
+                                sx={{ color: "#10b981" }}
+                              >
+                                <CheckCircleIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Reject Offer">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleRejectOfferClick(app)}
+                                sx={{ color: "#ef4444" }}
+                              >
+                                <CancelIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
           <TablePagination
             component="div"
             count={applications.length}
@@ -539,37 +655,15 @@ export default function PlacementApplicationsPage() {
               setPage(0);
             }}
           />
-        </Paper>
+        </TableContainer>
       ) : (
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <Typography color="text.secondary">
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Typography variant="body2" color="text.secondary">
             No applications received for this post yet.
           </Typography>
-        </Paper>
+        </Box>
       )}
-
-      {/* Actions Menu */}
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleMenuClose}
-      >
-        {selectedMenuApp?.application_status === "offer_pending" && (
-          <>
-            <MenuItem onClick={handleViewOffer}>
-              <VisibilityIcon sx={{ mr: 1, fontSize: 20 }} /> View Offer
-            </MenuItem>
-            <MenuItem onClick={handleApproveOffer}>
-              <CheckCircleIcon sx={{ mr: 1, fontSize: 20 }} /> Approve Offer
-            </MenuItem>
-            <MenuItem onClick={handleRejectOfferClick}>
-              <CancelIcon sx={{ mr: 1, fontSize: 20 }} /> Reject Offer
-            </MenuItem>
-          </>
-        )}
-      </Menu>
-
-      {/* Dialogs */}
+      {/* Send List Dialog */}
       <Dialog
         open={sendListDialogOpen}
         onClose={() => setSendListDialogOpen(false)}
@@ -583,7 +677,7 @@ export default function PlacementApplicationsPage() {
             <strong>{post?.company_name}</strong> -{" "}
             <strong>{post?.position}</strong>?
           </Typography>
-          <Typography color="error" sx={{ mt: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             This action can only be performed once.
           </Typography>
         </DialogContent>
@@ -592,13 +686,13 @@ export default function PlacementApplicationsPage() {
           <Button
             onClick={handleConfirmSendList}
             variant="contained"
-            color="primary"
+            sx={{ bgcolor: "#3b82f6" }}
           >
             Confirm Send
           </Button>
         </DialogActions>
       </Dialog>
-
+      {/* View Offer Dialog */}
       <Dialog
         open={offerDialogOpen}
         onClose={() => setOfferDialogOpen(false)}
@@ -608,33 +702,66 @@ export default function PlacementApplicationsPage() {
         <DialogTitle>Offer Letter Details</DialogTitle>
         <DialogContent>
           {selectedOffer && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
               <Box>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="caption" color="text.secondary">
                   Company
                 </Typography>
-                <Typography>{selectedOffer.company_name}</Typography>
+                <Typography variant="body1">
+                  {selectedOffer.company_name}
+                </Typography>
               </Box>
               <Box>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="caption" color="text.secondary">
                   Position
                 </Typography>
-                <Typography>{selectedOffer.position}</Typography>
+                <Typography variant="body1">
+                  {selectedOffer.position}
+                </Typography>
               </Box>
               <Box>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="caption" color="text.secondary">
                   Salary Package
                 </Typography>
-                <Typography>₹{selectedOffer.salary_package} LPA</Typography>
+                <Typography variant="body1">
+                  ₹{selectedOffer.salary_package} LPA
+                </Typography>
               </Box>
-            </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Joining Date
+                </Typography>
+                <Typography variant="body1">
+                  {new Date(selectedOffer.joining_date).toLocaleDateString()}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Location
+                </Typography>
+                <Typography variant="body1">
+                  {selectedOffer.location}
+                </Typography>
+              </Box>
+            </Stack>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOfferDialogOpen(false)}>Close</Button>
+          {selectedOffer?.offer_letter_url && (
+            <Button
+              onClick={() =>
+                handleDownloadOffer({ id: selectedOffer.application_id })
+              }
+              variant="contained"
+              sx={{ bgcolor: "#10b981" }}
+            >
+              Download Offer Letter
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
-
+      {/* Reject Offer Dialog */}
       <Dialog
         open={rejectOfferDialog}
         onClose={() => setRejectOfferDialog(false)}
@@ -662,25 +789,30 @@ export default function PlacementApplicationsPage() {
           >
             Cancel
           </Button>
-          <Button onClick={handleRejectOffer} variant="contained" color="error">
+          <Button
+            onClick={handleRejectOffer}
+            variant="contained"
+            sx={{ bgcolor: "#ef4444" }}
+          >
             Reject Offer
           </Button>
         </DialogActions>
       </Dialog>
-
+      {/* Success/Error Messages */}
       {successMsg && (
         <Alert
           severity="success"
           sx={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999 }}
+          onClose={() => setSuccessMsg("")}
         >
           {successMsg}
         </Alert>
       )}
-
       {errorMsg && (
         <Alert
           severity="error"
           sx={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999 }}
+          onClose={() => setErrorMsg("")}
         >
           {errorMsg}
         </Alert>
