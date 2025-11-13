@@ -1,98 +1,65 @@
 import express from "express";
 import { db } from "../db/index.js";
-import {
-    department_strength,
-    department_applications,
-    placement_statistics
-} from "../db/schema/placement_analytics.js";
-import { eq } from "drizzle-orm";
+
+import { eq, count, sum, sql, countDistinct, and } from "drizzle-orm";
+import { student_applications, posts, user, offer_letters } from "../db/schema/index.js";
 
 const router = express.Router();
-
-// Get department strength data
-router.get("/department-strength", async (req, res) => {
-    try {
-        const year = req.query.year || "2024-2025";
-
-        const strengthData = await db
-            .select()
-            .from(department_strength)
-            .where(eq(department_strength.year, year));
-
-        res.json({
-            ok: true,
-            data: strengthData,
-            year: year
-        });
-    } catch (error) {
-        console.error("Error fetching department strength:", error);
-        res.status(500).json({
-            ok: false,
-            error: "Failed to fetch department strength data"
-        });
-    }
-});
-
-// Get application analytics by department
-router.get("/department-applications", async (req, res) => {
-    try {
-        const postId = req.query.postId;
-
-        let query = db.select().from(department_applications);
-
-        if (postId) {
-            query = query.where(eq(department_applications.post_id, postId));
-        }
-
-        const applicationData = await query;
-
-        // Group by department and aggregate
-        const aggregated = applicationData.reduce((acc, curr) => {
-            const dept = curr.department;
-            if (!acc[dept]) {
-                acc[dept] = {
-                    department: dept,
-                    total_applied: 0,
-                    total_not_applied: 0
-                };
-            }
-            acc[dept].total_applied += curr.total_applied;
-            acc[dept].total_not_applied += curr.total_not_applied;
-            return acc;
-        }, {});
-
-        res.json({
-            ok: true,
-            data: Object.values(aggregated)
-        });
-    } catch (error) {
-        console.error("Error fetching department applications:", error);
-        res.status(500).json({
-            ok: false,
-            error: "Failed to fetch application analytics"
-        });
-    }
-});
 
 // Get overall placement statistics
 router.get("/statistics", async (req, res) => {
     try {
-        const year = req.query.year || "2024-2025";
+        // Get total unique students who have applied
+        const totalStudentsResult = await db
+            .select({ count: countDistinct(student_applications.student_id) })
+            .from(student_applications)
+            .innerJoin(posts, eq(student_applications.post_id, posts.id))
+            .where(eq(posts.approval_status, "approved"));
 
-        const stats = await db
-            .select()
-            .from(placement_statistics)
-            .where(eq(placement_statistics.year, year))
-            .limit(1);
+        // Get total students who received offers (placed)
+        const totalPlacedResult = await db
+            .select({ count: countDistinct(student_applications.student_id) })
+            .from(student_applications)
+            .innerJoin(posts, eq(student_applications.post_id, posts.id))
+            .where(
+                and(
+                    eq(posts.approval_status, "approved"),
+                    eq(student_applications.application_status, "offer")
+                )
+            );
+
+        // Get total approved companies
+        const totalCompaniesResult = await db
+            .select({ count: countDistinct(posts.user_id) })
+            .from(posts)
+            .where(eq(posts.approval_status, "approved"));
+
+        // Get highest package from approved posts
+        const highestPackageResult = await db
+            .select({ max: sql`MAX(${posts.package_offered})` })
+            .from(posts)
+            .where(eq(posts.approval_status, "approved"));
+
+        // Calculate average package
+        const averagePackageResult = await db
+            .select({ avg: sql`AVG(${posts.package_offered})` })
+            .from(posts)
+            .where(eq(posts.approval_status, "approved"));
+
+        const total_students = parseInt(totalStudentsResult[0]?.count || 0);
+        const total_placed = parseInt(totalPlacedResult[0]?.count || 0);
+        const total_companies = parseInt(totalCompaniesResult[0]?.count || 0);
+        const highest_package = parseFloat(highestPackageResult[0]?.max || 0);
+        const average_package = parseFloat(averagePackageResult[0]?.avg || 0);
 
         res.json({
             ok: true,
-            data: stats[0] || {
-                total_students: 0,
-                total_placed: 0,
-                total_companies: 0,
-                highest_package: 0,
-                average_package: 0
+            data: {
+                total_students,
+                total_placed,
+                total_companies,
+                highest_package,
+                average_package
             }
         });
     } catch (error) {
@@ -104,85 +71,124 @@ router.get("/statistics", async (req, res) => {
     }
 });
 
-// Seed fake data for testing
-router.post("/seed-data", async (req, res) => {
+// Get applied students data for stacked horizontal bar chart
+router.get("/applied-students", async (req, res) => {
     try {
-        const year = "2024-2025";
+        const department = req.query.department;
 
-        // Seed department strength
-        const strengthData = [
-            { department: "ECE", total_students: 60 },
-            { department: "CSE", total_students: 120 },
-            { department: "IT", total_students: 90 },
-            { department: "AIML", total_students: 60 },
-            { department: "AIDS", total_students: 60 },
-            { department: "MECH", total_students: 80 },
-            { department: "CSBS", total_students: 60 },
-            { department: "CIVIL", total_students: 70 },
-            { department: "EEE", total_students: 50 },
-            { department: "EIE", total_students: 50 }
-        ];
+        // Get all applications with approved posts and offer details
+        const applicationsWithPosts = await db
+            .select({
+                application: student_applications,
+                post: posts,
+                offer: offer_letters
+            })
+            .from(student_applications)
+            .leftJoin(posts, eq(student_applications.post_id, posts.id))
+            .leftJoin(offer_letters, eq(student_applications.id, offer_letters.application_id))
+            .where(eq(posts.approval_status, "approved"));
 
-        for (const dept of strengthData) {
-            await db
-                .insert(department_strength)
-                .values({
-                    department: dept.department,
-                    total_students: dept.total_students,
-                    year: year
-                })
-                .onConflictDoNothing();
-        }
+        // Group by post
+        const postGroups = {};
+        applicationsWithPosts.forEach(item => {
+            if (!item.post) return;
 
-        // Seed application data
-        const applicationData = [
-            { department: "ECE", total_applied: 45, total_not_applied: 15 },
-            { department: "CSE", total_applied: 100, total_not_applied: 20 },
-            { department: "IT", total_applied: 75, total_not_applied: 15 },
-            { department: "AIML", total_applied: 50, total_not_applied: 10 },
-            { department: "AIDS", total_applied: 48, total_not_applied: 12 },
-            { department: "MECH", total_applied: 55, total_not_applied: 25 },
-            { department: "CSBS", total_applied: 50, total_not_applied: 10 },
-            { department: "CIVIL", total_applied: 40, total_not_applied: 30 },
-            { department: "EEE", total_applied: 35, total_not_applied: 15 },
-            { department: "EIE", total_applied: 38, total_not_applied: 12 }
-        ];
+            const postId = item.post.id;
+            if (!postGroups[postId]) {
+                postGroups[postId] = {
+                    post_name: `${item.post.company_name} - ${item.post.position}`,
+                    applied: 0,
+                    interview_scheduled: 0,
+                    interviewed: 0,
+                    offer: 0,
+                    rejected: 0,
+                    items: []
+                };
+            }
 
-        for (const app of applicationData) {
-            await db.insert(department_applications).values({
-                department: app.department,
-                total_applied: app.total_applied,
-                total_not_applied: app.total_not_applied,
-                post_id: null
-            });
-        }
-
-        // Seed overall statistics
-        await db.insert(placement_statistics).values({
-            total_students: 700,
-            total_placed: 536,
-            total_companies: 45,
-            highest_package: 45,
-            average_package: 12,
-            year: year
+            // Filter by department if specified
+            if (department && department !== "All Departments") {
+                if (item.application.branch === department) {
+                    postGroups[postId].items.push(item);
+                }
+            } else {
+                postGroups[postId].items.push(item);
+            }
         });
+
+        // Count statuses for each post
+        const appliedData = Object.values(postGroups).map(group => {
+            const statusCounts = {
+                applied: 0,
+                interview_scheduled: 0,
+                interviewed: 0,
+                offer: 0,
+                rejected: 0
+            };
+
+            group.items.forEach(item => {
+                const status = item.application.application_status;
+                if (statusCounts.hasOwnProperty(status)) {
+                    statusCounts[status]++;
+                }
+            });
+
+            // Count offers based on offer_letters table
+            statusCounts.offer = group.items.filter(item => item.offer).length;
+
+            return {
+                post_name: group.post_name,
+                applied: statusCounts.applied,
+                interview_scheduled: statusCounts.interview_scheduled,
+                interviewed: statusCounts.interviewed,
+                offer: statusCounts.offer,
+                rejected: statusCounts.rejected
+            };
+        }).filter(item => item.applied > 0 || item.interview_scheduled > 0 || item.interviewed > 0 || item.offer > 0 || item.rejected > 0);
 
         res.json({
             ok: true,
-            message: "Fake data seeded successfully"
+            data: appliedData
         });
     } catch (error) {
-        console.error("Error seeding data:", error);
+        console.error("Error fetching applied students data:", error);
         res.status(500).json({
             ok: false,
-            error: "Failed to seed fake data"
+            error: "Failed to fetch applied students data"
         });
     }
 });
 
-router.get('/', (req, res) => {
-    res.json({ message: 'Placement analytics endpoint' });
+// Get overall applied students count
+router.get("/total-applied", async (req, res) => {
+    try {
+        const department = req.query.department;
+
+        let query = db
+            .select({ count: countDistinct(student_applications.student_id) })
+            .from(student_applications)
+            .innerJoin(posts, eq(student_applications.post_id, posts.id))
+            .where(eq(posts.approval_status, "approved"));
+
+        if (department && department !== "All Departments") {
+            query = query.where(eq(student_applications.branch, department));
+        }
+
+        const totalApplied = await query;
+
+        res.json({
+            ok: true,
+            total_applied: totalApplied[0].count
+        });
+    } catch (error) {
+        console.error("Error fetching total applied:", error);
+        res.status(500).json({
+            ok: false,
+            error: "Failed to fetch total applied count"
+        });
+    }
 });
+
 
 
 export default router;

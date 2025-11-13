@@ -10,6 +10,11 @@ import {
   Stack,
   Card,
   CardContent,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Pagination,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
@@ -18,6 +23,7 @@ import {
   People,
   Business,
   AttachMoney,
+  FilterList,
 } from "@mui/icons-material";
 import {
   BarChart,
@@ -39,38 +45,55 @@ export default function PlacementAnalytics() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
-  const [departmentStrength, setDepartmentStrength] = useState([]);
-  console.log("Department Strength Data:", departmentStrength);
+  const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
+  const [appliedData, setAppliedData] = useState([]);
+  const [totalApplied, setTotalApplied] = useState(0);
   const [statistics, setStatistics] = useState(null);
-  console.log("Placement Statistics Data:", statistics);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const departments = [
+    "All Departments",
+    "ECE",
+    "CSE",
+    "IT",
+    "AIML",
+    "AIDS",
+    "MECH",
+    "CSBS",
+    "CIVIL",
+    "EEE",
+    "EIE"
+  ];
+
   useEffect(() => {
     fetchAnalyticsData();
   }, []);
+
+  useEffect(() => {
+    fetchChartData();
+  }, [selectedDepartment]);
 
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const [strengthRes, statsRes] = await Promise.all([
-        axios.get(
-          `${BACKEND_URL}/api/placement-analytics/department-strength`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        ),
+      const [statsRes, totalAppliedRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/placement-analytics/statistics`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${BACKEND_URL}/api/placement-analytics/total-applied`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
-      if (strengthRes.data.ok) {
-        console.log("Fetched Department Strength:", strengthRes.data.data);
-        setDepartmentStrength(strengthRes.data.data);
-      }
-
       if (statsRes.data.ok) {
         setStatistics(statsRes.data.data);
+      }
+
+      if (totalAppliedRes.data.ok) {
+        setTotalApplied(totalAppliedRes.data.total_applied);
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -79,9 +102,37 @@ export default function PlacementAnalytics() {
     }
   };
 
+  const fetchChartData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const departmentParam = selectedDepartment === "All Departments" ? "" : `?department=${selectedDepartment}`;
+
+      const appliedRes = await axios.get(`${BACKEND_URL}/api/placement-analytics/applied-students${departmentParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (appliedRes.data.ok) {
+        setAppliedData(appliedRes.data.data);
+        setCurrentPage(1); // Reset to first page when data changes
+      }
+    } catch (error) {
+      console.error("Error fetching chart data:", error);
+    }
+  };
+
   const handleNavigateToApplications = () => {
     router.push("/placement-analytics/applications");
   };
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(appliedData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = appliedData.slice(startIndex, endIndex);
 
   const statCards = [
     {
@@ -99,9 +150,9 @@ export default function PlacementAnalytics() {
       bgColor: "#10b98120",
     },
     {
-      title: "Companies",
-      value: statistics?.total_companies || 0,
-      icon: Business,
+      title: "Total Applied",
+      value: totalApplied,
+      icon: FilterList,
       color: "#06b6d4",
       bgColor: "#06b6d420",
     },
@@ -113,6 +164,63 @@ export default function PlacementAnalytics() {
       bgColor: "#f59e0b20",
     },
   ];
+
+  // Custom Tooltip Component
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const total = payload.reduce((sum, entry) => sum + entry.value, 0);
+      return (
+        <Paper
+          sx={{
+            p: 2,
+            bgcolor: "background.paper",
+            border: "1px solid #334155",
+            borderRadius: 1,
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
+          >
+            {label}
+          </Typography>
+          {payload.map((entry, index) => (
+            <Stack
+              key={index}
+              direction="row"
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ mb: 0.5 }}
+            >
+              <Typography variant="body2" sx={{ color: entry.fill }}>
+                {entry.name}:
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.primary", fontWeight: 600 }}
+              >
+                {entry.value}
+              </Typography>
+            </Stack>
+          ))}
+          <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid #334155" }}>
+            <Stack direction="row" justifyContent="space-between" spacing={2}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Total:
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.primary", fontWeight: 700 }}
+              >
+                {total}
+              </Typography>
+            </Stack>
+          </Box>
+        </Paper>
+      );
+    }
+    return null;
+  };
 
   if (loading) {
     return (
@@ -210,6 +318,39 @@ export default function PlacementAnalytics() {
         })}
       </Grid>
 
+      {/* Department Filter */}
+      <Paper
+        sx={{
+          p: 3,
+          bgcolor: "background.paper",
+          border: "1px solid #334155",
+          borderRadius: 2,
+          mb: 4,
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <FilterList sx={{ color: "text.secondary" }} />
+          <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 600 }}>
+            Filter by Department
+          </Typography>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Select Department</InputLabel>
+            <Select
+              value={selectedDepartment}
+              label="Select Department"
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+            >
+              {departments.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+      </Paper>
+
+      {/* Application Statistics Chart */}
       <Paper
         sx={{
           p: 3,
@@ -218,88 +359,139 @@ export default function PlacementAnalytics() {
           borderRadius: 2,
         }}
       >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 3 }}
-        >
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
           <Box>
             <Typography
               variant="h6"
-              sx={{ color: "text.primary", fontWeight: 600, mb: 0.5 }}
+              sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
             >
-              Department Analytics
+              Application Statistics
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Total number of students per department
+              Track application progress across different companies and positions
             </Typography>
           </Box>
-          <IconButton
-            onClick={handleNavigateToApplications}
-            sx={{
-              bgcolor: "#8b5cf620",
-              color: "#8b5cf6",
-              "&:hover": {
-                bgcolor: "#8b5cf640",
-              },
-            }}
-          >
-            <ArrowForward />
-          </IconButton>
+          {appliedData.length > 0 && (
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Showing {startIndex + 1}-{Math.min(endIndex, appliedData.length)} of {appliedData.length} positions
+            </Typography>
+          )}
         </Stack>
 
-        <Box sx={{ width: "100%", height: 400 }}>
+        <Box sx={{ width: "100%", height: 400, mt: 2 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={departmentStrength}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              data={paginatedData}
+              layout="vertical"
+              margin={{ top: 20, right: 30, left: 180, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={false} />
               <XAxis
-                dataKey="department"
+                type="number"
                 stroke="#94a3b8"
-                angle={-45}
-                textAnchor="end"
-                height={80}
+                style={{ fontSize: "12px" }}
+                tick={{ fill: "#94a3b8" }}
               />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "background.paper",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                  color: "text.primary",
+              <YAxis
+                dataKey="post_name"
+                type="category"
+                stroke="#94a3b8"
+                width={170}
+                style={{ fontSize: "12px" }}
+                tick={{ fill: "#94a3b8" }}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#33415520" }} />
+              <Legend
+                wrapperStyle={{
+                  paddingTop: "20px",
+                  fontSize: "14px",
                 }}
+                iconType="circle"
               />
-              <Legend wrapperStyle={{ color: "text.secondary" }} />
-              <Bar
-                dataKey="total_students"
-                fill="#8b5cf6"
-                name="Total Students"
-                radius={[8, 8, 0, 0]}
-              />
+              <Bar dataKey="applied" stackId="a" fill="#8b5cf6" name="Applied" />
+              <Bar dataKey="interviewed" stackId="a" fill="#06b6d4" name="Interviewed" />
+              <Bar dataKey="offer" stackId="a" fill="#10b981" name="Offer" />
+              <Bar dataKey="rejected" stackId="a" fill="#ef4444" name="Rejected" />
             </BarChart>
           </ResponsiveContainer>
         </Box>
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size="large"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
+
+        {/* Summary Statistics */}
         <Box
           sx={{
-            mt: 3,
+            mt: 4,
             p: 2,
             bgcolor: "background.default",
-            borderRadius: 2,
+            borderRadius: 1,
             border: "1px solid #334155",
           }}
         >
-          <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
-            📊 Click the arrow icon above to view detailed application analytics
-            by department
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Application analytics show how many students from each department
-            have applied to job postings
-          </Typography>
+          <Stack
+            direction="row"
+            spacing={4}
+            justifyContent="center"
+            flexWrap="wrap"
+          >
+            <Box sx={{ textAlign: "center" }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "#8b5cf6", fontWeight: 700 }}
+              >
+                {appliedData.reduce((sum, item) => sum + item.applied, 0)}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Total Applied
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "center" }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "#06b6d4", fontWeight: 700 }}
+              >
+                {appliedData.reduce((sum, item) => sum + item.interviewed, 0)}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Total Interviewed
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "center" }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "#10b981", fontWeight: 700 }}
+              >
+                {appliedData.reduce((sum, item) => sum + item.offer, 0)}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Total Offers
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "center" }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "#ef4444", fontWeight: 700 }}
+              >
+                {appliedData.reduce((sum, item) => sum + item.rejected, 0)}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Total Rejected
+              </Typography>
+            </Box>
+          </Stack>
         </Box>
       </Paper>
     </Box>
