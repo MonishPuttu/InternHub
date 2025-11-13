@@ -154,7 +154,7 @@ export default function ChatPage() {
         width: "100%",
         height: "calc(100vh - 64px)",
         display: "flex",
-        bgcolor: "#0a0f1a",
+        bgcolor: "background.default",
       }}
     >
       {/* Sidebar - 20% */}

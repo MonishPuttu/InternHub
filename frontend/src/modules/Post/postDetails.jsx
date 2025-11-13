@@ -412,14 +412,12 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     </Typography>
                   </Box>
                   <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(post.application_date).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
+                    {new Date(post.application_date).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </Typography>
                 </Box>
               </Grid>
@@ -455,9 +453,10 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       </Typography>
                     </Box>
                     <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                      {new Date(post.application_deadline).toLocaleDateString(
-                        "en-US",
+                      {new Date(post.application_deadline).toLocaleString(
+                        "en-IN",
                         {
+                          timeZone: "Asia/Kolkata",
                           year: "numeric",
                           month: "long",
                           day: "numeric",
@@ -497,7 +496,8 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     </Typography>
                   </Box>
                   <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(post.interview_date).toLocaleDateString("en-US", {
+                    {new Date(post.interview_date).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
                       year: "numeric",
                       month: "long",
                       day: "numeric",
@@ -512,9 +512,11 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: "#0f172a",
+                    bgcolor: "background.default",
                     borderRadius: 2,
-                    border: "1px solid #334155",
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                   }}
                 >
                   <Box
@@ -526,7 +528,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     }}
                   >
                     <PersonIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
                       Targeted Departments
                     </Typography>
                   </Box>
@@ -537,10 +539,12 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                         label={dept}
                         size="small"
                         sx={{
-                          bgcolor: "#334155",
-                          color: "#e2e8f0",
+                          bgcolor:
+                            theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                          color: "text.primary",
                           fontSize: "0.75rem",
                           height: 24,
+                          fontWeight: 600,
                         }}
                       />
                     ))}
@@ -823,7 +827,17 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     Created At
                   </Typography>
                   <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {formatDate(post.created_at || post.application_date)}
+                    {new Date(
+                      post.created_at || post.application_date
+                    ).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
                   </Typography>
                 </Box>
               </Grid>
@@ -850,9 +864,17 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     >
                       Last Updated
                     </Typography>
-                    <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                      {formatDate(post.updated_at)}
-                    </Typography>
+                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
+                    {new Date(post.updated_at).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </Typography>
                   </Box>
                 </Grid>
               )}

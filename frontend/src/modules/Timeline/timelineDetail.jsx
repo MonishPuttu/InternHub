@@ -40,13 +40,48 @@ const STATUS_CONFIG = {
     color: "#f59e0b",
     icon: Schedule,
   },
+  "interview-scheduled": {
+    label: "Interview Scheduled",
+    color: "#f59e0b",
+    icon: Schedule,
+  },
   interviewed: {
     label: "Interview Completed",
     color: "#8b5cf6",
     icon: CheckCircle,
   },
+  "offer-pending": {
+    label: "Offer Pending Approval",
+    color: "#f59e0b",
+    icon: EmojiEvents,
+  },
+  offer_pending: {
+    label: "Offer Pending Approval",
+    color: "#f59e0b",
+    icon: EmojiEvents,
+  },
+  "offer-approved": {
+    label: "Offer Approved",
+    color: "#10b981",
+    icon: EmojiEvents,
+  },
+  offer_approved: {
+    label: "Offer Approved",
+    color: "#10b981",
+    icon: EmojiEvents,
+  },
   offered: { label: "Offer Received", color: "#10b981", icon: EmojiEvents },
   rejected: { label: "Not Selected", color: "#ef4444", icon: Cancel },
+  "rejected-by-placement": {
+    label: "Rejected by Placement",
+    color: "#ef4444",
+    icon: Cancel,
+  },
+  rejected_by_placement: {
+    label: "Rejected by Placement",
+    color: "#ef4444",
+    icon: Cancel,
+  },
 };
 
 export default function TimelineDetailPage({ params }) {

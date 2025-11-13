@@ -14,61 +14,29 @@ import { getToken } from "@/lib/session";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
-export default function ApprovedPostsSection({
-  searchQuery,
-  filterPostedDate,
-  filterIndustry,
-}) {
+export default function RecruiterPostsSection() {
   const router = useRouter();
-  const [approvedPosts, setApprovedPosts] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    fetchApprovedPosts();
-  }, [searchQuery, filterPostedDate, filterIndustry]);
+    fetchRecruiterPosts();
+  }, []);
 
-  const fetchApprovedPosts = async () => {
+  const fetchRecruiterPosts = async () => {
     try {
       setLoading(true);
       const token = getToken();
-      const response = await axios.get(
-        `${BACKEND_URL}/api/posts/approved-posts`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get(`${BACKEND_URL}/api/posts/my-posts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.ok) {
-        let posts = response.data.posts || [];
-
-        if (searchQuery) {
-          posts = posts.filter(
-            (post) =>
-              post.company_name
-                ?.toLowerCase()
-                .includes(searchQuery.toLowerCase()) ||
-              post.position?.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-        }
-
-        if (filterPostedDate) {
-          posts = posts.filter((post) => {
-            const postDate = new Date(post.application_date)
-              .toISOString()
-              .split("T")[0];
-            return postDate === filterPostedDate;
-          });
-        }
-
-        if (filterIndustry) {
-          posts = posts.filter((post) => post.industry === filterIndustry);
-        }
-
-        setApprovedPosts(posts);
+        setPosts(response.data.posts);
       }
     } catch (error) {
-      console.error("Error fetching approved posts:", error);
+      console.error("Error fetching posts:", error);
       setErrorMsg("Failed to load posts");
       setTimeout(() => setErrorMsg(""), 3000);
     } finally {
@@ -80,8 +48,38 @@ export default function ApprovedPostsSection({
     router.push(`/Post/postdetails/${postId}`);
   };
 
-  const handleViewApplications = (postId) => {
-    router.push(`/dashboard/placement/applications/${postId}`);
+  const handleViewApplications = async (postId) => {
+    try {
+      const token = getToken();
+      // First, check if applications have been sent for this post
+      const response = await axios.get(
+        `${BACKEND_URL}/api/student-application/received-lists`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.ok) {
+        // Find the list for this specific post
+        const listForPost = response.data.lists.find(
+          (list) => list.post?.id === postId
+        );
+
+        if (listForPost) {
+          // Navigate to applications page with the list ID
+          router.push(
+            `/dashboard/recruiter/applications/${postId}?listId=${listForPost.sentlist.id}`
+          );
+        } else {
+          setErrorMsg("No applications have been sent for this post yet");
+          setTimeout(() => setErrorMsg(""), 3000);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking applications:", error);
+      setErrorMsg("Failed to check applications");
+      setTimeout(() => setErrorMsg(""), 3000);
+    }
   };
 
   if (loading) {
@@ -93,16 +91,14 @@ export default function ApprovedPostsSection({
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        Approved Posts
+        My Posts
       </Typography>
 
-      {approvedPosts.length === 0 ? (
+      {posts.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
-          <Typography color="text.secondary">
-            No approved posts found
-          </Typography>
+          <Typography color="text.secondary">No posts created yet</Typography>
         </Paper>
       ) : (
         <Box
@@ -116,7 +112,7 @@ export default function ApprovedPostsSection({
             width: "100%",
           }}
         >
-          {approvedPosts.map((post) => (
+          {posts.map((post) => (
             <Box
               key={post.id}
               sx={{
@@ -129,12 +125,11 @@ export default function ApprovedPostsSection({
                 bgcolor: "background.paper",
                 "&:hover": {
                   transform: "translateY(-4px)",
-                  boxShadow: "0 8px 16px rgba(139, 92, 246, 0.2)",
+                  boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
                   borderColor: "primary.main",
                 },
               }}
             >
-              {/* Card Content */}
               <Box sx={{ p: 3, flexGrow: 1 }}>
                 <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
                   <Box
@@ -212,7 +207,6 @@ export default function ApprovedPostsSection({
                 </Box>
               </Box>
 
-              {/* Card Actions */}
               <Box
                 sx={{
                   p: 2,
@@ -222,7 +216,6 @@ export default function ApprovedPostsSection({
                 }}
               >
                 <Button
-                  size="medium"
                   variant="outlined"
                   startIcon={<VisibilityIcon />}
                   onClick={() => handleViewDetails(post.id)}
@@ -241,7 +234,6 @@ export default function ApprovedPostsSection({
                   View Details
                 </Button>
                 <Button
-                  size="medium"
                   variant="contained"
                   startIcon={<ListIcon />}
                   onClick={() => handleViewApplications(post.id)}

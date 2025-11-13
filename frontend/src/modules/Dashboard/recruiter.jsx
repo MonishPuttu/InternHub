@@ -1,374 +1,261 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Box, Typography, Paper, Button, Alert } from "@mui/material";
 import {
-  Box,
-  Typography,
-  Card,
-  Stack,
-  Grid,
-  CircularProgress,
-  Paper,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogActions,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  TablePagination,
-} from "@mui/material";
+  Visibility as VisibilityIcon,
+  List as ListIcon,
+  Business as BusinessIcon,
+} from "@mui/icons-material";
 import axios from "axios";
-import { useTheme } from "@mui/material/styles";
-import PostDetails from "@/modules/Post/postDetails";
+import { getToken } from "@/lib/session";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function RecruiterDashboard() {
   const router = useRouter();
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalPosts: 0,
-    approvedPosts: 0,
-    pendingPosts: 0,
-    totalApplications: 0,
-  });
-  const [approvedPosts, setApprovedPosts] = useState([]);
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [selectedPostForList, setSelectedPostForList] = useState(null);
-  const [applicationsList, setApplicationsList] = useState([]);
-  const theme = useTheme();
-  const [viewPostDialogOpen, setViewPostDialogOpen] = useState(false);
-  const [viewListDialogOpen, setViewListDialogOpen] = useState(false);
-  const [viewApplicationsDialogOpen, setViewApplicationsDialogOpen] =
-    useState(false);
-  const [receivedLists, setReceivedLists] = useState([]);
-  const [selectedReceivedList, setSelectedReceivedList] = useState(null);
-  const [postAppLoading, setPostAppLoading] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    fetchDashboardData();
-    fetchReceivedLists();
+    fetchRecruiterPosts();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchRecruiterPosts = async () => {
     try {
-      const token = localStorage.getItem("token");
+      setLoading(true);
+      const token = getToken();
+      const response = await axios.get(`${BACKEND_URL}/api/posts/my-posts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      // Fetch posts
-      const postsResponse = await axios.get(
-        `${BACKEND_URL}/api/posts/applications`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (postsResponse.data.ok) {
-        const posts = postsResponse.data.applications;
-        const approved = posts.filter((p) => p.approval_status === "approved");
-        setStats({
-          totalPosts: posts.length,
-          approvedPosts: approved.length,
-          pendingPosts: posts.filter((p) => p.approval_status === "pending")
-            .length,
-          totalApplications: 0, // You can add this later
-        });
-        setApprovedPosts(approved);
+      if (response.data.ok) {
+        // Filter only approved posts
+        const approvedPosts = (response.data.posts || []).filter(
+          (post) => post.approval_status === "approved"
+        );
+        setPosts(approvedPosts);
       }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Error fetching posts:", error);
+      setErrorMsg("Failed to load posts");
+      setTimeout(() => setErrorMsg(""), 3000);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchReceivedLists = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${BACKEND_URL}/api/student-applications/received-lists`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.data.ok) {
-        setReceivedLists(response.data.lists);
-      }
-    } catch (error) {
-      console.error("Error fetching received lists:", error);
-    }
+  const handleViewDetails = (postId) => {
+    router.push(`/Post/postdetails/${postId}`);
   };
 
-  const handleViewPostDetails = (post) => {
-    router.push(`/Post/postdetails/${post.id}`);
-  };
-
-  const handleViewApplicationsList = async (post) => {
-    // Find if there's a received list for this post
-    const receivedList = receivedLists.find((list) => list.post.id === post.id);
-
-    if (receivedList) {
-      setSelectedReceivedList(receivedList);
-      setViewListDialogOpen(true);
-    } else {
-      // No received list yet - show message or handle accordingly
-      console.log("No applications received for this post yet");
-      // You could show a snackbar or dialog here
-    }
-  };
-
-  const handleDownloadApplications = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${BACKEND_URL}/api/student-applications/received-list/${selectedReceivedList.sent_list.id}/download`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
-        }
-      );
-
-      // Create a blob URL and trigger download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `${selectedReceivedList.post.company_name}_${selectedReceivedList.post.position}_applications.csv`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error downloading applications:", error);
-      // You can add error handling here, like showing a snackbar
-    }
+  const handleViewApplications = (postId) => {
+    router.push(`/dashboard/recruiter/applications/${postId}`);
   };
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "80vh",
-        }}
-      >
-        <CircularProgress sx={{ color: "#8b5cf6" }} />
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography>Loading posts...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography
-        variant="h4"
-        sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
-      >
-        Recruiter Dashboard
-      </Typography>
-      <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
-        Welcome back! Here's an overview of your recruitment activities
-      </Typography>
-
-      {/* Stats Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              bgcolor: "background.paper",
-              border: "1px solid #334155",
-              borderRadius: 2,
-              p: 3,
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
-              Total Posts
-            </Typography>
-            <Typography
-              variant="h4"
-              sx={{ color: "text.primary", fontWeight: 700 }}
-            >
-              {stats.totalPosts}
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              bgcolor: "background.paper",
-              border: "1px solid #334155",
-              borderRadius: 2,
-              p: 3,
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
-              Approved Posts
-            </Typography>
-            <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 700 }}>
-              {stats.approvedPosts}
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              bgcolor: "background.paper",
-              border: "1px solid #334155",
-              borderRadius: 2,
-              p: 3,
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
-              Pending Review
-            </Typography>
-            <Typography variant="h4" sx={{ color: "#fbbf24", fontWeight: 700 }}>
-              {stats.pendingPosts}
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              bgcolor: "background.paper",
-              border: "1px solid #334155",
-              borderRadius: 2,
-              p: 3,
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
-              Total Applications
-            </Typography>
-            <Typography variant="h4" sx={{ color: "#8b5cf6", fontWeight: 700 }}>
-              {stats.totalApplications}
-            </Typography>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Quick Actions */}
-      <Card
-        sx={{
-          bgcolor: "background.paper",
-          border: "1px solid #334155",
-          borderRadius: 2,
-          p: 3,
-          mb: 4,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{ color: "text.primary", fontWeight: 600, mb: 2 }}
-        >
-          Quick Actions
-        </Typography>
-        <Stack spacing={2}>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            • Go to Posts section to create new job opportunities
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            • View and manage your posted opportunities
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            • Check applications from students
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            • The 'View Applications' button is unclickable if no students have applied to your post yet
-          </Typography>
-        </Stack>
-      </Card>
-
-      {/* Approved Posts Section */}
+    <Box sx={{ p: 4 }}>
       <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h5"
-          sx={{ color: "text.primary", fontWeight: 600, mb: 3 }}
-        >
-          Your Approved Posts
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+          My Job Posts
         </Typography>
+        <Typography variant="body1" color="text.secondary">
+          View and manage applications for your job postings
+        </Typography>
+      </Box>
+
+      {posts.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: "center" }}>
+          <Typography color="text.secondary" variant="h6">
+            No approved posts yet
+          </Typography>
+          <Typography color="text.secondary" sx={{ mt: 1 }}>
+            Your job posts will appear here once approved by placement cell
+          </Typography>
+        </Paper>
+      ) : (
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: { xs: 2, sm: 3 },
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "repeat(2, 1fr)",
+            },
+            gap: 3,
+            width: "100%",
           }}
         >
-          {approvedPosts.map((post) => (
-            <Paper
+          {posts.map((post) => (
+            <Box
               key={post.id}
               sx={{
-                p: 3,
+                display: "flex",
+                flexDirection: "column",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                transition: "all 0.3s ease",
                 bgcolor: "background.paper",
-                border: "1px solid #334155",
-                borderRadius: 2,
-                "&:hover": { borderColor: "#8b5cf6" },
+                "&:hover": {
+                  transform: "translateY(-8px)",
+                  boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+                  borderColor: "primary.main",
+                },
               }}
             >
-              <Typography
-                variant="h6"
-                sx={{ color: "text.primary", fontWeight: 600, mb: 2 }}
+              {/* Card Content */}
+              <Box sx={{ p: 3, flexGrow: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      bgcolor: "primary.main",
+                      color: "white",
+                      mr: 2,
+                    }}
+                  >
+                    <BusinessIcon sx={{ fontSize: 28 }} />
+                  </Box>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {post.company_name}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{ fontWeight: 600, color: "text.secondary" }}
+                    >
+                      {post.position}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Industry:
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {post.industry}
+                    </Typography>
+                  </Box>
+
+                  <Box
+                    sx={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Posted:
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {new Date(post.application_date).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+
+                  {post.package_offered && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mt: 1,
+                        p: 1.5,
+                        borderRadius: 1,
+                        bgcolor: "rgba(16, 185, 129, 0.1)",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "success.dark", fontWeight: 600 }}
+                      >
+                        Package:
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "success.dark", fontWeight: 700 }}
+                      >
+                        ₹{post.package_offered} LPA
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Card Actions */}
+              <Box
+                sx={{
+                  p: 2,
+                  pt: 0,
+                  display: "flex",
+                  gap: 1.5,
+                }}
               >
-                {post.company_name} - {post.position}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", mb: 3 }}
-              >
-                {post.industry} • Posted{" "}
-                {new Date(post.application_date).toLocaleDateString()}
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
                 <Button
                   variant="outlined"
-                  size="small"
-                  onClick={() => handleViewPostDetails(post)}
+                  startIcon={<VisibilityIcon />}
+                  onClick={() => handleViewDetails(post.id)}
                   sx={{
-                    color: "#8b5cf6",
-                    borderColor: "#8b5cf6",
-                    "&:hover": { borderColor: "#7c3aed", bgcolor: "#8b5cf620" },
+                    flex: "1 1 0",
+                    minWidth: 0,
+                    textTransform: "none",
+                    borderColor: "primary.main",
+                    color: "primary.main",
+                    "&:hover": {
+                      borderColor: "primary.dark",
+                      bgcolor: "rgba(139, 92, 246, 0.08)",
+                    },
                   }}
                 >
                   View Details
                 </Button>
                 <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handleViewApplicationsList(post)}
-                  disabled={
-                    !receivedLists.some((list) => list.post.id === post.id)
-                  }
+                  variant="contained"
+                  startIcon={<ListIcon />}
+                  onClick={() => handleViewApplications(post.id)}
                   sx={{
-                    color: "#10b981",
-                    borderColor: "#10b981",
-                    "&:hover": { borderColor: "#059669", bgcolor: "#10b98120" },
-                    "&:disabled": {
-                      color: "text.secondary",
-                      borderColor: "#64748b",
-                      opacity: 0.5,
+                    flex: "1 1 0",
+                    minWidth: 0,
+                    textTransform: "none",
+                    bgcolor: "primary.main",
+                    "&:hover": {
+                      bgcolor: "primary.dark",
                     },
                   }}
                 >
                   View Applications
                 </Button>
               </Box>
-            </Paper>
+            </Box>
           ))}
         </Box>
-      </Box>
+      )}
+
+      {errorMsg && (
+        <Alert
+          severity="error"
+          sx={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999 }}
+        >
+          {errorMsg}
+        </Alert>
+      )}
     </Box>
   );
 }

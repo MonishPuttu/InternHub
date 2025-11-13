@@ -88,18 +88,6 @@ export default function ChatMessages({
     setInput((prev) => prev + emojiObject.emoji);
   };
 
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      console.log("Selected file:", file.name);
-      // File upload logic will go here later
-    }
-  };
-
   const handleCopyRoomId = () => {
     if (selectedRoom?.id) {
       navigator.clipboard.writeText(selectedRoom.id);
@@ -137,7 +125,7 @@ export default function ChatMessages({
         <Typography variant="h5" sx={{ color: "text.secondary", mb: 1 }}>
           Select a chat to start messaging
         </Typography>
-        <Typography variant="body2" sx={{ color: "#475569" }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.disabled }}>
           Choose a room from the sidebar
         </Typography>
       </Box>
@@ -159,14 +147,14 @@ export default function ChatMessages({
         sx={{
           p: 2,
           bgcolor: "background.paper",
-          borderBottom: "1px solid #334155",
+          borderBottom: `1px solid ${theme.palette.divider}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
         <Stack direction="row" spacing={2} alignItems="center">
-          <Avatar sx={{ bgcolor: "#8b5cf6", width: 40, height: 40 }}>
+          <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 40, height: 40 }}>
             {initials(selectedRoom.name)}
           </Avatar>
           <Box>
@@ -194,8 +182,7 @@ export default function ChatMessages({
             sx: {
               bgcolor: "background.paper",
               color: "text.primary",
-              minWidth: 280,
-              border: "1px solid #334155",
+              border: `1px solid ${theme.palette.divider}`,
             },
           }}
         >
@@ -215,7 +202,7 @@ export default function ChatMessages({
               </Typography>
             </Stack>
           </MenuItem>
-          <Divider sx={{ borderColor: "#334155" }} />
+          <Divider sx={{ borderColor: theme.palette.divider }} />
           <MenuItem
             disabled
             sx={{ opacity: 1, "&.Mui-disabled": { opacity: 1 } }}
@@ -237,15 +224,15 @@ export default function ChatMessages({
               </Typography>
             </Stack>
           </MenuItem>
-          <Divider sx={{ borderColor: "#334155" }} />
+          <Divider sx={{ borderColor: theme.palette.divider }} />
           <MenuItem onClick={handleCopyRoomId}>
-            <ContentCopy sx={{ mr: 2, fontSize: 20, color: "#8b5cf6" }} />
+            <ContentCopy sx={{ mr: 2, fontSize: 20, color: theme.palette.primary.main }} />
             <Typography variant="body2">
               {copySuccess ? "Copied!" : "Copy Room ID"}
             </Typography>
           </MenuItem>
-          <Divider sx={{ borderColor: "#334155" }} />
-          <MenuItem onClick={handleDeleteClick} sx={{ color: "#ef4444" }}>
+          <Divider sx={{ borderColor: theme.palette.divider }} />
+          <MenuItem onClick={handleDeleteClick} sx={{ color: theme.palette.error.main }}>
             <DeleteSweep sx={{ mr: 2, fontSize: 20 }} />
             <Typography variant="body2">Delete Room</Typography>
           </MenuItem>
@@ -262,7 +249,7 @@ export default function ChatMessages({
           flexDirection: "column",
           gap: 2,
           backgroundImage:
-            "radial-gradient(circle at 1px 1px, #1e293b 1px, transparent 0)",
+            `radial-gradient(circle at 1px 1px, ${theme.palette.divider} 1px, transparent 0)`,
           backgroundSize: "40px 40px",
         }}
       >
@@ -401,21 +388,6 @@ export default function ChatMessages({
             </Box>
           </Popover>
 
-          {/* File Upload Button */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: "none" }}
-            onChange={handleFileChange}
-            accept="*/*"
-          />
-          <IconButton
-            sx={{ color: "text.secondary" }}
-            onClick={handleFileClick}
-          >
-            <AttachFile />
-          </IconButton>
-
           {/* Message Input */}
           <TextField
             fullWidth
@@ -473,8 +445,8 @@ export default function ChatMessages({
         <DialogTitle sx={{ color: "text.primary" }}>Delete Room?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Are you sure you want to delete "{selectedRoom.name}
-            "? This will permanently delete the room and all its messages. This
+            Are you sure you want to delete &quot;{selectedRoom.name}
+            &quot;? This will permanently delete the room and all its messages. This
             action cannot be undone.
           </Typography>
         </DialogContent>

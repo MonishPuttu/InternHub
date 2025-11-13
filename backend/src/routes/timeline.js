@@ -5,13 +5,14 @@ import {
   application_timeline,
   student_applications,
   posts,
+  offer_letters,
 } from "../db/schema/index.js";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
-// ✅ Status flow definition
+// ✅ Fixed: Use single version of each status (no duplicates)
 const STATUS_FLOW = {
   applied: {
     order: 1,
@@ -31,50 +32,99 @@ const STATUS_FLOW = {
     description: "Interview completed successfully",
     icon: "interviewed",
   },
-  offered: {
+  offer_pending: {
     order: 4,
-    title: "Offer Received",
-    description: "Congratulations! You have received an offer",
+    title: "Offer Letter Received",
+    description:
+      "Offer letter received from recruiter, pending placement approval",
+    icon: "offered",
+  },
+  offer_approved: {
+    order: 5,
+    title: "Offer Approved",
+    description:
+      "Congratulations! Your offer has been approved by placement cell",
     icon: "offered",
   },
   rejected: {
-    order: 4,
+    order: 99,
     title: "Not Selected",
     description: "Unfortunately, you were not selected for this position",
     icon: "rejected",
   },
+  rejected_by_placement: {
+    order: 99,
+    title: "Rejected by Placement",
+    description: "Offer rejected by placement cell",
+    icon: "rejected",
+  },
 };
 
-// ✅ Build complete timeline based on current status
+// ✅ Status mapping for variations (hyphenated to underscored)
+const STATUS_MAPPING = {
+  "interview-scheduled": "interview_scheduled",
+  "offer-pending": "offer_pending",
+  "offer-approved": "offer_approved",
+  "rejected-by-placement": "rejected_by_placement",
+};
+
+// ✅ Normalize status (convert hyphenated to underscored)
+function normalizeStatus(status) {
+  return STATUS_MAPPING[status] || status;
+}
+
+// ✅ Fixed: Build timeline with no duplicates
 function buildCompleteTimeline(dbEvents, currentStatus, appliedDate) {
-  // ✅ If status is "applied", only return actual DB events (no auto-generation)
-  if (currentStatus === "applied") {
+  // Normalize current status
+  const normalizedStatus = normalizeStatus(currentStatus);
+
+  // If status is "applied", only return actual DB events
+  if (normalizedStatus === "applied") {
     return dbEvents;
   }
 
-  const currentStatusOrder = STATUS_FLOW[currentStatus]?.order || 1;
+  const currentStatusConfig = STATUS_FLOW[normalizedStatus];
+  if (!currentStatusConfig) {
+    console.warn(`Unknown status: ${normalizedStatus}`);
+    return dbEvents;
+  }
+
+  const currentStatusOrder = currentStatusConfig.order;
   const completeTimeline = [];
 
-  // Get all statuses up to current status
-  const requiredStatuses = Object.entries(STATUS_FLOW)
-    .filter(([status, config]) => {
-      // Include all statuses up to current order
-      if (currentStatus === "rejected" || currentStatus === "offered") {
-        // For terminal states, include all previous steps + final step
-        return (
-          config.order < STATUS_FLOW[currentStatus].order ||
-          status === currentStatus
-        );
-      } else {
-        return config.order <= currentStatusOrder;
-      }
-    })
-    .sort((a, b) => a[1].order - b[1].order);
+  // ✅ Define the progression path based on current status
+  let progressionPath = [];
 
-  // Build timeline
-  requiredStatuses.forEach(([status, config]) => {
-    // Check if event exists in DB
-    const existingEvent = dbEvents.find((e) => e.event_type === status);
+  if (
+    normalizedStatus === "rejected" ||
+    normalizedStatus === "rejected_by_placement"
+  ) {
+    // Rejection path: show all steps up to rejection
+    progressionPath = [
+      "applied",
+      "interview_scheduled",
+      "interviewed",
+      normalizedStatus,
+    ];
+  } else {
+    // Success path: show all steps up to current status
+    progressionPath = Object.keys(STATUS_FLOW)
+      .filter((status) => {
+        const config = STATUS_FLOW[status];
+        return config.order <= currentStatusOrder && config.order < 99;
+      })
+      .sort((a, b) => STATUS_FLOW[a].order - STATUS_FLOW[b].order);
+  }
+
+  // Build timeline based on progression path
+  progressionPath.forEach((status) => {
+    const config = STATUS_FLOW[status];
+
+    // Check if event exists in DB (check both normal and hyphenated versions)
+    const existingEvent = dbEvents.find((e) => {
+      const normalizedEventType = normalizeStatus(e.event_type);
+      return normalizedEventType === status;
+    });
 
     if (existingEvent) {
       // Use actual event from DB
@@ -87,11 +137,11 @@ function buildCompleteTimeline(dbEvents, currentStatus, appliedDate) {
         event_type: status,
         title: config.title,
         description: config.description,
-        event_date: appliedDate, // Use applied date as fallback
+        event_date: appliedDate,
         metadata: null,
         visibility: "student",
         created_at: appliedDate,
-        isGenerated: true, // Mark as auto-generated
+        isGenerated: true,
       });
     }
   });
@@ -125,7 +175,7 @@ router.get("/my-applications", requireAuth, async (req, res) => {
   }
 });
 
-// ✅ Get timeline for specific application (with smart timeline building)
+// ✅ Get timeline for specific application
 router.get(
   "/application/:applicationId/timeline",
   requireAuth,
@@ -155,14 +205,42 @@ router.get(
         return res.status(403).json({ ok: false, error: "Access denied" });
       }
 
-      // ✅ Simply get timeline events - NO auto-creation
+      // Get timeline events from DB
       const dbTimelineEvents = await db
         .select()
         .from(application_timeline)
         .where(eq(application_timeline.application_id, applicationId))
         .orderBy(application_timeline.event_date);
 
-      // ✅ Build complete timeline with auto-generated events
+      // If offer status, fetch offer details
+      let offerDetails = null;
+      const normalizedStatus = normalizeStatus(
+        application.application.application_status
+      );
+
+      if (
+        normalizedStatus === "offer_pending" ||
+        normalizedStatus === "offer_approved"
+      ) {
+        const [offer] = await db
+          .select()
+          .from(offer_letters)
+          .where(eq(offer_letters.application_id, applicationId))
+          .limit(1);
+
+        if (offer) {
+          offerDetails = {
+            company_name: offer.company_name,
+            position: offer.position,
+            salary_package: offer.salary_package,
+            joining_date: offer.joining_date,
+            location: offer.location,
+            status: offer.status,
+          };
+        }
+      }
+
+      // Build complete timeline
       const completeTimeline = buildCompleteTimeline(
         dbTimelineEvents,
         application.application.application_status,
@@ -176,6 +254,7 @@ router.get(
           post: application.post,
           timeline: completeTimeline,
           currentStatus: application.application.application_status,
+          offerDetails,
         },
       });
     } catch (error) {

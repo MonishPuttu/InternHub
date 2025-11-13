@@ -17,6 +17,7 @@ import {
   Alert,
   Snackbar,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   ChevronLeft,
   ChevronRight,
@@ -33,6 +34,7 @@ const CAL_API = `${BACKEND_URL}/api/calendar`;
 const APPROVED_POSTS_API = `${BACKEND_URL}/api/posts/approved-posts`;
 
 export default function IntegratedStudentCalendar() {
+  const theme = useTheme();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("all");
@@ -681,11 +683,17 @@ export default function IntegratedStudentCalendar() {
                                   label="THIS WEEK"
                                   size="small"
                                   sx={{
-                                    bgcolor: "#8b5cf620",
-                                    color: "white",
-                                    border: data.isNearing
-                                      ? "2px solid #efcd44ff"
-                                      : "primary.main",
+                                    bgcolor:
+                                      theme.palette.mode === "dark"
+                                        ? "#334155"
+                                        : "#e2e8f0",
+                                    color: "text.primary",
+                                    border: "1px solid",
+                                    borderColor:
+                                      theme.palette.mode === "dark"
+                                        ? "#475569"
+                                        : "#cbd5e1",
+                                    fontWeight: 600,
                                   }}
                                 />
                               )}

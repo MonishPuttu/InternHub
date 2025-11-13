@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  boolean,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { user } from "../user.js";
 import { posts } from "../post.js";
 

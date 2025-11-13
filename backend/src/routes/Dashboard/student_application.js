@@ -860,4 +860,402 @@ router.get("/received-list/:listId/download", requireAuth, async (req, res) => {
   }
 });
 
+router.post("/schedule-interview", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const {
+      applicationId,
+      interview_type,
+      interview_date,
+      interview_time,
+      location,
+      meeting_link,
+      notes,
+    } = req.body;
+
+    if (!applicationId || !interview_date || !interview_time) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing required fields",
+      });
+    }
+
+    // Get application
+    const application = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
+
+    if (application.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Application not found",
+      });
+    }
+
+    // Verify post belongs to recruiter
+    const post = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.id, application[0].post_id),
+          eq(posts.user_id, req.user.id)
+        )
+      )
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(403).json({
+        ok: false,
+        error: "Post doesn't belong to you",
+      });
+    }
+
+    // Combine date and time
+    const interviewDateTime = new Date(`${interview_date}T${interview_time}`);
+
+    // Update application with interview details
+    await db
+      .update(student_applications)
+      .set({
+        application_status: "interview_scheduled",
+        interview_date: interviewDateTime,
+        interview_confirmed: true,
+        placement_notes:
+          `Interview scheduled for ${
+            interview_type === "online" ? "Online" : "Offline"
+          }\n` +
+          `Date: ${interview_date} at ${interview_time}\n` +
+          `${
+            interview_type === "online"
+              ? `Meeting Link: ${meeting_link}`
+              : `Location: ${location}`
+          }\n` +
+          `${notes ? `Notes: ${notes}` : ""}`,
+        updated_at: new Date(),
+      })
+      .where(eq(student_applications.id, applicationId));
+
+    // Add timeline event
+    await db.insert(application_timeline).values({
+      application_id: applicationId,
+      event_type: "interview_scheduled",
+      title: "Interview Scheduled",
+      description:
+        `Interview scheduled on ${interview_date} at ${interview_time}\n` +
+        `${
+          interview_type === "online"
+            ? `Meeting Link: ${meeting_link}`
+            : `Location: ${location}`
+        }`,
+      event_date: new Date(),
+      visibility: "all",
+    });
+
+    res.json({
+      ok: true,
+      message: "Interview scheduled successfully",
+    });
+  } catch (e) {
+    console.error("Error scheduling interview:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Send Feedback (Recruiter only)
+router.post("/feedback", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { applicationId, feedback, rating } = req.body;
+
+    if (!applicationId || !feedback || !rating) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing required fields",
+      });
+    }
+
+    // Get application
+    const application = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
+
+    if (application.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Application not found",
+      });
+    }
+
+    // Verify post belongs to recruiter
+    const post = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.id, application[0].post_id),
+          eq(posts.user_id, req.user.id)
+        )
+      )
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(403).json({
+        ok: false,
+        error: "Post doesn't belong to you",
+      });
+    }
+
+    // Update application with feedback
+    const existingNotes = application[0].placement_notes || "";
+    const feedbackText = `\n\nFeedback from recruiter (Rating: ${rating}/5):\n${feedback}`;
+
+    await db
+      .update(student_applications)
+      .set({
+        application_status: "interviewed",
+        placement_notes: existingNotes + feedbackText,
+        updated_at: new Date(),
+      })
+      .where(eq(student_applications.id, applicationId));
+
+    // Add timeline event
+    await db.insert(application_timeline).values({
+      application_id: applicationId,
+      event_type: "feedback_received",
+      title: "Interview Feedback Received",
+      description: `Recruiter provided feedback with rating: ${rating}/5`,
+      event_date: new Date(),
+      visibility: "placement",
+    });
+
+    res.json({
+      ok: true,
+      message: "Feedback sent successfully",
+    });
+  } catch (e) {
+    console.error("Error sending feedback:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Reject Application (Recruiter only)
+router.put("/reject/:applicationId", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const { applicationId } = req.params;
+
+    // Get application
+    const application = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
+
+    if (application.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Application not found",
+      });
+    }
+
+    // Verify post belongs to recruiter
+    const post = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.id, application[0].post_id),
+          eq(posts.user_id, req.user.id)
+        )
+      )
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(403).json({
+        ok: false,
+        error: "Post doesn't belong to you",
+      });
+    }
+
+    // Update application status
+    await db
+      .update(student_applications)
+      .set({
+        application_status: "rejected",
+        updated_at: new Date(),
+      })
+      .where(eq(student_applications.id, applicationId));
+
+    // Add timeline event
+    await db.insert(application_timeline).values({
+      application_id: applicationId,
+      event_type: "rejected",
+      title: "Application Rejected",
+      description: `Application rejected by ${post[0].company_name}`,
+      event_date: new Date(),
+      visibility: "all",
+    });
+
+    res.json({
+      ok: true,
+      message: "Application rejected successfully",
+    });
+  } catch (e) {
+    console.error("Error rejecting application:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get recruiter's applications (Recruiter only)
+router.get("/recruiter/applications", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "recruiter") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    // Get all posts by this recruiter
+    const recruiterPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.user_id, req.user.id));
+
+    if (recruiterPosts.length === 0) {
+      return res.json({ ok: true, applications: [] });
+    }
+
+    const postIds = recruiterPosts.map((p) => p.id);
+
+    // Get all applications for these posts
+    const applications = await db
+      .select({
+        application: student_applications,
+        post: posts,
+      })
+      .from(student_applications)
+      .leftJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(posts.user_id, req.user.id))
+      .orderBy(desc(student_applications.applied_at));
+
+    // Flatten the data
+    const flattenedApplications = applications.map((item) => ({
+      ...item.application,
+      company_name: item.post?.company_name,
+      position: item.post?.position,
+    }));
+
+    res.json({ ok: true, applications: flattenedApplications });
+  } catch (e) {
+    console.error("Error fetching recruiter applications:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get single application details (All roles)
+router.get("/application/:applicationId", requireAuth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    const application = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
+
+    if (application.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Application not found",
+      });
+    }
+
+    res.json({ ok: true, application: application[0] });
+  } catch (e) {
+    console.error("Error fetching application:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Get single post details by ID
+router.get("/:postId", requireAuth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const post = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
+
+    if (post.length === 0) {
+      return res.status(404).json({ ok: false, error: "Post not found" });
+    }
+
+    res.json({ ok: true, post: post[0] });
+  } catch (e) {
+    console.error("Error fetching post:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// GET single application by ID (for recruiters)
+router.get("/:applicationId", requireAuth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const token = getToken();
+
+    const [application] = await db
+      .select()
+      .from(student_applications)
+      .where(eq(student_applications.id, applicationId))
+      .limit(1);
+
+    if (!application) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Application not found" });
+    }
+
+    res.json({ ok: true, application });
+  } catch (error) {
+    console.error("Error fetching application:", error);
+    res.status(500).json({ ok: false, error: "Failed to fetch application" });
+  }
+});
+
+// GET check if list was sent for a post
+router.get("/sent-list/:postId", requireAuth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const [sentList] = await db
+      .select()
+      .from(sent_lists)
+      .where(eq(sent_lists.post_id, postId))
+      .limit(1);
+
+    if (sentList) {
+      return res.json({ ok: true, sentList });
+    } else {
+      return res.json({ ok: true, sentList: null });
+    }
+  } catch (error) {
+    console.error("Error checking sent list:", error);
+    res.status(500).json({ ok: false, error: "Failed to check sent list" });
+  }
+});
+
 export default router;

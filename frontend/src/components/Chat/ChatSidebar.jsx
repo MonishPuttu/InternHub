@@ -41,7 +41,7 @@ export default function ChatSidebar({
         width: "100%",
         height: "100%",
         bgcolor: "background.default",
-        borderRight: "1px solid #1e293b",
+        borderRight: `1px solid ${theme.palette.divider}`,
         display: "flex",
         flexDirection: "column",
       }}
@@ -51,7 +51,7 @@ export default function ChatSidebar({
         sx={{
           p: 2,
           bgcolor: "background.paper",
-          borderBottom: "1px solid #334155",
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Typography
@@ -75,8 +75,8 @@ export default function ChatSidebar({
             "& .MuiOutlinedInput-root": {
               color: "text.primary",
               bgcolor: "background.default",
-              "& fieldset": { borderColor: "#334155" },
-              "&:hover fieldset": { borderColor: "#8b5cf6" },
+              "& fieldset": { borderColor: theme.palette.divider },
+              "&:hover fieldset": { borderColor: theme.palette.primary.main },
             },
           }}
         />
@@ -92,17 +92,19 @@ export default function ChatSidebar({
                 py: 2,
                 px: 2,
                 bgcolor:
-                  selectedRoom?.id === room.id ? "#1e293b" : "transparent",
+                  selectedRoom?.id === room.id
+                    ? theme.palette.action.selected
+                    : "transparent",
                 borderLeft:
                   selectedRoom?.id === room.id
-                    ? "4px solid #8b5cf6"
+                    ? `4px solid ${theme.palette.primary.main}`
                     : "4px solid transparent",
                 "&:hover": { bgcolor: "background.paper" },
               }}
             >
               <Avatar
                 sx={{
-                  bgcolor: "#8b5cf6",
+                  bgcolor: theme.palette.primary.main,
                   mr: 2,
                   width: 48,
                   height: 48,
@@ -150,18 +152,18 @@ export default function ChatSidebar({
       </List>
 
       {/* Action Buttons */}
-      <Box sx={{ p: 2, borderTop: "1px solid #1e293b" }}>
+      <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
         <Stack spacing={1}>
           <Button
             onClick={onCreateRoom}
             startIcon={<Add />}
             sx={{
-              bgcolor: "#8b5cf6",
-              color: "#fff",
+              bgcolor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
               width: "100%",
               borderRadius: 2,
               textTransform: "none",
-              "&:hover": { bgcolor: "#7c3aed" },
+              "&:hover": { bgcolor: theme.palette.primary.dark },
             }}
           >
             New Room
@@ -170,12 +172,12 @@ export default function ChatSidebar({
             onClick={onJoinRoom}
             startIcon={<Login />}
             sx={{
-              bgcolor: "#334155",
+              bgcolor: theme.palette.action.hover,
               color: "text.primary",
               width: "100%",
               borderRadius: 2,
               textTransform: "none",
-              "&:hover": { bgcolor: "#475569" },
+              "&:hover": { bgcolor: theme.palette.action.focus },
             }}
           >
             Join Room

@@ -25,7 +25,6 @@ import {
   MoreVert as MoreVertIcon,
   Edit as EditIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import axios from "axios";
@@ -121,8 +120,7 @@ export default function PlacementDashboard() {
 
       setSuccessMsg("Student removed successfully");
       setRemoveDialogOpen(false);
-      // Trigger refresh by updating a key that causes ApprovedPostsSection to re-fetch
-      window.location.reload(); // Simple refresh for now
+      window.location.reload();
     } catch (error) {
       setErrorMsg("Failed to remove student");
     }
@@ -243,6 +241,7 @@ export default function PlacementDashboard() {
         </Box>
       </Box>
 
+      {/* Pass everything to ApprovedPostsSection */}
       <ApprovedPostsSection
         page={page}
         rowsPerPage={rowsPerPage}
