@@ -159,13 +159,13 @@ export default function RecentApplicationsCard({ applications }) {
                         width: 40,
                         height: 40,
                         borderRadius: 1,
-                        bgcolor: "#334155",
+                        bgcolor: theme.palette.background.default,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Business sx={{ color: "#8b5cf6", fontSize: 20 }} />
+                      <Business sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
                     </Box>
                     <Box>
                       <Typography

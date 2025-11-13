@@ -8,6 +8,7 @@ import {
   Person,
   BarChart,
   VideoCall,
+  Timeline,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -109,9 +110,9 @@ export default function StudentDashboard() {
       path: "/analytics",
     },
     {
-      title: "Mock Interview",
+      title: "Timeline",
       subtitle: "Practice sessions",
-      icon: VideoCall,
+      icon: Timeline,
       color: "#f59e0b",
       path: "/timeline",
     },

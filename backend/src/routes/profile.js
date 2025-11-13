@@ -117,7 +117,15 @@ router.get("/personal", requireAuth, async (req, res) => {
       .where(eq(student_profile.user_id, userId))
       .limit(1);
 
-    res.json({ ok: true, profile: profiles[0] || null });
+    const studentProfile = profiles[0] || {};
+    res.json({
+      ok: true,
+      profile: {
+        ...studentProfile,
+        email: req.user.email,
+        linkedin_profile: studentProfile.linkedin, // Map 'linkedin' to 'linkedin_profile'
+      },
+    });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
   }
