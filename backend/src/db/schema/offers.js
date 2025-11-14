@@ -15,20 +15,19 @@ import { user } from "./user.js";
 export const offer_letters = pgTable("offer_letters", {
   id: serial("id").primaryKey(),
 
-  // All foreign keys must be UUID to match your existing tables
   application_id: uuid("application_id")
     .notNull()
     .references(() => student_applications.id, { onDelete: "cascade" }),
 
-  student_id: uuid("student_id") // Changed from integer to uuid
+  student_id: uuid("student_id")
     .notNull()
     .references(() => user.id),
 
-  post_id: uuid("post_id") // Changed from integer to uuid
+  post_id: uuid("post_id")
     .notNull()
     .references(() => posts.id),
 
-  recruiter_id: uuid("recruiter_id") // Changed from integer to uuid
+  recruiter_id: uuid("recruiter_id")
     .notNull()
     .references(() => user.id),
 
@@ -49,7 +48,7 @@ export const offer_letters = pgTable("offer_letters", {
     .default("pending_placement_approval")
     .notNull(),
 
-  approved_by: uuid("approved_by").references(() => user.id), // Changed from integer to uuid
+  approved_by: uuid("approved_by").references(() => user.id),
   approved_at: timestamp("approved_at"),
   placement_notes: text("placement_notes"),
   created_at: timestamp("created_at").defaultNow().notNull(),

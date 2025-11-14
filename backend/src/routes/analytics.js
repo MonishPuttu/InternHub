@@ -1,6 +1,6 @@
 import express from "express";
 import { db } from "../db/index.js";
-import { applications } from "../db/schema/index.js";
+import { student_applications, posts } from "../db/schema/index.js";
 import { eq, gte, and, count, avg, isNotNull, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
@@ -11,61 +11,72 @@ router.get("/overview", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { timeRange = "6" } = req.query;
-
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - parseInt(timeRange));
 
     // Total applications
     const totalApps = await db
       .select({ value: count() })
-      .from(applications)
+      .from(student_applications)
       .where(
         and(
-          eq(applications.user_id, userId),
-          gte(applications.application_date, startDate)
+          eq(student_applications.student_id, userId),
+          gte(student_applications.applied_at, startDate)
         )
       );
 
-    // Applications with interviews
+    // Applications with interviews scheduled or completed
     const interviewedApps = await db
       .select({ value: count() })
-      .from(applications)
+      .from(student_applications)
       .where(
         and(
-          eq(applications.user_id, userId),
-          gte(applications.application_date, startDate),
-          isNotNull(applications.interview_date)
+          eq(student_applications.student_id, userId),
+          gte(student_applications.applied_at, startDate),
+          sql`${student_applications.application_status} IN ('interview_scheduled', 'interview-scheduled', 'interviewed')`
         )
       );
 
-    // Applications with offers
+    // Applications with offers (offer-pending, offer-approved)
     const offersReceived = await db
       .select({ value: count() })
-      .from(applications)
+      .from(student_applications)
       .where(
         and(
-          eq(applications.user_id, userId),
-          gte(applications.application_date, startDate),
-          eq(applications.status, "offer")
+          eq(student_applications.student_id, userId),
+          gte(student_applications.applied_at, startDate),
+          sql`${student_applications.application_status} IN ('offer-pending', 'offer_pending', 'offer-approved', 'offer_approved', 'offered')`
         )
       );
 
-    // Average package
-    const avgPackageResult = await db
-      .select({ value: avg(applications.package_offered) })
-      .from(applications)
+    // Average package from posts where student got offers
+    const offeredApplications = await db
+      .select({
+        package: posts.package_offered,
+      })
+      .from(student_applications)
+      .leftJoin(posts, eq(student_applications.post_id, posts.id))
       .where(
         and(
-          eq(applications.user_id, userId),
-          eq(applications.status, "offer"),
-          isNotNull(applications.package_offered)
+          eq(student_applications.student_id, userId),
+          sql`${student_applications.application_status} IN ('offer-approved', 'offer_approved', 'offered')`,
+          isNotNull(posts.package_offered)
         )
       );
 
     const total = parseInt(totalApps[0]?.value || 0);
     const interviewed = parseInt(interviewedApps[0]?.value || 0);
     const offers = parseInt(offersReceived[0]?.value || 0);
-    const avgPkg = parseFloat(avgPackageResult[0]?.value || 0);
+
+    // Calculate average package
+    let avgPkg = 0;
+    if (offeredApplications.length > 0) {
+      const sum = offeredApplications.reduce(
+        (acc, app) => acc + parseFloat(app.package || 0),
+        0
+      );
+      avgPkg = sum / offeredApplications.length;
+    }
 
     res.json({
       ok: true,
@@ -83,31 +94,29 @@ router.get("/overview", requireAuth, async (req, res) => {
   }
 });
 
-// Get timeline data - Using Drizzle ORM grouping
+// Get timeline data
 router.get("/timeline", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { timeRange = "6" } = req.query;
-
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - parseInt(timeRange));
 
     // Fetch all applications in range
     const apps = await db
       .select()
-      .from(applications)
+      .from(student_applications)
       .where(
         and(
-          eq(applications.user_id, userId),
-          gte(applications.application_date, startDate)
+          eq(student_applications.student_id, userId),
+          gte(student_applications.applied_at, startDate)
         )
       );
 
     // Group by month manually
     const monthlyData = {};
-
     apps.forEach((app) => {
-      const date = new Date(app.application_date);
+      const date = new Date(app.applied_at);
       const monthKey = `${date.getFullYear()}-${String(
         date.getMonth() + 1
       ).padStart(2, "0")}`;
@@ -122,8 +131,24 @@ router.get("/timeline", requireAuth, async (req, res) => {
       }
 
       monthlyData[monthKey].applications++;
-      if (app.interview_date) monthlyData[monthKey].interviews++;
-      if (app.status === "offer") monthlyData[monthKey].offers++;
+
+      if (
+        app.application_status === "interview_scheduled" ||
+        app.application_status === "interview-scheduled" ||
+        app.application_status === "interviewed"
+      ) {
+        monthlyData[monthKey].interviews++;
+      }
+
+      if (
+        app.application_status === "offer-pending" ||
+        app.application_status === "offer_pending" ||
+        app.application_status === "offer-approved" ||
+        app.application_status === "offer_approved" ||
+        app.application_status === "offered"
+      ) {
+        monthlyData[monthKey].offers++;
+      }
     });
 
     // Convert to array and sort
@@ -146,16 +171,18 @@ router.get("/industry-focus", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Fetch all applications for user
+    // Fetch all applications with post industry info
     const apps = await db
-      .select()
-      .from(applications)
-      .where(eq(applications.user_id, userId));
+      .select({
+        industry: posts.industry,
+      })
+      .from(student_applications)
+      .leftJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(student_applications.student_id, userId));
 
     // Group by industry manually
     const industryCount = {};
     let total = 0;
-
     apps.forEach((app) => {
       const industry = app.industry || "Other";
       industryCount[industry] = (industryCount[industry] || 0) + 1;
@@ -185,18 +212,23 @@ router.get("/industry-focus", requireAuth, async (req, res) => {
 router.get("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { status, industry, limit = 50 } = req.query;
+    const { status, limit = 50 } = req.query;
 
-    const conditions = [eq(applications.user_id, userId)];
+    const conditions = [eq(student_applications.student_id, userId)];
 
-    if (status) conditions.push(eq(applications.status, status));
-    if (industry) conditions.push(eq(applications.industry, industry));
+    if (status) {
+      conditions.push(eq(student_applications.application_status, status));
+    }
 
     const apps = await db
-      .select()
-      .from(applications)
+      .select({
+        application: student_applications,
+        post: posts,
+      })
+      .from(student_applications)
+      .leftJoin(posts, eq(student_applications.post_id, posts.id))
       .where(and(...conditions))
-      .orderBy(desc(applications.application_date))
+      .orderBy(desc(student_applications.applied_at))
       .limit(parseInt(limit));
 
     res.json({ ok: true, applications: apps });
@@ -206,77 +238,29 @@ router.get("/applications", requireAuth, async (req, res) => {
   }
 });
 
-// Create new application
-router.post("/applications", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const {
-      company_name,
-      position,
-      industry,
-      application_date,
-      status,
-      package_offered,
-      notes,
-    } = req.body;
-
-    if (!company_name || !position || !industry) {
-      return res.status(400).json({
-        ok: false,
-        error: "Company name, position, and industry are required",
-      });
-    }
-
-    const newApp = await db
-      .insert(applications)
-      .values({
-        user_id: userId,
-        company_name,
-        position,
-        industry,
-        application_date: application_date
-          ? new Date(application_date)
-          : new Date(),
-        status: status || "applied",
-        package_offered: package_offered || null,
-        notes: notes || null,
-      })
-      .returning();
-
-    res.status(201).json({ ok: true, application: newApp[0] });
-  } catch (e) {
-    console.error("Error creating application:", e);
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-// Update application
+// Update application status
 router.put("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
     const updateData = { ...req.body };
 
-    // Convert date strings to Date objects
-    if (updateData.application_date) {
-      updateData.application_date = new Date(updateData.application_date);
-    }
+    // Convert date strings to Date objects if present
     if (updateData.interview_date) {
       updateData.interview_date = new Date(updateData.interview_date);
-    }
-    if (updateData.offer_date) {
-      updateData.offer_date = new Date(updateData.offer_date);
-    }
-    if (updateData.rejection_date) {
-      updateData.rejection_date = new Date(updateData.rejection_date);
     }
 
     updateData.updated_at = new Date();
 
     const updated = await db
-      .update(applications)
+      .update(student_applications)
       .set(updateData)
-      .where(and(eq(applications.id, id), eq(applications.user_id, userId)))
+      .where(
+        and(
+          eq(student_applications.id, id),
+          eq(student_applications.student_id, userId)
+        )
+      )
       .returning();
 
     if (updated.length === 0) {
@@ -299,8 +283,13 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
 
     await db
-      .delete(applications)
-      .where(and(eq(applications.id, id), eq(applications.user_id, userId)));
+      .delete(student_applications)
+      .where(
+        and(
+          eq(student_applications.id, id),
+          eq(student_applications.student_id, userId)
+        )
+      );
 
     res.json({ ok: true });
   } catch (e) {
