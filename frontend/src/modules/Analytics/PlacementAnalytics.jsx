@@ -34,9 +34,13 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { color } from "framer-motion";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -45,7 +49,7 @@ export default function PlacementAnalytics() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
-  const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
+  const [selectedDepartment, setSelectedDepartment] = useState("All Dept");
   const [appliedData, setAppliedData] = useState([]);
   const [totalApplied, setTotalApplied] = useState(0);
   const [statistics, setStatistics] = useState(null);
@@ -53,7 +57,7 @@ export default function PlacementAnalytics() {
   const itemsPerPage = 5;
 
   const departments = [
-    "All Departments",
+    "All Dept",
     "ECE",
     "CSE",
     "IT",
@@ -68,7 +72,7 @@ export default function PlacementAnalytics() {
 
   useEffect(() => {
     fetchAnalyticsData();
-  }, []);
+  }, [selectedDepartment]);
 
   useEffect(() => {
     fetchChartData();
@@ -78,12 +82,13 @@ export default function PlacementAnalytics() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+      const departmentParam = selectedDepartment === "All Dept" ? "" : `?department=${selectedDepartment}`;
 
       const [statsRes, totalAppliedRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/placement-analytics/statistics`, {
+        axios.get(`${BACKEND_URL}/api/placement-analytics/statistics${departmentParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${BACKEND_URL}/api/placement-analytics/total-applied`, {
+        axios.get(`${BACKEND_URL}/api/placement-analytics/total-applied${departmentParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -105,7 +110,7 @@ export default function PlacementAnalytics() {
   const fetchChartData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const departmentParam = selectedDepartment === "All Departments" ? "" : `?department=${selectedDepartment}`;
+      const departmentParam = selectedDepartment === "All Dept" ? "" : `?department=${selectedDepartment}`;
 
       const appliedRes = await axios.get(`${BACKEND_URL}/api/placement-analytics/applied-students${departmentParam}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -139,29 +144,31 @@ export default function PlacementAnalytics() {
       title: "Total Students",
       value: statistics?.total_students || 0,
       icon: People,
-      color: "#8b5cf6",
-      bgColor: "#8b5cf620",
+
+      color: "#6366f1",
+
     },
     {
       title: "Students Placed",
       value: statistics?.total_placed || 0,
       icon: TrendingUp,
       color: "#10b981",
-      bgColor: "#10b98120",
+
     },
     {
       title: "Total Applied",
       value: totalApplied,
-      icon: FilterList,
+      icon: Business,
       color: "#06b6d4",
-      bgColor: "#06b6d420",
+
     },
     {
       title: "Highest Package",
       value: `₹${statistics?.highest_package || 0}L`,
       icon: AttachMoney,
+      p: 2,
       color: "#f59e0b",
-      bgColor: "#f59e0b20",
+
     },
   ];
 
@@ -304,11 +311,11 @@ export default function PlacementAnalytics() {
                         borderRadius: 2,
                         bgcolor: stat.bgColor,
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "left",
                         justifyContent: "center",
                       }}
                     >
-                      <Icon sx={{ color: stat.color, fontSize: 24 }} />
+                      <Icon sx={{ color: stat.color, fontSize: 25, }} />
                     </Box>
                   </Stack>
                 </CardContent>
@@ -316,184 +323,188 @@ export default function PlacementAnalytics() {
             </Grid>
           );
         })}
+        {/* Department Filter */}
+        <Paper
+          sx={{
+            p: 2,
+            bgcolor: "background.paper",
+            border: "1px solid #334155",
+            borderRadius: 2,
+            mb: 4,
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <FilterList sx={{ color: "text.secondary" }} />
+            <FormControl sx={{ Width: 90, height: 75 }}>
+              <InputLabel>Select Department</InputLabel>
+              <Select
+                value={selectedDepartment}
+                label="Select Department"
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={dept} value={dept}>
+                    {dept}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        </Paper>
       </Grid>
 
-      {/* Department Filter */}
-      <Paper
-        sx={{
-          p: 3,
-          bgcolor: "background.paper",
-          border: "1px solid #334155",
-          borderRadius: 2,
-          mb: 4,
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <FilterList sx={{ color: "text.secondary" }} />
-          <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 600 }}>
-            Filter by Department
-          </Typography>
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Select Department</InputLabel>
-            <Select
-              value={selectedDepartment}
-              label="Select Department"
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-            >
-              {departments.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
-      </Paper>
+      {/* Overview Tab */}
+      <Box sx={{ borderBottom: 1, borderColor: "#334155", mb: 3 }}>
+        <Typography
+          sx={{
+            color: "#8b5cf6",
+            pb: 1.5,
+            borderBottom: "2px solid #8b5cf6",
+            display: "inline-block",
+            fontWeight: 500,
+          }}
+        >
+          Overview
+        </Typography>
+      </Box>
 
-      {/* Application Statistics Chart */}
-      <Paper
+      <Box
         sx={{
-          p: 3,
-          bgcolor: "background.paper",
-          border: "1px solid #334155",
-          borderRadius: 2,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" },
+          gap: 3,
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-          <Box>
+        {/* Application Statistics Chart - Left Side */}
+        <Paper
+          sx={{
+            p: 3,
+            bgcolor: "background.paper",
+            border: "1px solid #334155",
+            borderRadius: 2,
+          }}
+        >
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
+              >
+                Application Statistics
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Track application progress across different companies and positions
+              </Typography>
+            </Box>
+            {appliedData.length > 0 && (
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Showing {startIndex + 1}-{Math.min(endIndex, appliedData.length)} of {appliedData.length} positions
+              </Typography>
+            )}
+          </Stack>
+
+          <Box sx={{ width: "100%", height: 400, mt: 2 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={paginatedData}
+                layout="vertical"
+                margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#fbfbfcff" horizontal={true} vertical={false} />
+                <XAxis
+                  type="number"
+                  stroke="#94a3b8"
+                  style={{ fontSize: "12px" }}
+                  tick={{ fill: "#94a3b8" }}
+                />
+                <YAxis
+                  dataKey="post_name"
+                  type="category"
+                  stroke="#94a3b8"
+                  width={170}
+                  style={{ fontSize: "12px" }}
+                  tick={{ fill: "#94a3b8" }}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "#33415520" }} />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: "20px",
+                    fontSize: "14px",
+                  }}
+                  iconType="circle"
+                />
+                <Bar dataKey="applied" stackId="a" fill="rgba(138, 92, 246, 0.64)" name="Applied" />
+                <Bar dataKey="interviewed" stackId="a" fill="#06b5d4ab" name="Interviewed" />
+                <Bar dataKey="offer" stackId="a" fill="#10b9819d" name="Offer" />
+                <Bar dataKey="rejected" stackId="a" fill="#ef4444a5" name="Rejected" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+        </Paper>
+
+        {/* Career Path Statistics Pie Chart - Right Side */}
+        <Paper
+          sx={{
+            p: 3,
+            bgcolor: "background.paper",
+            border: "1px solid #334155",
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ mb: 2 }}>
             <Typography
               variant="h6"
               sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
             >
-              Application Statistics
+              Career Path Distribution
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Track application progress across different companies and positions
+              Students opting for placement vs. higher education
             </Typography>
           </Box>
-          {appliedData.length > 0 && (
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Showing {startIndex + 1}-{Math.min(endIndex, appliedData.length)} of {appliedData.length} positions
-            </Typography>
-          )}
-        </Stack>
 
-        <Box sx={{ width: "100%", height: 400, mt: 2 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={paginatedData}
-              layout="vertical"
-              margin={{ top: 20, right: 30, left: 180, bottom: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={false} />
-              <XAxis
-                type="number"
-                stroke="#94a3b8"
-                style={{ fontSize: "12px" }}
-                tick={{ fill: "#94a3b8" }}
-              />
-              <YAxis
-                dataKey="post_name"
-                type="category"
-                stroke="#94a3b8"
-                width={170}
-                style={{ fontSize: "12px" }}
-                tick={{ fill: "#94a3b8" }}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#33415520" }} />
-              <Legend
-                wrapperStyle={{
-                  paddingTop: "20px",
-                  fontSize: "14px",
-                }}
-                iconType="circle"
-              />
-              <Bar dataKey="applied" stackId="a" fill="#8b5cf6" name="Applied" />
-              <Bar dataKey="interviewed" stackId="a" fill="#06b6d4" name="Interviewed" />
-              <Bar dataKey="offer" stackId="a" fill="#10b981" name="Offer" />
-              <Bar dataKey="rejected" stackId="a" fill="#ef4444" name="Rejected" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Box>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Pagination
-              count={totalPages}
-              page={currentPage}
-              onChange={handlePageChange}
-              color="primary"
-              size="large"
-              showFirstButton
-              showLastButton
-            />
+          <Box sx={{ width: "100%", height: 465, mt: 2 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Placement", value: statistics?.career_path_stats?.placement || 0, fill: "#10b981a8" },
+                    { name: "Higher Education", value: statistics?.career_path_stats?.higher_education || 0, fill: "#6365f193" },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ percent }) => ` ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  <Cell fill="#10b9819b" />
+                  <Cell fill="#6365f199" />
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </Box>
-        )}
-
-        {/* Summary Statistics */}
-        <Box
-          sx={{
-            mt: 4,
-            p: 2,
-            bgcolor: "background.default",
-            borderRadius: 1,
-            border: "1px solid #334155",
-          }}
-        >
-          <Stack
-            direction="row"
-            spacing={4}
-            justifyContent="center"
-            flexWrap="wrap"
-          >
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h5"
-                sx={{ color: "#8b5cf6", fontWeight: 700 }}
-              >
-                {appliedData.reduce((sum, item) => sum + item.applied, 0)}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Total Applied
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h5"
-                sx={{ color: "#06b6d4", fontWeight: 700 }}
-              >
-                {appliedData.reduce((sum, item) => sum + item.interviewed, 0)}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Total Interviewed
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h5"
-                sx={{ color: "#10b981", fontWeight: 700 }}
-              >
-                {appliedData.reduce((sum, item) => sum + item.offer, 0)}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Total Offers
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography
-                variant="h5"
-                sx={{ color: "#ef4444", fontWeight: 700 }}
-              >
-                {appliedData.reduce((sum, item) => sum + item.rejected, 0)}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Total Rejected
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
     </Box>
+
   );
 }

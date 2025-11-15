@@ -61,9 +61,8 @@ export default function UpcomingEventsCard({ events }) {
         "Dec",
       ];
 
-      return `${days[date.getUTCDay()]}, ${
-        months[date.getUTCMonth()]
-      } ${date.getUTCDate()}`;
+      return `${days[date.getUTCDay()]}, ${months[date.getUTCMonth()]
+        } ${date.getUTCDate()}`;
     }
   };
 

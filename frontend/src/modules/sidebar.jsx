@@ -96,6 +96,23 @@ const navigationItems = [
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
 ];
 
+const getFilteredNavigationItems = (user) => {
+  if (!user) return navigationItems;
+
+  // If student has opted for higher education, show only Dashboard and Profile & Resume
+  if (user.role === "student" && user.isHigherEducationOpted) {
+    return navigationItems.filter(item =>
+      item.text === "Dashboard" || item.text === "Profile & Resume"
+    );
+  }
+
+  // Default filtering by roles
+  return navigationItems.filter(item => {
+    if (!item.roles) return true;
+    return item.roles.includes(user.role);
+  });
+};
+
 export default function Sidebar({
   variant = "permanent",
   open = false,
@@ -159,7 +176,7 @@ export default function Sidebar({
         </Box>
 
         <List sx={{ px: 1.5 }}>
-          {navigationItems
+          {getFilteredNavigationItems(user)
             .filter((item) => {
               if (!item.roles) return true;
               if (!userRole) return false;

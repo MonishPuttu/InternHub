@@ -164,6 +164,7 @@ router.post("/signup", async (req, res) => {
           twelfth_score: profileData.twelfth_score || null,
           linkedin: profileData.linkedin || null,
           skills: profileData.skills || null,
+          career_path: profileData.career_path || "placement",
         })
         .returning();
     } else if (role === "placement" && profileData) {
@@ -294,6 +295,37 @@ router.post("/signin", async (req, res) => {
 
     const name = await getUserName(foundUser.id, foundUser.role);
 
+    // Fetch role-specific profile
+    let profile = null;
+    if (foundUser.role === "student") {
+      const profiles = await db
+        .select()
+        .from(student_profile)
+        .where(eq(student_profile.user_id, foundUser.id))
+        .limit(1);
+      profile = profiles[0];
+    } else if (foundUser.role === "placement") {
+      const profiles = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, foundUser.id))
+        .limit(1);
+      profile = profiles[0];
+    } else if (foundUser.role === "recruiter") {
+      const profiles = await db
+        .select()
+        .from(recruiter_profile)
+        .where(eq(recruiter_profile.user_id, foundUser.id))
+        .limit(1);
+      profile = profiles[0];
+    }
+
+    // Check if student has opted for higher education
+    let isHigherEducationOpted = false;
+    if (foundUser.role === "student" && profile) {
+      isHigherEducationOpted = profile.career_path === "higher_education";
+    }
+
     res.json({
       ok: true,
       user: {
@@ -301,6 +333,8 @@ router.post("/signin", async (req, res) => {
         email: foundUser.email,
         role: foundUser.role,
         name,
+        profile,
+        isHigherEducationOpted,
       },
       token,
       expiresAt: expiresAt.toISOString(),
@@ -366,12 +400,19 @@ router.get("/me", requireAuth, async (req, res) => {
       name = profile?.full_name || "Unknown";
     }
 
+    // Check if student has opted for higher education
+    let isHigherEducationOpted = false;
+    if (u.role === "student" && profile) {
+      isHigherEducationOpted = profile.career_path === "higher_education";
+    }
+
     res.json({
       ok: true,
       user: {
         ...u,
         name, // Add name field for backward compatibility
         profile,
+        isHigherEducationOpted,
       },
     });
   } catch (e) {

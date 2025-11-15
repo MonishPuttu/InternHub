@@ -2,22 +2,36 @@ import express from "express";
 import { db } from "../db/index.js";
 
 import { eq, count, sum, sql, countDistinct, and } from "drizzle-orm";
-import { student_applications, posts, user, offer_letters } from "../db/schema/index.js";
+import { student_applications, posts, user, offer_letters, student_profile } from "../db/schema/index.js";
+import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
 // Get overall placement statistics
-router.get("/statistics", async (req, res) => {
+router.get("/statistics", requireAuth, async (req, res) => {
     try {
+        // Check if user is placement officer
+        if (req.user.role !== "placement") {
+            return res.status(403).json({ ok: false, error: "Forbidden" });
+        }
+
+        const department = req.query.department;
+
         // Get total unique students who have applied
-        const totalStudentsResult = await db
+        let totalStudentsQuery = db
             .select({ count: countDistinct(student_applications.student_id) })
             .from(student_applications)
             .innerJoin(posts, eq(student_applications.post_id, posts.id))
             .where(eq(posts.approval_status, "approved"));
 
+        if (department && department !== "All Dept") {
+            totalStudentsQuery = totalStudentsQuery.where(eq(student_applications.branch, department));
+        }
+
+        const totalStudentsResult = await totalStudentsQuery;
+
         // Get total students who received offers (placed)
-        const totalPlacedResult = await db
+        let totalPlacedQuery = db
             .select({ count: countDistinct(student_applications.student_id) })
             .from(student_applications)
             .innerJoin(posts, eq(student_applications.post_id, posts.id))
@@ -27,6 +41,12 @@ router.get("/statistics", async (req, res) => {
                     eq(student_applications.application_status, "offer")
                 )
             );
+
+        if (department && department !== "All Dept") {
+            totalPlacedQuery = totalPlacedQuery.where(eq(student_applications.branch, department));
+        }
+
+        const totalPlacedResult = await totalPlacedQuery;
 
         // Get total approved companies
         const totalCompaniesResult = await db
@@ -46,6 +66,36 @@ router.get("/statistics", async (req, res) => {
             .from(posts)
             .where(eq(posts.approval_status, "approved"));
 
+        // Get career path statistics (placement vs higher_education)
+        let careerPathQuery = db
+            .select({
+                career_path: student_profile.career_path,
+                count: count()
+            })
+            .from(student_profile)
+            .innerJoin(user, eq(student_profile.user_id, user.id))
+            .where(eq(user.role, "student"))
+            .groupBy(student_profile.career_path);
+
+        if (department && department !== "All Dept") {
+            careerPathQuery = careerPathQuery.where(eq(student_profile.branch, department));
+        }
+
+        const careerPathResult = await careerPathQuery;
+
+        const careerPathStats = {
+            placement: 0,
+            higher_education: 0
+        };
+
+        careerPathResult.forEach(row => {
+            if (row.career_path === "placement") {
+                careerPathStats.placement = parseInt(row.count);
+            } else if (row.career_path === "higher_education") {
+                careerPathStats.higher_education = parseInt(row.count);
+            }
+        });
+
         const total_students = parseInt(totalStudentsResult[0]?.count || 0);
         const total_placed = parseInt(totalPlacedResult[0]?.count || 0);
         const total_companies = parseInt(totalCompaniesResult[0]?.count || 0);
@@ -59,7 +109,8 @@ router.get("/statistics", async (req, res) => {
                 total_placed,
                 total_companies,
                 highest_package,
-                average_package
+                average_package,
+                career_path_stats: careerPathStats
             }
         });
     } catch (error) {
@@ -72,8 +123,13 @@ router.get("/statistics", async (req, res) => {
 });
 
 // Get applied students data for stacked horizontal bar chart
-router.get("/applied-students", async (req, res) => {
+router.get("/applied-students", requireAuth, async (req, res) => {
     try {
+        // Check if user is placement officer
+        if (req.user.role !== "placement") {
+            return res.status(403).json({ ok: false, error: "Forbidden" });
+        }
+
         const department = req.query.department;
 
         // Get all applications with approved posts and offer details
@@ -160,8 +216,13 @@ router.get("/applied-students", async (req, res) => {
 });
 
 // Get overall applied students count
-router.get("/total-applied", async (req, res) => {
+router.get("/total-applied", requireAuth, async (req, res) => {
     try {
+        // Check if user is placement officer
+        if (req.user.role !== "placement") {
+            return res.status(403).json({ ok: false, error: "Forbidden" });
+        }
+
         const department = req.query.department;
 
         let query = db

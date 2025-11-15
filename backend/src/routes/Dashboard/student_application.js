@@ -27,6 +27,20 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
         .json({ ok: false, error: "Only students can apply" });
     }
 
+    // Check if student has opted for higher education
+    const studentProfile = await db
+      .select()
+      .from(student_profile)
+      .where(eq(student_profile.user_id, studentId))
+      .limit(1);
+
+    if (studentProfile.length > 0 && studentProfile[0].career_path === "higher_education") {
+      return res.status(403).json({
+        ok: false,
+        error: "Students opting for higher education cannot apply to placement posts",
+      });
+    }
+
     // Check if post exists and is approved
     const post = await db
       .select()
@@ -45,11 +59,7 @@ router.post("/apply/:postId", requireAuth, async (req, res) => {
     }
 
     // Check if student can apply to this post (department check)
-    const studentProfile = await db
-      .select()
-      .from(student_profile)
-      .where(eq(student_profile.user_id, studentId))
-      .limit(1);
+    // studentProfile already fetched above
 
     if (studentProfile.length === 0) {
       return res
@@ -927,14 +937,12 @@ router.post("/schedule-interview", requireAuth, async (req, res) => {
         interview_date: interviewDateTime,
         interview_confirmed: true,
         placement_notes:
-          `Interview scheduled for ${
-            interview_type === "online" ? "Online" : "Offline"
+          `Interview scheduled for ${interview_type === "online" ? "Online" : "Offline"
           }\n` +
           `Date: ${interview_date} at ${interview_time}\n` +
-          `${
-            interview_type === "online"
-              ? `Meeting Link: ${meeting_link}`
-              : `Location: ${location}`
+          `${interview_type === "online"
+            ? `Meeting Link: ${meeting_link}`
+            : `Location: ${location}`
           }\n` +
           `${notes ? `Notes: ${notes}` : ""}`,
         updated_at: new Date(),
@@ -948,10 +956,9 @@ router.post("/schedule-interview", requireAuth, async (req, res) => {
       title: "Interview Scheduled",
       description:
         `Interview scheduled on ${interview_date} at ${interview_time}\n` +
-        `${
-          interview_type === "online"
-            ? `Meeting Link: ${meeting_link}`
-            : `Location: ${location}`
+        `${interview_type === "online"
+          ? `Meeting Link: ${meeting_link}`
+          : `Location: ${location}`
         }`,
       event_date: new Date(),
       visibility: "all",
