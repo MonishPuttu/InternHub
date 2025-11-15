@@ -1,9 +1,10 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { posts } from "../db/schema/post.js";
-import { placement_profile, student_profile } from "../db/schema/user.js";
-import { eq, desc, and, or, isNull, gt, arrayContains } from "drizzle-orm";
+import { placement_profile, student_profile, user, recruiter_profile } from "../db/schema/user.js";
+import { eq, desc, and, or, isNull, gt, arrayContains, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
+import { sendNotificationEmail } from "../lib/emailService.js";
 
 const router = express.Router();
 
@@ -133,6 +134,90 @@ router.post("/applications", requireAuth, async (req, res) => {
         approval_status: "pending",
       })
       .returning();
+
+    // --- Email Notification Logic Start ---
+    if (newPost.length > 0 && validatedDepartments.length > 0) {
+      const createdPost = newPost[0];
+
+      // Fetch recruiter details
+      const recruiter = await db
+        .select({
+          email: user.email,
+          fullName: recruiter_profile.full_name,
+          companyName: recruiter_profile.company_name,
+        })
+        .from(user)
+        .leftJoin(recruiter_profile, eq(user.id, recruiter_profile.user_id))
+        .where(eq(user.id, userId))
+        .limit(1);
+
+      const recruiterInfo = recruiter[0] || {
+        email: "N/A",
+        fullName: "N/A",
+        companyName: "N/A",
+      };
+
+      // Fetch placement officers' emails for target departments
+      const placementOfficers = await db
+        .select({ email: user.email })
+        .from(user)
+        .leftJoin(placement_profile, eq(user.id, placement_profile.user_id))
+        .where(
+          and(
+            eq(user.role, "placement"),
+            inArray(placement_profile.department_branch, validatedDepartments)
+          )
+        );
+
+      console.log("Validated Departments:", validatedDepartments);
+      const recipientEmails = placementOfficers.map((po) => po.email);
+      console.log("Recipient Emails for notification:", recipientEmails);
+
+      if (recipientEmails.length > 0) {
+        const subject = `New Job Post from ${recruiterInfo.companyName} - ${createdPost.position}`;
+        const htmlContent = `
+          <p>Dear Placement Officer,</p>
+          <p>A new job post has been created by a recruiter. Please find the details below:</p>
+          <h3>Recruiter Information:</h3>
+          <ul>
+            <li><strong>Name:</strong> ${recruiterInfo.fullName}</li>
+            <li><strong>Company:</strong> ${recruiterInfo.companyName}</li>
+            <li><strong>Email:</strong> ${recruiterInfo.email}</li>
+          </ul>
+          <h3>Job Post Information:</h3>
+          <ul>
+            <li><strong>Company Name:</strong> ${createdPost.company_name}</li>
+            <li><strong>Position:</strong> ${createdPost.position}</li>
+            <li><strong>Industry:</strong> ${createdPost.industry}</li>
+            <li><strong>Application Deadline:</strong> ${
+              createdPost.application_deadline
+                ? new Date(createdPost.application_deadline).toDateString()
+                : "N/A"
+            }</li>
+            <li><strong>Target Departments:</strong> ${
+              createdPost.target_departments
+                ? createdPost.target_departments.join(", ")
+                : "N/A"
+            }</li>
+            <li><strong>Package Offered:</strong> ${
+              createdPost.package_offered || "N/A"
+            }</li>
+          </ul>
+          <p>Please review the post and take necessary action.</p>
+          <p>Regards,<br>InternHub Team</p>
+        `;
+
+        for (const email of recipientEmails) {
+          console.log(`Attempting to send email to: ${email}`);
+          await sendNotificationEmail(email, subject, htmlContent);
+        }
+      } else {
+        console.log("No recipient emails found for notification.");
+      }
+    } else {
+      console.log("No new post created or no target departments for notification.");
+    }
+    // --- Email Notification Logic End ---
 
     res.status(201).json({ ok: true, application: newPost[0] });
   } catch (e) {

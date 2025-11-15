@@ -644,389 +644,446 @@ export default function ProfilePage() {
             }}
           >
             {/* Full Name */}
-            <TextField
-              label="Full Name"
-              value={formData.full_name || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, full_name: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Full Name"
+                value={formData.full_name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, full_name: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Full Name
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.full_name || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* Email */}
-            <TextField
-              label="Email"
-              type="email"
-              value={formData.email || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, email: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Email"
+                type="email"
+                value={formData.email || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Email
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.email || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* Phone */}
-            <TextField
-              label="Phone Number"
-              value={formData.contact_number || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, contact_number: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Phone Number"
+                value={formData.contact_number || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, contact_number: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Phone Number
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.contact_number || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* College */}
-            <TextField
-              label="College Name"
-              value={formData.college_name || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, college_name: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="College Name"
+                value={formData.college_name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, college_name: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  College Name
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.college_name || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* Branch */}
-            <TextField
-              label="Branch"
-              value={formData.branch || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, branch: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Branch"
+                value={formData.branch || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, branch: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Branch
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.branch || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* Semester */}
-            <TextField
-              label="Current Semester"
-              type="number"
-              value={formData.current_semester || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, current_semester: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Current Semester"
+                type="number"
+                value={formData.current_semester || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, current_semester: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Current Semester
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.current_semester || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* CGPA */}
-            <TextField
-              label="CGPA"
-              type="number"
-              value={formData.cgpa || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, cgpa: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="CGPA"
+                type="number"
+                value={formData.cgpa || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, cgpa: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  CGPA
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.cgpa || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* 10th */}
-            <TextField
-              label="10th Score (%)"
-              type="number"
-              value={formData.tenth_score || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, tenth_score: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="10th Score (%)"
+                type="number"
+                value={formData.tenth_score || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, tenth_score: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  10th Score (%)
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.tenth_score || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* 12th */}
-            <TextField
-              label="12th Score (%)"
-              type="number"
-              value={formData.twelfth_score || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, twelfth_score: e.target.value })
-              }
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="12th Score (%)"
+                type="number"
+                value={formData.twelfth_score || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, twelfth_score: e.target.value })
+                }
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  12th Score (%)
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.twelfth_score || "N/A"}
+                </Typography>
+              </Box>
+            )}
 
             {/* LinkedIn */}
-            <TextField
-              label="LinkedIn Profile"
-              value={formData.linkedin_profile || ""}
-              disabled={!canEditPersonalInfo}
-              onChange={(e) =>
-                canEditPersonalInfo &&
-                setFormData({ ...formData, linkedin_profile: e.target.value })
-              }
-              fullWidth
-              placeholder="https://linkedin.com/in/yourprofile"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+            {canEditPersonalInfo ? (
+              <TextField
+                label="LinkedIn Profile"
+                value={formData.linkedin_profile || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, linkedin_profile: e.target.value })
+                }
+                fullWidth
+                placeholder="https://linkedin.com/in/yourprofile"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
-                  "&:hover fieldset": {
-                    borderColor: canEditPersonalInfo
-                      ? "#8b5cf6"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
                   },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              (formData.linkedin_profile && formData.linkedin_profile !== "N/A") && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    LinkedIn Profile
+                  </Typography>
+                  <Typography variant="body1" color="text.primary">
+                    {formData.linkedin_profile}
+                  </Typography>
+                </Box>
+              )
+            )}
           </Box>
 
           {/* Skills */}
-          <TextField
-            label="Skills"
-            value={formData.skills || ""}
-            disabled={!canEditPersonalInfo}
-            onChange={(e) =>
-              canEditPersonalInfo &&
-              setFormData({ ...formData, skills: e.target.value })
-            }
-            multiline
-            rows={2}
-            fullWidth
-            placeholder="React, Node.js, Python, Machine Learning"
-            sx={{
-              mt: 3,
-              "& .MuiOutlinedInput-root": {
-                color: "text.primary",
-                bgcolor: "background.default",
-                "& fieldset": {
-                  borderColor:
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          {canEditPersonalInfo ? (
+            <TextField
+              label="Skills"
+              value={formData.skills || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, skills: e.target.value })
+              }
+              multiline
+              rows={2}
+              fullWidth
+              placeholder="React, Node.js, Python, Machine Learning"
+              sx={{
+                mt: 3,
+                "& .MuiOutlinedInput-root": {
+                  color: "text.primary",
+                  bgcolor: "background.default",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#8b5cf6",
+                  },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
-                "&:hover fieldset": {
-                  borderColor: canEditPersonalInfo
-                    ? "#8b5cf6"
-                    : theme.palette.mode === "dark"
-                    ? "#334155"
-                    : "#e2e8f0",
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
                 },
-                "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-              },
-              "& .MuiInputLabel-root": {
-                color: "text.secondary",
-                "&.Mui-focused": { color: "#8b5cf6" },
-              },
-            }}
-          />
+              }}
+            />
+          ) : (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="caption" color="text.secondary">
+                Skills
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.skills || "N/A"}
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 

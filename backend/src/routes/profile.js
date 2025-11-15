@@ -2,13 +2,13 @@ import express from "express";
 import { db } from "../db/index.js";
 import {
   student_profile,
-  applications,
-  skill_assessments,
+  student_applications,
+  posts,
   education,
   projects,
   social_links,
 } from "../db/schema/index.js";
-import { eq, desc, count, and, or } from "drizzle-orm";
+import { eq, desc, count, and, or, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -17,8 +17,8 @@ router.get("/overview", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const role = req.user.role;
-
     let profile = null;
+
     if (role === "student") {
       const profiles = await db
         .select()
@@ -34,19 +34,21 @@ router.get("/overview", requireAuth, async (req, res) => {
       .where(eq(social_links.user_id, userId))
       .limit(1);
 
+    // Get recent experience from approved offers
     const recentExperience = await db
-      .select()
-      .from(applications)
+      .select({
+        application: student_applications,
+        post: posts,
+      })
+      .from(student_applications)
+      .leftJoin(posts, eq(student_applications.post_id, posts.id))
       .where(
         and(
-          eq(applications.user_id, userId),
-          or(
-            eq(applications.status, "offer"),
-            eq(applications.status, "interviewed")
-          )
+          eq(student_applications.student_id, userId),
+          sql`${student_applications.application_status} IN ('offer-approved', 'offer_approved', 'offered')`
         )
       )
-      .orderBy(desc(applications.application_date))
+      .orderBy(desc(student_applications.applied_at))
       .limit(2);
 
     const educationCount = await db
@@ -56,14 +58,11 @@ router.get("/overview", requireAuth, async (req, res) => {
 
     const experienceCount = await db
       .select({ value: count() })
-      .from(applications)
+      .from(student_applications)
       .where(
         and(
-          eq(applications.user_id, userId),
-          or(
-            eq(applications.status, "offer"),
-            eq(applications.status, "interviewed")
-          )
+          eq(student_applications.student_id, userId),
+          sql`${student_applications.application_status} IN ('offer-approved', 'offer_approved', 'offered')`
         )
       );
 
@@ -91,11 +90,11 @@ router.get("/overview", requireAuth, async (req, res) => {
         role: req.user.role,
       },
       socialLinks: socialLinks[0] || null,
-      recentExperience: recentExperience.map((app) => ({
-        job_title: app.position,
-        company_name: app.company_name,
-        start_date: app.application_date,
-        end_date: app.offer_date,
+      recentExperience: recentExperience.map((item) => ({
+        job_title: item.post?.position || "Position",
+        company_name: item.post?.company_name || "Company",
+        start_date: item.application?.applied_at,
+        end_date: item.application?.updated_at,
       })),
       completeness: {
         ...completeness,
@@ -117,7 +116,16 @@ router.get("/personal", requireAuth, async (req, res) => {
       .where(eq(student_profile.user_id, userId))
       .limit(1);
 
-    res.json({ ok: true, profile: profiles[0] || null });
+    const studentProfile = profiles[0] || {};
+
+    res.json({
+      ok: true,
+      profile: {
+        ...studentProfile,
+        email: req.user.email,
+        linkedin_profile: studentProfile.linkedin,
+      },
+    });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
   }
@@ -137,7 +145,6 @@ router.put("/personal", requireAuth, async (req, res) => {
     ];
 
     const bodyData = {};
-
     for (const [key, value] of Object.entries(req.body)) {
       if (excludedFields.includes(key)) continue;
       if (value === null || value === undefined || value === "") continue;
@@ -145,7 +152,6 @@ router.put("/personal", requireAuth, async (req, res) => {
     }
 
     let updated;
-
     if (role === "student") {
       const existing = await db
         .select()
@@ -235,31 +241,35 @@ router.delete("/education/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Experience now comes from student_applications with approved offers
 router.get("/experience", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+
     const experienceList = await db
-      .select()
-      .from(applications)
+      .select({
+        application: student_applications,
+        post: posts,
+      })
+      .from(student_applications)
+      .leftJoin(posts, eq(student_applications.post_id, posts.id))
       .where(
         and(
-          eq(applications.user_id, userId),
-          or(
-            eq(applications.status, "offer"),
-            eq(applications.status, "interviewed")
-          )
+          eq(student_applications.student_id, userId),
+          sql`${student_applications.application_status} IN ('offer-approved', 'offer_approved', 'offered')`
         )
       )
-      .orderBy(desc(applications.application_date));
+      .orderBy(desc(student_applications.applied_at));
 
-    const formatted = experienceList.map((app) => ({
-      id: app.id,
-      job_title: app.position,
-      company_name: app.company_name,
-      location: app.industry,
-      start_date: app.application_date,
-      end_date: app.offer_date,
-      description: app.notes,
+    const formatted = experienceList.map((item) => ({
+      id: item.application.id,
+      job_title: item.post?.position || "Position",
+      company_name: item.post?.company_name || "Company",
+      location: item.post?.industry || "N/A",
+      start_date: item.application.applied_at,
+      end_date: item.application.updated_at,
+      description:
+        item.application.placement_notes || item.application.cover_letter,
     }));
 
     res.json({ ok: true, experience: formatted });
@@ -316,44 +326,6 @@ router.delete("/projects/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await db.delete(projects).where(eq(projects.id, id));
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-router.get("/skills", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const skillsList = await db
-      .select()
-      .from(skill_assessments)
-      .where(eq(skill_assessments.user_id, userId));
-
-    res.json({ ok: true, skills: skillsList });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-router.post("/skills", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const newSkill = await db
-      .insert(skill_assessments)
-      .values({ user_id: userId, ...req.body })
-      .returning();
-
-    res.status(201).json({ ok: true, skill: newSkill[0] });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-router.delete("/skills/:id", requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.delete(skill_assessments).where(eq(skill_assessments.id, id));
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
