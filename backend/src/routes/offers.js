@@ -172,17 +172,23 @@ router.post("/reject", requireAuth, async (req, res) => {
       });
     }
 
-    // Update application status
+    // ✅ Fixed: Update application_status instead of status
     await db
       .update(student_applications)
-      .set({ status: "rejected" })
+      .set({
+        application_status: "rejected",
+        updated_at: new Date(),
+      })
       .where(eq(student_applications.id, applicationId));
 
-    // Add to timeline
+    // ✅ Fixed: Add proper timeline event
     await db.insert(application_timeline).values({
       application_id: applicationId,
-      status: "rejected",
-      notes: rejectionReason || "Application rejected by recruiter",
+      event_type: "rejected",
+      title: "Application Rejected",
+      description: rejectionReason || "Application rejected by recruiter",
+      event_date: new Date(),
+      visibility: "student",
     });
 
     res.json({

@@ -41,6 +41,7 @@ export const student_profile = pgTable("student_profile", {
   emis: text("emis"),
   skills: text("skills"),
   extra_activities: text("extra_activities"),
+  career_path: text("career_path").default("placement"), // "placement" or "higher_education"
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });

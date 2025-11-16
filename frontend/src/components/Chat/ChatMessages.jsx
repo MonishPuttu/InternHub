@@ -293,7 +293,7 @@ export default function ChatMessages({
                   borderRadius: isSender
                     ? "12px 12px 0 12px"
                     : "12px 12px 12px 0",
-                  bgcolor: isSender ? "#8b5cf6" : "#1e293b",
+                  bgcolor: isSender ? theme.palette.primary.main : theme.palette.action.hover,
                   color: "text.primary",
                 }}
               >
@@ -301,7 +301,7 @@ export default function ChatMessages({
                   <Typography
                     variant="caption"
                     sx={{
-                      color: "#a78bfa",
+                      color: theme.palette.primary.light,
                       fontWeight: 600,
                       display: "block",
                       mb: 0.5,
@@ -337,7 +337,7 @@ export default function ChatMessages({
               </Paper>
 
               {isSender && (
-                <Avatar sx={{ width: 32, height: 32, bgcolor: "#8b5cf6" }}>
+                <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
                   {initials(senderName)}
                 </Avatar>
               )}
@@ -352,7 +352,7 @@ export default function ChatMessages({
         sx={{
           p: 2,
           bgcolor: "background.paper",
-          borderTop: "1px solid #334155",
+          borderTop: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
@@ -407,9 +407,9 @@ export default function ChatMessages({
                 color: "text.primary",
                 bgcolor: "background.default",
                 borderRadius: 3,
-                "& fieldset": { borderColor: "#334155" },
-                "&:hover fieldset": { borderColor: "#8b5cf6" },
-                "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
               },
             }}
           />
@@ -419,10 +419,13 @@ export default function ChatMessages({
             onClick={onSendMessage}
             disabled={!socketConnected || !input.trim()}
             sx={{
-              bgcolor: "#8b5cf6",
-              color: "#fff",
-              "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#334155", color: "text.secondary" },
+              bgcolor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+              "&:hover": { bgcolor: theme.palette.primary.dark },
+              "&:disabled": {
+                bgcolor: theme.palette.action.disabledBackground,
+                color: theme.palette.text.disabled,
+              },
             }}
           >
             <Send />
@@ -438,7 +441,7 @@ export default function ChatMessages({
           sx: {
             bgcolor: "background.paper",
             color: "text.primary",
-            border: "1px solid #334155",
+            border: `1px solid ${theme.palette.divider}`,
           },
         }}
       >
@@ -461,9 +464,9 @@ export default function ChatMessages({
             onClick={handleConfirmDelete}
             variant="contained"
             sx={{
-              bgcolor: "#ef4444",
+              bgcolor: theme.palette.error.main,
               textTransform: "none",
-              "&:hover": { bgcolor: "#dc2626" },
+              "&:hover": { bgcolor: theme.palette.error.dark },
             }}
           >
             Delete All

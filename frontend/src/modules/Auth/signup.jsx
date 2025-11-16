@@ -36,7 +36,9 @@ export default function SignUp() {
     password: "",
     confirmPassword: "",
   });
-  const [profileData, setProfileData] = useState({});
+  const [profileData, setProfileData] = useState({
+    career_path: "placement", // Default value
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -100,6 +102,18 @@ export default function SignUp() {
 
   const renderStudentFields = () => (
     <Stack spacing={2.5}>
+      {/* Career Path Selection */}
+      <StyledSelect
+        label="Are you opting for Placements or Higher Education?"
+        value={profileData.career_path || "placement"}
+        onChange={(e) => updateProfileData("career_path", e.target.value)}
+        options={[
+          { value: "placement", label: "Opting for Placements" },
+          { value: "higher_education", label: "Choosing Higher Education" },
+        ]}
+        required
+      />
+
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <StyledTextField
           label="Full Name"
@@ -403,7 +417,9 @@ export default function SignUp() {
                   value={role}
                   onChange={(e) => {
                     setRole(e.target.value);
-                    setProfileData({});
+                    setProfileData({
+                      career_path: "placement", // Reset to default when role changes
+                    });
                   }}
                   options={roleOptions}
                   required

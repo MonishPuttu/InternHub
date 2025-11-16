@@ -213,8 +213,8 @@ export default function ChatPage() {
             sx={{
               "& .MuiOutlinedInput-root": {
                 color: "text.primary",
-                "& fieldset": { borderColor: "#334155" },
-                "&:hover fieldset": { borderColor: "#8b5cf6" },
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
               },
               "& .MuiInputLabel-root": { color: "text.secondary" },
             }}
@@ -230,7 +230,7 @@ export default function ChatPage() {
           <Button
             onClick={handleConfirmCreateRoom}
             variant="contained"
-            sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
+            sx={{ bgcolor: theme.palette.primary.main, "&:hover": { bgcolor: theme.palette.primary.dark } }}
           >
             Create
           </Button>
@@ -271,8 +271,8 @@ export default function ChatPage() {
               "& .MuiOutlinedInput-root": {
                 color: "text.primary",
                 fontFamily: "monospace",
-                "& fieldset": { borderColor: "#334155" },
-                "&:hover fieldset": { borderColor: "#8b5cf6" },
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
               },
               "& .MuiInputLabel-root": { color: "text.secondary" },
             }}
@@ -288,7 +288,7 @@ export default function ChatPage() {
           <Button
             onClick={handleConfirmJoinRoom}
             variant="contained"
-            sx={{ bgcolor: "#8b5cf6", "&:hover": { bgcolor: "#7c3aed" } }}
+            sx={{ bgcolor: theme.palette.primary.main, "&:hover": { bgcolor: theme.palette.primary.dark } }}
           >
             Join Room
           </Button>

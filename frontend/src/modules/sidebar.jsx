@@ -73,12 +73,12 @@ const navigationItems = [
     roles: ["student"],
   },
 
-  // {
-  //   text: "Analytics",
-  //   path: "/placement-analytics",
-  //   icon: <BarChartIcon />,
-  //   roles: ["placement"],
-  // },
+  {
+    text: "Analytics",
+    path: "/placement-analytics",
+    icon: <BarChartIcon />,
+    roles: ["placement"],
+  },
   {
     text: "Timeline",
     icon: <TimelineIcon />,
@@ -96,10 +96,27 @@ const navigationItems = [
   { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
 ];
 
+const getFilteredNavigationItems = (user) => {
+  if (!user) return navigationItems;
+
+  // If student has opted for higher education, show only Dashboard and Profile & Resume
+  if (user.role === "student" && user.isHigherEducationOpted) {
+    return navigationItems.filter(item =>
+      item.text === "Dashboard" || item.text === "Profile & Resume"
+    );
+  }
+
+  // Default filtering by roles
+  return navigationItems.filter(item => {
+    if (!item.roles) return true;
+    return item.roles.includes(user.role);
+  });
+};
+
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -159,7 +176,7 @@ export default function Sidebar({
         </Box>
 
         <List sx={{ px: 1.5 }}>
-          {navigationItems
+          {getFilteredNavigationItems(user)
             .filter((item) => {
               if (!item.roles) return true;
               if (!userRole) return false;
@@ -193,8 +210,8 @@ export default function Sidebar({
                       color: isActive
                         ? "#a78bfa"
                         : theme.palette.mode === "dark"
-                        ? "#94a3b8"
-                        : "#64748b", // Dynamic text color
+                          ? "#94a3b8"
+                          : "#64748b", // Dynamic text color
                       "&:hover": {
                         backgroundColor: isActive
                           ? alpha("#8b5cf6", 0.18)
@@ -208,8 +225,8 @@ export default function Sidebar({
                         color: isActive
                           ? "#a78bfa"
                           : theme.palette.mode === "dark"
-                          ? "#64748b"
-                          : "#94a3b8", // Dynamic icon color
+                            ? "#64748b"
+                            : "#94a3b8", // Dynamic icon color
                       }}
                     >
                       {item.icon}

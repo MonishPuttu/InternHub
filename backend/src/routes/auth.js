@@ -86,7 +86,9 @@ async function sendResetEmail(email, resetUrl) {
   // Check if SMTP credentials are configured
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log("SMTP credentials not configured. Reset link:", resetUrl);
-    console.log("For production, set SMTP_USER and SMTP_PASS environment variables");
+    console.log(
+      "For production, set SMTP_USER and SMTP_PASS environment variables"
+    );
     return true; // Return success for development
   }
 
@@ -164,6 +166,7 @@ router.post("/signup", async (req, res) => {
           twelfth_score: profileData.twelfth_score || null,
           linkedin: profileData.linkedin || null,
           skills: profileData.skills || null,
+          career_path: profileData.career_path || "placement",
         })
         .returning();
     } else if (role === "placement" && profileData) {
@@ -294,6 +297,37 @@ router.post("/signin", async (req, res) => {
 
     const name = await getUserName(foundUser.id, foundUser.role);
 
+    // Fetch role-specific profile
+    let profile = null;
+    if (foundUser.role === "student") {
+      const profiles = await db
+        .select()
+        .from(student_profile)
+        .where(eq(student_profile.user_id, foundUser.id))
+        .limit(1);
+      profile = profiles[0];
+    } else if (foundUser.role === "placement") {
+      const profiles = await db
+        .select()
+        .from(placement_profile)
+        .where(eq(placement_profile.user_id, foundUser.id))
+        .limit(1);
+      profile = profiles[0];
+    } else if (foundUser.role === "recruiter") {
+      const profiles = await db
+        .select()
+        .from(recruiter_profile)
+        .where(eq(recruiter_profile.user_id, foundUser.id))
+        .limit(1);
+      profile = profiles[0];
+    }
+
+    // Check if student has opted for higher education
+    let isHigherEducationOpted = false;
+    if (foundUser.role === "student" && profile) {
+      isHigherEducationOpted = profile.career_path === "higher_education";
+    }
+
     res.json({
       ok: true,
       user: {
@@ -301,6 +335,8 @@ router.post("/signin", async (req, res) => {
         email: foundUser.email,
         role: foundUser.role,
         name,
+        profile,
+        isHigherEducationOpted,
       },
       token,
       expiresAt: expiresAt.toISOString(),
@@ -366,12 +402,19 @@ router.get("/me", requireAuth, async (req, res) => {
       name = profile?.full_name || "Unknown";
     }
 
+    // Check if student has opted for higher education
+    let isHigherEducationOpted = false;
+    if (u.role === "student" && profile) {
+      isHigherEducationOpted = profile.career_path === "higher_education";
+    }
+
     res.json({
       ok: true,
       user: {
         ...u,
         name, // Add name field for backward compatibility
         profile,
+        isHigherEducationOpted,
       },
     });
   } catch (e) {
@@ -438,7 +481,8 @@ router.post("/forgot-password", async (req, res) => {
       // Don't reveal if email exists or not for security
       return res.json({
         ok: true,
-        message: "If an account with that email exists, a reset link has been sent.",
+        message:
+          "If an account with that email exists, a reset link has been sent.",
       });
     }
 
@@ -458,13 +502,16 @@ router.post("/forgot-password", async (req, res) => {
       .where(eq(user.id, foundUser.id));
 
     // Send reset email
-    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
+    const resetUrl = `${
+      process.env.CLIENT_URL || "http://localhost:3000"
+    }/reset-password?token=${resetToken}`;
 
     await sendResetEmail(email, resetUrl);
 
     res.json({
       ok: true,
-      message: "If an account with that email exists, a reset link has been sent.",
+      message:
+        "If an account with that email exists, a reset link has been sent.",
     });
   } catch (e) {
     console.error("Forgot password error:", e);
@@ -510,7 +557,10 @@ router.post("/change-password", requireAuth, async (req, res) => {
     const foundUser = users[0];
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, foundUser.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      foundUser.password
+    );
 
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
@@ -520,7 +570,10 @@ router.post("/change-password", requireAuth, async (req, res) => {
     }
 
     // Check if new password is different from current
-    const isSamePassword = await bcrypt.compare(newPassword, foundUser.password);
+    const isSamePassword = await bcrypt.compare(
+      newPassword,
+      foundUser.password
+    );
     if (isSamePassword) {
       return res.status(400).json({
         ok: false,
@@ -584,7 +637,10 @@ router.post("/reset-password", async (req, res) => {
     const foundUser = users[0];
 
     // Check if token is expired
-    if (!foundUser.reset_token_expires || foundUser.reset_token_expires < new Date()) {
+    if (
+      !foundUser.reset_token_expires ||
+      foundUser.reset_token_expires < new Date()
+    ) {
       return res.status(400).json({
         ok: false,
         error: "Reset token has expired",

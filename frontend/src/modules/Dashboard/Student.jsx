@@ -8,6 +8,7 @@ import {
   Person,
   BarChart,
   VideoCall,
+  Timeline,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -92,7 +93,7 @@ export default function StudentDashboard() {
       subtitle: "Find new opportunities",
       icon: WorkOutline,
       color: "#8b5cf6",
-      path: getRoleBasedPath(userRole), // Only this path changes
+      path: getRoleBasedPath(userRole),
     },
     {
       title: "Update Profile",
@@ -109,40 +110,76 @@ export default function StudentDashboard() {
       path: "/analytics",
     },
     {
-      title: "Mock Interview",
+      title: "Timeline",
       subtitle: "Practice sessions",
-      icon: VideoCall,
+      icon: Timeline,
       color: "#f59e0b",
       path: "/timeline",
     },
   ];
 
+  // ✅ Fixed date formatting
   const formatDate = (dateString) => {
     if (!dateString) return "Unknown";
     const date = new Date(dateString);
     const today = new Date();
-    const diffTime = Math.abs(today - date);
+
+    // Reset time to midnight for accurate day comparison
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+
+    const diffTime = today - date;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "1 day ago";
+    if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 14) return "1 week ago";
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString("en-US", {
+
+    return date.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
   };
 
+  // ✅ Fixed package formatting - adds "LPA" for lakhs
+  const formatPackage = (packageOffered) => {
+    if (
+      !packageOffered ||
+      packageOffered === "null" ||
+      packageOffered === null
+    ) {
+      return "Not disclosed";
+    }
+    const amount = parseFloat(packageOffered);
+    if (isNaN(amount)) return "Not disclosed";
+    return `₹${amount.toFixed(2)} LPA`;
+  };
+
+  // ✅ Fixed status formatting
+  const formatStatus = (status) => {
+    const statusMap = {
+      applied: "Applied",
+      interview_scheduled: "Interview Scheduled",
+      interviewed: "Interviewed",
+      offer_pending: "Offer Pending",
+      offer_approved: "Offer Approved",
+      rejected: "Rejected",
+      hired: "Hired",
+    };
+    return statusMap[status] || status;
+  };
+
+  // ✅ Map applications with proper formatting
   const recentApplications = applications.map((app) => ({
     company: app.company_name || "Unknown Company",
     location: app.industry || "Unknown Location",
     position: app.position || "Unknown Position",
     type: "Internship",
-    stipend: app.package_offered ? `₹${app.package_offered}` : "Not disclosed",
-    status: app.status || "pending",
+    stipend: formatPackage(app.package_offered), // ✅ Now shows "₹10.00 LPA"
+    status: formatStatus(app.status || app.application_status), // ✅ Now shows "Offer Approved"
     applied: formatDate(app.application_date),
   }));
 
