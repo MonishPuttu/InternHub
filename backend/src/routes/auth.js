@@ -86,7 +86,9 @@ async function sendResetEmail(email, resetUrl) {
   // Check if SMTP credentials are configured
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log("SMTP credentials not configured. Reset link:", resetUrl);
-    console.log("For production, set SMTP_USER and SMTP_PASS environment variables");
+    console.log(
+      "For production, set SMTP_USER and SMTP_PASS environment variables"
+    );
     return true; // Return success for development
   }
 
@@ -479,7 +481,8 @@ router.post("/forgot-password", async (req, res) => {
       // Don't reveal if email exists or not for security
       return res.json({
         ok: true,
-        message: "If an account with that email exists, a reset link has been sent.",
+        message:
+          "If an account with that email exists, a reset link has been sent.",
       });
     }
 
@@ -499,13 +502,16 @@ router.post("/forgot-password", async (req, res) => {
       .where(eq(user.id, foundUser.id));
 
     // Send reset email
-    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
+    const resetUrl = `${
+      process.env.CLIENT_URL || "http://localhost:3000"
+    }/reset-password?token=${resetToken}`;
 
     await sendResetEmail(email, resetUrl);
 
     res.json({
       ok: true,
-      message: "If an account with that email exists, a reset link has been sent.",
+      message:
+        "If an account with that email exists, a reset link has been sent.",
     });
   } catch (e) {
     console.error("Forgot password error:", e);
@@ -551,7 +557,10 @@ router.post("/change-password", requireAuth, async (req, res) => {
     const foundUser = users[0];
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, foundUser.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      foundUser.password
+    );
 
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
@@ -561,7 +570,10 @@ router.post("/change-password", requireAuth, async (req, res) => {
     }
 
     // Check if new password is different from current
-    const isSamePassword = await bcrypt.compare(newPassword, foundUser.password);
+    const isSamePassword = await bcrypt.compare(
+      newPassword,
+      foundUser.password
+    );
     if (isSamePassword) {
       return res.status(400).json({
         ok: false,
@@ -625,7 +637,10 @@ router.post("/reset-password", async (req, res) => {
     const foundUser = users[0];
 
     // Check if token is expired
-    if (!foundUser.reset_token_expires || foundUser.reset_token_expires < new Date()) {
+    if (
+      !foundUser.reset_token_expires ||
+      foundUser.reset_token_expires < new Date()
+    ) {
       return res.status(400).json({
         ok: false,
         error: "Reset token has expired",

@@ -67,7 +67,7 @@ export default function PlacementAnalytics() {
     "CSBS",
     "CIVIL",
     "EEE",
-    "EIE"
+    "EIE",
   ];
 
   useEffect(() => {
@@ -82,15 +82,24 @@ export default function PlacementAnalytics() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const departmentParam = selectedDepartment === "All Dept" ? "" : `?department=${selectedDepartment}`;
+      const departmentParam =
+        selectedDepartment === "All Dept"
+          ? ""
+          : `?department=${selectedDepartment}`;
 
       const [statsRes, totalAppliedRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/placement-analytics/statistics${departmentParam}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${BACKEND_URL}/api/placement-analytics/total-applied${departmentParam}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        axios.get(
+          `${BACKEND_URL}/api/placement-analytics/statistics${departmentParam}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        ),
+        axios.get(
+          `${BACKEND_URL}/api/placement-analytics/total-applied${departmentParam}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        ),
       ]);
 
       if (statsRes.data.ok) {
@@ -110,11 +119,17 @@ export default function PlacementAnalytics() {
   const fetchChartData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const departmentParam = selectedDepartment === "All Dept" ? "" : `?department=${selectedDepartment}`;
+      const departmentParam =
+        selectedDepartment === "All Dept"
+          ? ""
+          : `?department=${selectedDepartment}`;
 
-      const appliedRes = await axios.get(`${BACKEND_URL}/api/placement-analytics/applied-students${departmentParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const appliedRes = await axios.get(
+        `${BACKEND_URL}/api/placement-analytics/applied-students${departmentParam}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (appliedRes.data.ok) {
         setAppliedData(appliedRes.data.data);
@@ -144,23 +159,19 @@ export default function PlacementAnalytics() {
       title: "Total Students",
       value: statistics?.total_students || 0,
       icon: People,
-
-      color: "#6366f1",
-
+      color: "#8b5cf6", // ✅ Changed to purple
     },
     {
       title: "Students Placed",
       value: statistics?.total_placed || 0,
       icon: TrendingUp,
       color: "#10b981",
-
     },
     {
       title: "Total Applied",
       value: totalApplied,
       icon: Business,
       color: "#06b6d4",
-
     },
     {
       title: "Highest Package",
@@ -168,7 +179,6 @@ export default function PlacementAnalytics() {
       icon: AttachMoney,
       p: 2,
       color: "#f59e0b",
-
     },
   ];
 
@@ -315,7 +325,7 @@ export default function PlacementAnalytics() {
                         justifyContent: "center",
                       }}
                     >
-                      <Icon sx={{ color: stat.color, fontSize: 25, }} />
+                      <Icon sx={{ color: stat.color, fontSize: 25 }} />
                     </Box>
                   </Stack>
                 </CardContent>
@@ -384,7 +394,12 @@ export default function PlacementAnalytics() {
             borderRadius: 2,
           }}
         >
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={1}
+          >
             <Box>
               <Typography
                 variant="h6"
@@ -393,12 +408,15 @@ export default function PlacementAnalytics() {
                 Application Statistics
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Track application progress across different companies and positions
+                Track application progress across different companies and
+                positions
               </Typography>
             </Box>
             {appliedData.length > 0 && (
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Showing {startIndex + 1}-{Math.min(endIndex, appliedData.length)} of {appliedData.length} positions
+                Showing {startIndex + 1}-
+                {Math.min(endIndex, appliedData.length)} of {appliedData.length}{" "}
+                positions
               </Typography>
             )}
           </Stack>
@@ -410,7 +428,12 @@ export default function PlacementAnalytics() {
                 layout="vertical"
                 margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#fbfbfcff" horizontal={true} vertical={false} />
+                {/* ✅ Remove dotted lines */}
+                <CartesianGrid
+                  stroke="transparent"
+                  horizontal={true}
+                  vertical={false}
+                />
                 <XAxis
                   type="number"
                   stroke="#94a3b8"
@@ -425,7 +448,10 @@ export default function PlacementAnalytics() {
                   style={{ fontSize: "12px" }}
                   tick={{ fill: "#94a3b8" }}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "#33415520" }} />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "#33415520" }}
+                />
                 <Legend
                   wrapperStyle={{
                     paddingTop: "20px",
@@ -433,10 +459,26 @@ export default function PlacementAnalytics() {
                   }}
                   iconType="circle"
                 />
-                <Bar dataKey="applied" stackId="a" fill="rgba(138, 92, 246, 0.64)" name="Applied" />
-                <Bar dataKey="interviewed" stackId="a" fill="#06b5d4ab" name="Interviewed" />
-                <Bar dataKey="offer" stackId="a" fill="#10b9819d" name="Offer" />
-                <Bar dataKey="rejected" stackId="a" fill="#ef4444a5" name="Rejected" />
+                {/* ✅ Updated colors to match student analytics */}
+                <Bar
+                  dataKey="applied"
+                  stackId="a"
+                  fill="#8b5cf6"
+                  name="Applied"
+                />
+                <Bar
+                  dataKey="interviewed"
+                  stackId="a"
+                  fill="#06b6d4"
+                  name="Interviewed"
+                />
+                <Bar dataKey="offer" stackId="a" fill="#10b981" name="Offer" />
+                <Bar
+                  dataKey="rejected"
+                  stackId="a"
+                  fill="#ef4444"
+                  name="Rejected"
+                />
               </BarChart>
             </ResponsiveContainer>
           </Box>
@@ -483,8 +525,17 @@ export default function PlacementAnalytics() {
               <PieChart>
                 <Pie
                   data={[
-                    { name: "Placement", value: statistics?.career_path_stats?.placement || 0, fill: "#10b981a8" },
-                    { name: "Higher Education", value: statistics?.career_path_stats?.higher_education || 0, fill: "#6365f193" },
+                    {
+                      name: "Placement",
+                      value: statistics?.career_path_stats?.placement || 0,
+                      fill: "#10b981",
+                    },
+                    {
+                      name: "Higher Education",
+                      value:
+                        statistics?.career_path_stats?.higher_education || 0,
+                      fill: "#8b5cf6", // ✅ Changed to purple
+                    },
                   ]}
                   cx="50%"
                   cy="50%"
@@ -494,8 +545,8 @@ export default function PlacementAnalytics() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  <Cell fill="#10b9819b" />
-                  <Cell fill="#6365f199" />
+                  <Cell fill="#10b981" />
+                  <Cell fill="#8b5cf6" /> {/* ✅ Changed to purple */}
                 </Pie>
                 <Tooltip />
                 <Legend />
@@ -505,6 +556,5 @@ export default function PlacementAnalytics() {
         </Paper>
       </Box>
     </Box>
-
   );
 }
