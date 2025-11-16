@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { dateInputToUTC, isToday, isTomorrow } from "@/lib/dateUtils";
 
-const BACKEND_URL = "http://localhost:4000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 const CAL_API = `${BACKEND_URL}/api/calendar`;
 const APPROVED_POSTS_API = `${BACKEND_URL}/api/posts/approved-posts`;
 
