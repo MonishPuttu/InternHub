@@ -1,7 +1,7 @@
 import express from "express";
 import { db } from "../db/index.js";
-import { student_profile, user, education, projects, social_links, report_cards, assessments } from "../db/schema/index.js";
-import { eq, like, and, sql } from "drizzle-orm";
+import { student_profile, user, education, projects, social_links, report_cards, assessments, student_applications } from "../db/schema/index.js";
+import { eq, like, and, sql, exists, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -9,9 +9,9 @@ const router = express.Router();
 // GET /api/studentdata/students - Fetch all students with optional filters
 router.get("/students", requireAuth, async (req, res) => {
     try {
-        const { registerNumber, department } = req.query;
+        const { search, department, year, placementStatus } = req.query;
 
-        // Base query joining user and student_profile
+        // Base query joining user, student_profile, and student_applications for placement status
         let query = db
             .select({
                 id: student_profile.id,
@@ -23,21 +23,43 @@ router.get("/students", requireAuth, async (req, res) => {
                 rollNumber: student_profile.student_id,
                 year: student_profile.current_semester,
                 cgpa: student_profile.cgpa,
-                placementStatus: sql`CASE WHEN EXISTS (SELECT 1 FROM student_applications WHERE student_applications.student_id = ${user.id} AND student_applications.application_status IN ('offer-approved', 'offer_approved', 'offered')) THEN 'Placed' ELSE 'Not Placed' END`,
+                applicationId: student_applications.id,
             })
             .from(student_profile)
             .leftJoin(user, eq(student_profile.user_id, user.id))
+            .leftJoin(student_applications, and(
+                eq(student_applications.student_id, user.id),
+                inArray(student_applications.application_status, ['offer-approved', 'offer_approved', 'offered'])
+            ))
             .where(eq(user.role, "student"));
 
-        // Apply filters if provided
-        if (registerNumber) {
-            query = query.where(like(student_profile.roll_number, `%${registerNumber}%`));
-        }
-        if (department) {
-            query = query.where(like(student_profile.branch, `%${department}%`));
+        // Apply search filter if provided
+        if (search) {
+            query = query.where(
+                sql`${student_profile.full_name} LIKE ${`%${search}%`} OR ${user.email} LIKE ${`%${search}%`} OR ${student_profile.branch} LIKE ${`%${search}%`} OR ${student_profile.roll_number} LIKE ${`%${search}%`} OR ${student_profile.student_id} LIKE ${`%${search}%`}`
+            );
         }
 
-        const students = await query;
+        // Apply department filter
+        if (department) {
+            query = query.where(eq(student_profile.branch, department));
+        }
+
+        // Apply year filter
+        if (year) {
+            query = query.where(eq(student_profile.current_semester, parseInt(year)));
+        }
+
+        // Apply placement status filter
+        if (placementStatus) {
+            if (placementStatus === "Placed") {
+                query = query.where(sql`${student_applications.id} IS NOT NULL`);
+            } else if (placementStatus === "Not Placed") {
+                query = query.where(sql`${student_applications.id} IS NULL`);
+            }
+        }
+
+        const students = await query.orderBy(student_profile.full_name);
 
         // Process full_name to split into firstName and lastName if needed
         const processedStudents = students.map(student => {
@@ -46,6 +68,7 @@ router.get("/students", requireAuth, async (req, res) => {
                 ...student,
                 firstName: nameParts[0] || '',
                 lastName: nameParts.slice(1).join(' ') || '',
+                placementStatus: student.applicationId ? 'Placed' : 'Not Placed',
             };
         });
 
@@ -182,6 +205,38 @@ router.get("/students/:studentId", requireAuth, async (req, res) => {
         res.json({ ok: true, student: detailedStudent });
     } catch (e) {
         console.error("Error fetching detailed student data:", e);
+        res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
+// PUT /api/studentdata/students/:studentId - Update student details
+router.put("/students/:studentId", requireAuth, async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { full_name, branch, roll_number, student_id, current_semester, cgpa } = req.body;
+
+        // Check if user is placement_cell
+        if (req.user.role !== "placement_cell") {
+            return res.status(403).json({ ok: false, error: "Access denied. Only placement cell can edit student data." });
+        }
+
+        // Update student_profile
+        const updateData = {};
+        if (full_name) updateData.full_name = full_name;
+        if (branch) updateData.branch = branch;
+        if (roll_number) updateData.roll_number = roll_number;
+        if (student_id) updateData.student_id = student_id;
+        if (current_semester) updateData.current_semester = parseInt(current_semester);
+        if (cgpa) updateData.cgpa = parseFloat(cgpa);
+
+        await db
+            .update(student_profile)
+            .set(updateData)
+            .where(eq(student_profile.id, studentId));
+
+        res.json({ ok: true, message: "Student data updated successfully" });
+    } catch (e) {
+        console.error("Error updating student data:", e);
         res.status(500).json({ ok: false, error: String(e) });
     }
 });

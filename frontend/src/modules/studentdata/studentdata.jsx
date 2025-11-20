@@ -13,15 +13,20 @@ import {
     TableRow,
     Paper,
     InputAdornment,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     CircularProgress,
     Snackbar,
     Alert,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
+import { Search as SearchIcon, Edit as EditIcon } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
 
@@ -34,7 +39,22 @@ export default function StudentData() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [searchValue, setSearchValue] = useState("");
-    const [searchType, setSearchType] = useState("registerNumber");
+    const [department, setDepartment] = useState("");
+    const [year, setYear] = useState("");
+    const [placementStatus, setPlacementStatus] = useState("");
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [editForm, setEditForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        department: "",
+        registerNumber: "",
+        rollNumber: "",
+        year: "",
+        cgpa: "",
+    });
+    const [updating, setUpdating] = useState(false);
 
     const fetchStudents = async () => {
         try {
@@ -43,7 +63,16 @@ export default function StudentData() {
 
             const params = new URLSearchParams();
             if (searchValue.trim()) {
-                params.set(searchType, searchValue.trim());
+                params.set("search", searchValue.trim());
+            }
+            if (department) {
+                params.set("department", department);
+            }
+            if (year) {
+                params.set("year", year);
+            }
+            if (placementStatus) {
+                params.set("placementStatus", placementStatus);
             }
 
             const response = await axios.get(
@@ -59,14 +88,56 @@ export default function StudentData() {
         }
     };
 
+    const handleEditClick = (student) => {
+        setSelectedStudent(student);
+        setEditForm({
+            firstName: student.firstName || "",
+            lastName: student.lastName || "",
+            email: student.email || "",
+            department: student.department || "",
+            registerNumber: student.registerNumber || "",
+            rollNumber: student.rollNumber || "",
+            year: student.year || "",
+            cgpa: student.cgpa || "",
+        });
+        setEditModalOpen(true);
+    };
+
+    const handleEditSubmit = async () => {
+        if (!selectedStudent) return;
+
+        try {
+            setUpdating(true);
+            const token = getToken();
+
+            const updateData = {
+                full_name: `${editForm.firstName} ${editForm.lastName}`.trim(),
+                branch: editForm.department,
+                roll_number: editForm.registerNumber,
+                student_id: editForm.rollNumber,
+                current_semester: parseInt(editForm.year),
+                cgpa: parseFloat(editForm.cgpa),
+            };
+
+            await axios.put(
+                `${BACKEND_URL}/api/studentdata/students/${selectedStudent.id}`,
+                updateData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setEditModalOpen(false);
+            setSelectedStudent(null);
+            fetchStudents(); // Refresh the list
+        } catch (err) {
+            setError("Failed to update student data");
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     useEffect(() => {
         fetchStudents();
-    }, [searchValue, searchType]);
-
-    const searchOptions = [
-        { value: "registerNumber", label: "Register Number" },
-        { value: "department", label: "Department" },
-    ];
+    }, [searchValue, department, year, placementStatus]);
 
     return (
         <Box sx={{ p: 3 }}>
@@ -84,46 +155,9 @@ export default function StudentData() {
                     alignItems: "center",
                 }}
             >
-                <FormControl
-                    size="small"
-                    sx={{
-                        minWidth: 200,
-                        "& .MuiOutlinedInput-root": {
-                            color: "text.primary",
-                            bgcolor: "background.default",
-                            "& fieldset": { borderColor: "#334155" },
-                            "&:hover fieldset": { borderColor: "#8b5cf6" },
-                        },
-                        "& .MuiInputLabel-root": { color: "text.secondary" },
-                    }}
-                >
-                    <InputLabel>Search By</InputLabel>
-                    <Select
-                        value={searchType}
-                        onChange={(e) => setSearchType(e.target.value)}
-                        label="Search By"
-                        sx={{
-                            color: "text.primary",
-                            bgcolor: "background.default",
-                            "& .MuiOutlinedInput-notchedOutline": {
-                                borderColor: "#334155",
-                            },
-                            "&:hover .MuiOutlinedInput-notchedOutline": {
-                                borderColor: "#8b5cf6",
-                            },
-                        }}
-                    >
-                        {searchOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
                 <TextField
                     size="small"
-                    placeholder={`Enter ${searchOptions.find(opt => opt.value === searchType)?.label}...`}
+                    placeholder="Search students..."
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     InputProps={{
@@ -144,6 +178,74 @@ export default function StudentData() {
                         "& .MuiInputBase-input::placeholder": { color: "text.secondary" },
                     }}
                 />
+
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel sx={{ color: "text.secondary" }}>Department</InputLabel>
+                    <Select
+                        value={department}
+                        label="Department"
+                        onChange={(e) => setDepartment(e.target.value)}
+                        sx={{
+                            color: "text.primary",
+                            bgcolor: "background.default",
+                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                        }}
+                    >
+                        <MenuItem value="">
+                            <em>All</em>
+                        </MenuItem>
+                        <MenuItem value="CSE">CSE</MenuItem>
+                        <MenuItem value="ECE">ECE</MenuItem>
+                        <MenuItem value="IT">IT</MenuItem>
+                        <MenuItem value="MECH">MECH</MenuItem>
+                        <MenuItem value="CIVIL">CIVIL</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel sx={{ color: "text.secondary" }}>Year</InputLabel>
+                    <Select
+                        value={year}
+                        label="Year"
+                        onChange={(e) => setYear(e.target.value)}
+                        sx={{
+                            color: "text.primary",
+                            bgcolor: "background.default",
+                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                        }}
+                    >
+                        <MenuItem value="">
+                            <em>All</em>
+                        </MenuItem>
+                        <MenuItem value="1">1</MenuItem>
+                        <MenuItem value="2">2</MenuItem>
+                        <MenuItem value="3">3</MenuItem>
+                        <MenuItem value="4">4</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel sx={{ color: "text.secondary" }}>Placement Status</InputLabel>
+                    <Select
+                        value={placementStatus}
+                        label="Placement Status"
+                        onChange={(e) => setPlacementStatus(e.target.value)}
+                        sx={{
+                            color: "text.primary",
+                            bgcolor: "background.default",
+                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                        }}
+                    >
+                        <MenuItem value="">
+                            <em>All</em>
+                        </MenuItem>
+                        <MenuItem value="Placed">Placed</MenuItem>
+                        <MenuItem value="Not Placed">Not Placed</MenuItem>
+                    </Select>
+                </FormControl>
             </Box>
 
             {/* Table */}
@@ -159,19 +261,20 @@ export default function StudentData() {
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Year</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>CGPA</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Placement Status</TableCell>
+                            <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
 
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={8} align="center">
+                                <TableCell colSpan={9} align="center">
                                     <CircularProgress />
                                 </TableCell>
                             </TableRow>
                         ) : students.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} align="center">
+                                <TableCell colSpan={9} align="center">
                                     No students found
                                 </TableCell>
                             </TableRow>
@@ -211,6 +314,7 @@ export default function StudentData() {
                                     <TableCell sx={{ color: "text.primary" }}>
                                         {student.placementStatus || "Not Placed"}
                                     </TableCell>
+
                                 </TableRow>
                             ))
                         )}

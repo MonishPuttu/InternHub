@@ -21,8 +21,10 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TextField,
+    Snackbar,
 } from "@mui/material";
-import { ArrowBack, Email, Phone, LocationOn, School, Web, LinkedIn, GitHub } from "@mui/icons-material";
+import { ArrowBack, Email, Phone, LocationOn, School, Web, LinkedIn, GitHub, Edit, Save, Cancel } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
 
