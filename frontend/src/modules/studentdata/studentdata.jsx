@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
     Box,
     Typography,
@@ -28,6 +29,7 @@ const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function StudentData() {
+    const router = useRouter();
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -175,7 +177,16 @@ export default function StudentData() {
                             </TableRow>
                         ) : (
                             students.map((student) => (
-                                <TableRow key={student.id}>
+                                <TableRow
+                                    key={student.id}
+                                    onClick={() => router.push(`/studentdata/${student.id}`)}
+                                    sx={{
+                                        cursor: "pointer",
+                                        "&:hover": {
+                                            backgroundColor: "action.hover",
+                                        },
+                                    }}
+                                >
                                     <TableCell sx={{ color: "text.primary" }}>
                                         {student.firstName} {student.lastName}
                                     </TableCell>
