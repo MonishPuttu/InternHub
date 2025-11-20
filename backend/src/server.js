@@ -15,6 +15,7 @@ import trainingRoutes from "./routes/training.js"; // Training part routes
 import placementAnalyticsRoutes from "./routes/placement_analytics.js";
 import timelineRoutes from "./routes/timeline.js";
 import offer from "./routes/offers.js";
+import studentDataRoutes from "./routes/studentdata.js";
 // import { startTimelineUpdater } from "./jobs/timeline-updater.js";
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api", calendarRoutes);
 app.use("/api/training", trainingRoutes);
 app.use("/api/timeline", timelineRoutes);
 app.use("/api/offers", offer);
+app.use("/api/studentdata", studentDataRoutes);
 
 app.use("/api/placement-analytics", placementAnalyticsRoutes);
 
