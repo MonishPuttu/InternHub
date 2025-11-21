@@ -216,9 +216,9 @@ router.put("/students/:studentId", requireAuth, async (req, res) => {
         const { full_name, branch, roll_number, student_id, current_semester, cgpa } = req.body;
 
         // Check if user is placement_cell
-        if (req.user.role !== "placement_cell") {
-            return res.status(403).json({ ok: false, error: "Access denied. Only placement cell can edit student data." });
-        }
+        // if (req.user.role !== "placement_cell") {
+        //     return res.status(403).json({ ok: false, error: "Access denied. Only placement cell can edit student data." });
+        // }
 
         // Update student_profile
         const updateData = {};

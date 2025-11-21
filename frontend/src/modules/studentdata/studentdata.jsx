@@ -47,7 +47,6 @@ export default function StudentData() {
     const [editForm, setEditForm] = useState({
         firstName: "",
         lastName: "",
-        email: "",
         department: "",
         registerNumber: "",
         rollNumber: "",
@@ -314,13 +313,80 @@ export default function StudentData() {
                                     <TableCell sx={{ color: "text.primary" }}>
                                         {student.placementStatus || "Not Placed"}
                                     </TableCell>
-
+                                    <TableCell sx={{ color: "text.primary" }}>
+                                        <Button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditClick(student);
+                                            }}
+                                            sx={{ color: "#8b5cf6" }}
+                                        >
+                                            <EditIcon />
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             ))
                         )}
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {/* Edit Dialog */}
+            <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Student Information</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+                        <TextField
+                            label="First Name"
+                            value={editForm.firstName}
+                            onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Last Name"
+                            value={editForm.lastName}
+                            onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Department"
+                            value={editForm.department}
+                            onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Register Number"
+                            value={editForm.registerNumber}
+                            onChange={(e) => setEditForm({ ...editForm, registerNumber: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Roll Number"
+                            value={editForm.rollNumber}
+                            onChange={(e) => setEditForm({ ...editForm, rollNumber: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Year"
+                            value={editForm.year}
+                            onChange={(e) => setEditForm({ ...editForm, year: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="CGPA"
+                            value={editForm.cgpa}
+                            onChange={(e) => setEditForm({ ...editForm, cgpa: e.target.value })}
+                            fullWidth
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
+                    <Button onClick={handleEditSubmit} disabled={updating}>
+                        {updating ? "Saving..." : "Save"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Error Snackbar */}
             <Snackbar
