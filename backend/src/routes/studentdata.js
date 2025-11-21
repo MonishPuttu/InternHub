@@ -241,4 +241,97 @@ router.put("/students/:studentId", requireAuth, async (req, res) => {
     }
 });
 
+// POST /api/studentdata/import - Import student data from CSV
+router.post("/import", requireAuth, async (req, res) => {
+    try {
+        const { students } = req.body;
+
+        if (!students || !Array.isArray(students)) {
+            return res.status(400).json({ ok: false, error: "Invalid data format. Expected array of students." });
+        }
+
+        const importedStudents = [];
+        const errors = [];
+
+        for (const studentData of students) {
+            try {
+                // Check if user exists by email, if not create one
+                let user = await db
+                    .select()
+                    .from(user)
+                    .where(eq(user.email, studentData.email))
+                    .limit(1);
+
+                if (user.length === 0) {
+                    // Create new user
+                    const newUser = await db
+                        .insert(user)
+                        .values({
+                            email: studentData.email,
+                            role: "student",
+                            // Add other required fields if needed
+                        })
+                        .returning();
+
+                    user = newUser;
+                }
+
+                // Check if student profile exists
+                let studentProfile = await db
+                    .select()
+                    .from(student_profile)
+                    .where(eq(student_profile.user_id, user[0].id))
+                    .limit(1);
+
+                if (studentProfile.length === 0) {
+                    // Create new student profile
+                    const newProfile = await db
+                        .insert(student_profile)
+                        .values({
+                            user_id: user[0].id,
+                            full_name: studentData.full_name,
+                            branch: studentData.branch,
+                            roll_number: studentData.roll_number,
+                            student_id: studentData.student_id,
+                            current_semester: studentData.current_semester,
+                            cgpa: studentData.cgpa,
+                        })
+                        .returning();
+
+                    importedStudents.push(newProfile[0]);
+                } else {
+                    // Update existing student profile
+                    const updatedProfile = await db
+                        .update(student_profile)
+                        .set({
+                            full_name: studentData.full_name,
+                            branch: studentData.branch,
+                            roll_number: studentData.roll_number,
+                            student_id: studentData.student_id,
+                            current_semester: studentData.current_semester,
+                            cgpa: studentData.cgpa,
+                        })
+                        .where(eq(student_profile.id, studentProfile[0].id))
+                        .returning();
+
+                    importedStudents.push(updatedProfile[0]);
+                }
+            } catch (err) {
+                errors.push({ student: studentData, error: err.message });
+            }
+        }
+
+        res.json({
+            ok: true,
+            message: `Imported ${importedStudents.length} students successfully. ${errors.length} errors occurred.`,
+            imported: importedStudents.length,
+            errors: errors.length,
+            errorDetails: errors
+        });
+    } catch (e) {
+        console.error("Error importing student data:", e);
+        res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
 export default router;

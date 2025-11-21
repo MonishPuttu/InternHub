@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
     Box,
@@ -26,9 +26,10 @@ import {
     DialogContent,
     DialogActions,
 } from "@mui/material";
-import { Search as SearchIcon, Edit as EditIcon } from "@mui/icons-material";
+import { Search as SearchIcon, Edit as EditIcon, FileDownload as FileDownloadIcon, FileUpload as FileUploadIcon } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
+import Papa from "papaparse";
 
 const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -54,6 +55,9 @@ export default function StudentData() {
         cgpa: "",
     });
     const [updating, setUpdating] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const [success, setSuccess] = useState("");
+    const fileInputRef = useRef(null);
 
     const fetchStudents = async () => {
         try {
@@ -132,6 +136,85 @@ export default function StudentData() {
         } finally {
             setUpdating(false);
         }
+    };
+
+    const handleExportCSV = () => {
+        if (students.length === 0) {
+            setError("No student data to export");
+            return;
+        }
+
+        const csvData = students.map(student => ({
+            "First Name": student.firstName || "",
+            "Last Name": student.lastName || "",
+            "Email": student.email || "",
+            "Department": student.department || "",
+            "Register Number": student.registerNumber || "",
+            "Roll Number": student.rollNumber || "",
+            "Year": student.year || "",
+            "CGPA": student.cgpa || "",
+            "Placement Status": student.placementStatus || "Not Placed",
+        }));
+
+        const csv = Papa.unparse(csvData);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "student_data.csv");
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleImportCSV = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setImporting(true);
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                try {
+                    const token = getToken();
+                    const importData = results.data.map(row => ({
+                        full_name: `${row["First Name"] || ""} ${row["Last Name"] || ""}`.trim(),
+                        email: row["Email"] || "",
+                        branch: row["Department"] || "",
+                        roll_number: row["Register Number"] || "",
+                        student_id: row["Roll Number"] || "",
+                        current_semester: parseInt(row["Year"]) || null,
+                        cgpa: parseFloat(row["CGPA"]) || null,
+                    })).filter(row => row.full_name || row.email); // Filter out empty rows
+
+                    if (importData.length === 0) {
+                        setError("No valid data found in CSV");
+                        setImporting(false);
+                        return;
+                    }
+
+                    const response = await axios.post(
+                        `${BACKEND_URL}/api/studentdata/import`,
+                        { students: importData },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+
+                    fetchStudents(); // Refresh the list
+                    setError(""); // Clear any previous errors
+                    setSuccess(response.data.message || "Student data imported successfully");
+                } catch (err) {
+                    setError("Failed to import student data");
+                } finally {
+                    setImporting(false);
+                }
+            },
+            error: (error) => {
+                setError("Failed to parse CSV file");
+                setImporting(false);
+            },
+        });
     };
 
     useEffect(() => {
@@ -245,6 +328,39 @@ export default function StudentData() {
                         <MenuItem value="Not Placed">Not Placed</MenuItem>
                     </Select>
                 </FormControl>
+
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleExportCSV}
+                    sx={{
+                        color: "text.primary",
+                        borderColor: "#334155",
+                        "&:hover": { borderColor: "#8b5cf6", bgcolor: "action.hover" },
+                    }}
+                >
+                    Export CSV
+                </Button>
+
+                <Button
+                    variant="contained"
+                    startIcon={<FileUploadIcon />}
+                    component="label"
+                    disabled={importing}
+                    sx={{
+                        bgcolor: "#8b5cf6",
+                        "&:hover": { bgcolor: "#7c3aed" },
+                    }}
+                >
+                    {importing ? "Importing..." : "Import CSV"}
+                    <input
+                        type="file"
+                        accept=".csv"
+                        hidden
+                        ref={fileInputRef}
+                        onChange={handleImportCSV}
+                    />
+                </Button>
             </Box>
 
             {/* Table */}
@@ -387,6 +503,17 @@ export default function StudentData() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={!!success}
+                autoHideDuration={4000}
+                onClose={() => setSuccess("")}
+            >
+                <Alert severity="success" onClose={() => setSuccess("")} sx={{ width: "100%" }}>
+                    {success}
+                </Alert>
+            </Snackbar>
 
             {/* Error Snackbar */}
             <Snackbar
