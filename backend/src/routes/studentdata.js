@@ -1,6 +1,8 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { student_profile, user, education, projects, social_links, report_cards, assessments, student_applications } from "../db/schema/index.js";
+import { offer_letters } from "../db/schema/offers.js";
+import { posts } from "../db/schema/post.js";
 import { eq, like, and, sql, exists, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
@@ -193,6 +195,38 @@ router.get("/students/:studentId", requireAuth, async (req, res) => {
 
         const socialLinks = socialLinksQuery.length > 0 ? socialLinksQuery[0] : {};
 
+        // Fetch applications
+        const applicationsQuery = await db
+            .select({
+                id: student_applications.id,
+                post_id: student_applications.post_id,
+                applicationStatus: student_applications.application_status,
+                appliedAt: student_applications.applied_at,
+                companyName: posts.company_name,
+                position: posts.position,
+            })
+            .from(student_applications)
+            .leftJoin(posts, eq(student_applications.post_id, posts.id))
+            .where(eq(student_applications.student_id, student.userId))
+            .orderBy(student_applications.applied_at);
+
+        // Fetch offers
+        const offersQuery = await db
+            .select({
+                id: offer_letters.id,
+                applicationId: offer_letters.application_id,
+                offerStatus: offer_letters.status,
+                salaryPackage: offer_letters.salary_package,
+                joiningDate: offer_letters.joining_date,
+                location: offer_letters.location,
+                offerLetterUrl: offer_letters.offer_letter_url,
+                fileName: offer_letters.file_name,
+                createdAt: offer_letters.created_at,
+            })
+            .from(offer_letters)
+            .where(eq(offer_letters.student_id, student.userId))
+            .orderBy(offer_letters.created_at);
+
         // Compile detailed student data
         const detailedStudent = {
             ...student,
@@ -200,6 +234,8 @@ router.get("/students/:studentId", requireAuth, async (req, res) => {
             education: educationQuery,
             projects: projectsQuery,
             socialLinks,
+            applications: applicationsQuery,
+            offers: offersQuery,
         };
 
         res.json({ ok: true, student: detailedStudent });

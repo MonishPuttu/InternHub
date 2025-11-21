@@ -184,6 +184,7 @@ export default function StudentDetail({ studentId }) {
                                     <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Status</TableCell>
                                     <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Offer</TableCell>
                                     <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Date</TableCell>
+                                    <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -223,6 +224,21 @@ export default function StudentDetail({ studentId }) {
                                             </TableCell>
                                             <TableCell align="center" sx={{ color: "text.secondary", fontSize: "0.85rem" }}>
                                                 {new Date(app.appliedAt).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                {relatedOffer && relatedOffer.offerLetterUrl ? (
+                                                    <Button
+                                                        href={relatedOffer.offerLetterUrl}
+                                                        target="_blank"
+                                                        download={relatedOffer.fileName || "offer_letter.pdf"}
+                                                        size="small"
+                                                        sx={{ color: "#8b5cf6", textTransform: "none", fontSize: "0.8rem" }}
+                                                    >
+                                                        Download
+                                                    </Button>
+                                                ) : (
+                                                    <Typography sx={{ color: "text.secondary", fontSize: "0.85rem" }}>N/A</Typography>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -286,7 +302,7 @@ export default function StudentDetail({ studentId }) {
                                         <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.85rem", mb: 1 }}>
                                             {project.description}
                                         </Typography>
-                                        {project.technologies && (
+                                        {project.technologies && project.technologies.length > 0 && (
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
                                                 {project.technologies.map((tech, techIndex) => (
                                                     <Chip key={techIndex} label={tech} size="small" sx={{ bgcolor: "#8b5cf620", color: "#8b5cf6", fontSize: "0.7rem", height: 20 }} />

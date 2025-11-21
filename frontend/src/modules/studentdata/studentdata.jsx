@@ -42,7 +42,7 @@ export default function StudentData() {
     const [searchValue, setSearchValue] = useState("");
     const [department, setDepartment] = useState("");
     const [year, setYear] = useState("");
-    const [placementStatus, setPlacementStatus] = useState("");
+
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [editForm, setEditForm] = useState({
@@ -74,9 +74,7 @@ export default function StudentData() {
             if (year) {
                 params.set("year", year);
             }
-            if (placementStatus) {
-                params.set("placementStatus", placementStatus);
-            }
+
 
             const response = await axios.get(
                 `${BACKEND_URL}/api/studentdata/students?${params}`,
@@ -219,7 +217,7 @@ export default function StudentData() {
 
     useEffect(() => {
         fetchStudents();
-    }, [searchValue, department, year, placementStatus]);
+    }, [searchValue, department, year]);
 
     return (
         <Box sx={{ p: 3 }}>
@@ -308,26 +306,7 @@ export default function StudentData() {
                     </Select>
                 </FormControl>
 
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel sx={{ color: "text.secondary" }}>Placement Status</InputLabel>
-                    <Select
-                        value={placementStatus}
-                        label="Placement Status"
-                        onChange={(e) => setPlacementStatus(e.target.value)}
-                        sx={{
-                            color: "text.primary",
-                            bgcolor: "background.default",
-                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
-                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
-                        }}
-                    >
-                        <MenuItem value="">
-                            <em>All</em>
-                        </MenuItem>
-                        <MenuItem value="Placed">Placed</MenuItem>
-                        <MenuItem value="Not Placed">Not Placed</MenuItem>
-                    </Select>
-                </FormControl>
+
 
                 <Button
                     variant="outlined"
@@ -375,7 +354,7 @@ export default function StudentData() {
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Roll Number</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Year</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>CGPA</TableCell>
-                            <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Placement Status</TableCell>
+
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -383,13 +362,13 @@ export default function StudentData() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={9} align="center">
+                                <TableCell colSpan={8} align="center">
                                     <CircularProgress />
                                 </TableCell>
                             </TableRow>
                         ) : students.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={9} align="center">
+                                <TableCell colSpan={8} align="center">
                                     No students found
                                 </TableCell>
                             </TableRow>
@@ -426,9 +405,7 @@ export default function StudentData() {
                                     <TableCell sx={{ color: "text.primary" }}>
                                         {student.cgpa || "N/A"}
                                     </TableCell>
-                                    <TableCell sx={{ color: "text.primary" }}>
-                                        {student.placementStatus || "Not Placed"}
-                                    </TableCell>
+
                                     <TableCell sx={{ color: "text.primary" }}>
                                         <Button
                                             onClick={(e) => {
