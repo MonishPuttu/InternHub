@@ -18,7 +18,7 @@ export default function AssessmentHistoryPage({ params }) {
             try {
                 const token = getToken();
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/${studentId}/assessments`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/students/${studentId}/assessments`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }

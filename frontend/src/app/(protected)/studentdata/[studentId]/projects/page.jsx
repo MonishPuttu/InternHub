@@ -18,7 +18,7 @@ export default function ProjectsPage({ params }) {
             try {
                 const token = getToken();
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/${studentId}/projects`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/students/${studentId}/projects`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }

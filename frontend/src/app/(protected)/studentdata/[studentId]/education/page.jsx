@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import EducationSection from "@/modules/studentdata/components/EducationSection";
@@ -8,7 +8,7 @@ import axios from "axios";
 import { getToken } from "@/lib/session";
 
 export default function EducationPage({ params }) {
-    const { studentId } = use(params);
+    const { studentId } = params;
     const router = useRouter();
     const [education, setEducation] = useState([]);
     const [error, setError] = useState("");
@@ -18,7 +18,7 @@ export default function EducationPage({ params }) {
             try {
                 const token = getToken();
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/${studentId}/education`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/students/${studentId}/education`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }

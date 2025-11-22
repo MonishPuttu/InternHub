@@ -21,12 +21,12 @@ export default function ApplicationsOffersPage({ params }) {
             try {
                 const token = getToken();
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/${studentId}/applications-offers`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/students/${studentId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 if (response.data && response.data.ok) {
-                    setApplications(response.data.applications || []);
-                    setOffers(response.data.offers || []);
+                    setApplications(response.data.student.applications || []);
+                    setOffers(response.data.student.offers || []);
                 } else {
                     setError("Failed to load applications and offers.");
                 }
