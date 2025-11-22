@@ -37,11 +37,13 @@ export const student_profile = pgTable("student_profile", {
   cgpa: text("cgpa"),
   tenth_score: text("tenth_score"),
   twelfth_score: text("twelfth_score"),
+  diploma_score: text("diploma_score"),
+  entry_type: text("entry_type").default("regular"),
   courses_certifications: text("courses_certifications"),
   emis: text("emis"),
   skills: text("skills"),
   extra_activities: text("extra_activities"),
-  career_path: text("career_path").default("placement"), // "placement" or "higher_education"
+  career_path: text("career_path").default("placement"), // "placement", "higher_education", or "entrepreneurship"
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });

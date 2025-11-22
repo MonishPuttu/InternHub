@@ -65,8 +65,30 @@ export default function SignIn() {
     setError("");
     setLoading(true);
 
+    // Client-side validation
     if (!formData.role) {
       setError("Please select your role");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.email || !formData.password) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
+    // Password length check (don't reveal too much info)
+    if (formData.password.length < 6) {
+      setError("Invalid email or password");
       setLoading(false);
       return;
     }
@@ -74,25 +96,49 @@ export default function SignIn() {
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/signin`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Send password as plain text - HTTPS encrypts it!
+        body: JSON.stringify({
+          email: formData.email.toLowerCase().trim(),
+          password: formData.password,
+          role: formData.role,
+        }),
       });
 
       const data = await response.json();
 
-      if (!data.ok) {
-        setError(data.error || "Sign in failed");
+      if (!response.ok || !data.ok) {
+        // Display backend error message
+        setError(data.error || "Sign in failed. Please try again.");
         setLoading(false);
         return;
       }
 
+      // Store authentication data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("sessionExpires", data.expiresAt);
 
-      router.push("/dashboard");
+      // Optional: Store session expiry if backend provides it
+      if (data.expiresAt) {
+        localStorage.setItem("sessionExpires", data.expiresAt);
+      }
+
+      // Clear form data (security best practice)
+      setFormData({ email: "", password: "", role: "" });
+
+      // Redirect based on role
+      const redirectPaths = {
+        student: "/student/dashboard",
+        placement: "/placement/dashboard",
+        recruiter: "/recruiter/dashboard",
+      };
+
+      router.push(redirectPaths[formData.role] || "/dashboard");
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error("Login error:", err);
+      setError("Network error. Please check your connection and try again.");
       setLoading(false);
     }
   };
@@ -176,6 +222,10 @@ export default function SignIn() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
+                autoComplete="email"
+                inputProps={{
+                  "aria-label": "Email Address",
+                }}
               />
             </Box>
 
@@ -188,6 +238,11 @@ export default function SignIn() {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 required
+                autoComplete="current-password"
+                inputProps={{
+                  "aria-label": "Password",
+                  minLength: 6,
+                }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -195,6 +250,9 @@ export default function SignIn() {
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
                         sx={{ color: "text.secondary" }}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
