@@ -16,13 +16,13 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import SchoolIcon from "@mui/icons-material/School";
 import BusinessIcon from "@mui/icons-material/Business";
-import { useTheme } from "@mui/material/styles";
 import WorkIcon from "@mui/icons-material/Work";
 import {
   StyledTextField,
   StyledSelect,
   roleOptions,
 } from "@/components/auth/authcomp";
+import { signinSchema } from "@/lib/validationUtils";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -50,7 +50,6 @@ const roleContent = {
 
 export default function SignIn() {
   const router = useRouter();
-  const theme = useTheme();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -63,35 +62,21 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Zod validation
+    const validation = signinSchema.safeParse({
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0];
+      setError(firstError.message);
+      return;
+    }
+
     setLoading(true);
-
-    // Client-side validation
-    if (!formData.role) {
-      setError("Please select your role");
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.email || !formData.password) {
-      setError("Please fill in all fields");
-      setLoading(false);
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address");
-      setLoading(false);
-      return;
-    }
-
-    // Password length check (don't reveal too much info)
-    if (formData.password.length < 6) {
-      setError("Invalid email or password");
-      setLoading(false);
-      return;
-    }
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/signin`, {
@@ -99,7 +84,6 @@ export default function SignIn() {
         headers: {
           "Content-Type": "application/json",
         },
-        // Send password as plain text - HTTPS encrypts it!
         body: JSON.stringify({
           email: formData.email.toLowerCase().trim(),
           password: formData.password,
@@ -110,7 +94,6 @@ export default function SignIn() {
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        // Display backend error message
         setError(data.error || "Sign in failed. Please try again.");
         setLoading(false);
         return;
@@ -120,22 +103,15 @@ export default function SignIn() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Optional: Store session expiry if backend provides it
       if (data.expiresAt) {
         localStorage.setItem("sessionExpires", data.expiresAt);
       }
 
-      // Clear form data (security best practice)
+      // Clear form data
       setFormData({ email: "", password: "", role: "" });
 
-      // Redirect based on role
-      const redirectPaths = {
-        student: "/student/dashboard",
-        placement: "/placement/dashboard",
-        recruiter: "/recruiter/dashboard",
-      };
-
-      router.push(redirectPaths[formData.role] || "/dashboard");
+      // Redirect to single dashboard (handles role-based content internally)
+      router.push("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setError("Network error. Please check your connection and try again.");
@@ -223,9 +199,6 @@ export default function SignIn() {
                 }
                 required
                 autoComplete="email"
-                inputProps={{
-                  "aria-label": "Email Address",
-                }}
               />
             </Box>
 
@@ -239,10 +212,6 @@ export default function SignIn() {
                 }
                 required
                 autoComplete="current-password"
-                inputProps={{
-                  "aria-label": "Password",
-                  minLength: 6,
-                }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
