@@ -37,19 +37,6 @@ router.post("/send", requireAuth, async (req, res) => {
       notes,
     } = req.body;
 
-    console.log("Received offer data:", {
-      student_id,
-      post_id,
-      application_id,
-      company_name,
-      position,
-      package_offered,
-      joining_date,
-      location,
-      file_name,
-      file_type,
-    });
-
     // --- Validation ---
     if (
       !student_id ||
