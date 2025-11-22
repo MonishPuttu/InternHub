@@ -13,6 +13,11 @@ router.get("/students", requireAuth, async (req, res) => {
     try {
         const { search, department, year } = req.query;
 
+        // If no filters are provided, return empty list
+        if ((!search || search.trim() === '') && !department && !year) {
+            return res.json({ ok: true, students: [] });
+        }
+
         // Build where conditions array
         const whereConditions = [eq(user.role, "student")];
 
