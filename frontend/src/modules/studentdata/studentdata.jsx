@@ -151,7 +151,6 @@ export default function StudentData() {
             "Roll Number": student.rollNumber || "",
             "Year": student.year || "",
             "CGPA": student.cgpa || "",
-            "Placement Status": student.placementStatus || "Not Placed",
         }));
 
         const csv = Papa.unparse(csvData);
@@ -354,7 +353,6 @@ export default function StudentData() {
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Roll Number</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Year</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>CGPA</TableCell>
-
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -368,7 +366,7 @@ export default function StudentData() {
                             </TableRow>
                         ) : students.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} align="center">
+                                <TableCell colSpan={9} align="center">
                                     No students found
                                 </TableCell>
                             </TableRow>
@@ -405,7 +403,6 @@ export default function StudentData() {
                                     <TableCell sx={{ color: "text.primary" }}>
                                         {student.cgpa || "N/A"}
                                     </TableCell>
-
                                     <TableCell sx={{ color: "text.primary" }}>
                                         <Button
                                             onClick={(e) => {

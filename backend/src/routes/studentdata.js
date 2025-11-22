@@ -3,7 +3,7 @@ import { db } from "../db/index.js";
 import { student_profile, user, education, projects, social_links, report_cards, assessments, student_applications } from "../db/schema/index.js";
 import { offer_letters } from "../db/schema/offers.js";
 import { posts } from "../db/schema/post.js";
-import { eq, like, and, sql, exists, inArray } from "drizzle-orm";
+import { eq, like, and, sql, exists, inArray, or } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
@@ -11,55 +11,53 @@ const router = express.Router();
 // GET /api/studentdata/students - Fetch all students with optional filters
 router.get("/students", requireAuth, async (req, res) => {
     try {
-        const { search, department, year, placementStatus } = req.query;
+        const { search, department, year } = req.query;
 
-        // Base query joining user, student_profile, and student_applications for placement status
+        // Build where conditions array
+        const whereConditions = [eq(user.role, "student")];
+
+        // Apply search filter if provided
+        if (search) {
+            whereConditions.push(
+                or(
+                    like(student_profile.full_name, `%${search}%`),
+                    like(user.email, `%${search}%`),
+                    like(student_profile.branch, `%${search}%`),
+                    like(student_profile.roll_number, `%${search}%`),
+                    like(student_profile.student_id, `%${search}%`)
+                )
+            );
+        }
+
+        // Apply department filter
+        if (department) {
+            whereConditions.push(eq(student_profile.branch, department));
+        }
+
+        // Apply year filter
+        if (year) {
+            whereConditions.push(eq(student_profile.current_semester, parseInt(year)));
+        }
+
+        // Base query joining user, student_profile
         let query = db
             .select({
                 id: student_profile.id,
-                firstName: student_profile.full_name, // Assuming full_name is "First Last", but need to split if necessary
-                lastName: student_profile.full_name, // Placeholder, adjust if full_name is single field
+                firstName: student_profile.full_name,
+                lastName: student_profile.full_name,
                 email: user.email,
                 department: student_profile.branch,
                 registerNumber: student_profile.roll_number,
                 rollNumber: student_profile.student_id,
                 year: student_profile.current_semester,
                 cgpa: student_profile.cgpa,
-                applicationId: student_applications.id,
+
             })
             .from(student_profile)
             .leftJoin(user, eq(student_profile.user_id, user.id))
-            .leftJoin(student_applications, and(
-                eq(student_applications.student_id, user.id),
-                inArray(student_applications.application_status, ['offer-approved', 'offer_approved', 'offered'])
-            ))
-            .where(eq(user.role, "student"));
+            .where(and(...whereConditions));
 
-        // Apply search filter if provided
-        if (search) {
-            query = query.where(
-                sql`${student_profile.full_name} LIKE ${`%${search}%`} OR ${user.email} LIKE ${`%${search}%`} OR ${student_profile.branch} LIKE ${`%${search}%`} OR ${student_profile.roll_number} LIKE ${`%${search}%`} OR ${student_profile.student_id} LIKE ${`%${search}%`}`
-            );
-        }
 
-        // Apply department filter
-        if (department) {
-            query = query.where(eq(student_profile.branch, department));
-        }
-
-        // Apply year filter
-        if (year) {
-            query = query.where(eq(student_profile.current_semester, parseInt(year)));
-        }
-
-        // Apply placement status filter
-        if (placementStatus) {
-            if (placementStatus === "Placed") {
-                query = query.where(sql`${student_applications.id} IS NOT NULL`);
-            } else if (placementStatus === "Not Placed") {
-                query = query.where(sql`${student_applications.id} IS NULL`);
-            }
-        }
 
         const students = await query.orderBy(student_profile.full_name);
 
@@ -70,7 +68,6 @@ router.get("/students", requireAuth, async (req, res) => {
                 ...student,
                 firstName: nameParts[0] || '',
                 lastName: nameParts.slice(1).join(' ') || '',
-                placementStatus: student.applicationId ? 'Placed' : 'Not Placed',
             };
         });
 
@@ -251,11 +248,6 @@ router.put("/students/:studentId", requireAuth, async (req, res) => {
         const { studentId } = req.params;
         const { full_name, branch, roll_number, student_id, current_semester, cgpa } = req.body;
 
-        // Check if user is placement_cell
-        // if (req.user.role !== "placement_cell") {
-        //     return res.status(403).json({ ok: false, error: "Access denied. Only placement cell can edit student data." });
-        // }
-
         // Update student_profile
         const updateData = {};
         if (full_name) updateData.full_name = full_name;
@@ -286,72 +278,61 @@ router.post("/import", requireAuth, async (req, res) => {
             return res.status(400).json({ ok: false, error: "Invalid data format. Expected array of students." });
         }
 
+        // Filter to unique register numbers (roll_number)
+        const uniqueStudents = students.filter((student, index, self) =>
+            index === self.findIndex(s => s.roll_number === student.roll_number)
+        );
+
         const importedStudents = [];
+        const skipped = [];
         const errors = [];
 
-        for (const studentData of students) {
+        for (const studentData of uniqueStudents) {
             try {
-                // Check if user exists by email, if not create one
-                let user = await db
+                // Check if user exists by email
+                const userResult = await db
                     .select()
                     .from(user)
                     .where(eq(user.email, studentData.email))
                     .limit(1);
 
-                if (user.length === 0) {
-                    // Create new user
-                    const newUser = await db
-                        .insert(user)
-                        .values({
-                            email: studentData.email,
-                            role: "student",
-                            // Add other required fields if needed
-                        })
-                        .returning();
-
-                    user = newUser;
+                if (userResult.length === 0) {
+                    // Skip if email does not exist
+                    skipped.push({ student: studentData, reason: "Email not found" });
+                    continue;
                 }
 
-                // Check if student profile exists
-                let studentProfile = await db
+                // Check if student profile exists with matching user_id and roll_number
+                const studentProfile = await db
                     .select()
                     .from(student_profile)
-                    .where(eq(student_profile.user_id, user[0].id))
+                    .where(and(
+                        eq(student_profile.user_id, userResult[0].id),
+                        eq(student_profile.roll_number, studentData.roll_number)
+                    ))
                     .limit(1);
 
                 if (studentProfile.length === 0) {
-                    // Create new student profile
-                    const newProfile = await db
-                        .insert(student_profile)
-                        .values({
-                            user_id: user[0].id,
-                            full_name: studentData.full_name,
-                            branch: studentData.branch,
-                            roll_number: studentData.roll_number,
-                            student_id: studentData.student_id,
-                            current_semester: studentData.current_semester,
-                            cgpa: studentData.cgpa,
-                        })
-                        .returning();
-
-                    importedStudents.push(newProfile[0]);
-                } else {
-                    // Update existing student profile
-                    const updatedProfile = await db
-                        .update(student_profile)
-                        .set({
-                            full_name: studentData.full_name,
-                            branch: studentData.branch,
-                            roll_number: studentData.roll_number,
-                            student_id: studentData.student_id,
-                            current_semester: studentData.current_semester,
-                            cgpa: studentData.cgpa,
-                        })
-                        .where(eq(student_profile.id, studentProfile[0].id))
-                        .returning();
-
-                    importedStudents.push(updatedProfile[0]);
+                    // Skip if register number does not exist for this user
+                    skipped.push({ student: studentData, reason: "Register number not found for this email" });
+                    continue;
                 }
+
+                // Update existing student profile
+                const updatedProfile = await db
+                    .update(student_profile)
+                    .set({
+                        full_name: studentData.full_name,
+                        branch: studentData.branch,
+                        roll_number: studentData.roll_number,
+                        student_id: studentData.student_id,
+                        current_semester: studentData.current_semester,
+                        cgpa: studentData.cgpa,
+                    })
+                    .where(eq(student_profile.id, studentProfile[0].id))
+                    .returning();
+
+                importedStudents.push(updatedProfile[0]);
             } catch (err) {
                 errors.push({ student: studentData, error: err.message });
             }
@@ -359,9 +340,11 @@ router.post("/import", requireAuth, async (req, res) => {
 
         res.json({
             ok: true,
-            message: `Imported ${importedStudents.length} students successfully. ${errors.length} errors occurred.`,
-            imported: importedStudents.length,
+            message: `Updated ${importedStudents.length} students successfully. ${skipped.length} skipped. ${errors.length} errors occurred.`,
+            updated: importedStudents.length,
+            skipped: skipped.length,
             errors: errors.length,
+            skippedDetails: skipped,
             errorDetails: errors
         });
     } catch (e) {
