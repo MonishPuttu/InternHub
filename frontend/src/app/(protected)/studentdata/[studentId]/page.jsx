@@ -1,37 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/session";
-import StudentDetail from "@/modules/studentdata/StudentDetail";
+import StudentDashboardBoxes from "@/modules/studentdata/components/StudentDashboardBoxes";
 
 export default function StudentDetailPage({ params }) {
     const router = useRouter();
     const theme = useTheme();
     const [user, setUser] = useState(null);
-    const [studentId, setStudentId] = useState(null);
+    const resolvedParams = use(params);
+    const studentId = resolvedParams.studentId;
 
     useEffect(() => {
-        const extractParams = async () => {
-            try {
-                const resolvedParams = await params;
-                setStudentId(resolvedParams.studentId);
-            } catch (err) {
-                console.error("Error extracting params:", err);
-                router.push("/studentdata");
-            }
-        };
-
-        extractParams();
-
         const currentUser = getUser();
         if (!currentUser) {
             router.push("/auth/signin");
             return;
         }
         setUser(currentUser);
-    }, [router, params]);
+    }, [router]);
 
     if (!studentId) {
         return (
@@ -58,7 +47,7 @@ export default function StudentDetailPage({ params }) {
                 color: "text.primary",
             }}
         >
-            <StudentDetail studentId={studentId} />
+            <StudentDashboardBoxes studentId={studentId} />
         </Box>
     );
 }
