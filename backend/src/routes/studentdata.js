@@ -56,6 +56,7 @@ router.get("/students", requireAuth, async (req, res) => {
                 rollNumber: student_profile.student_id,
                 year: student_profile.current_semester,
                 cgpa: student_profile.cgpa,
+                careerPath: student_profile.career_path,
 
             })
             .from(student_profile)
@@ -251,7 +252,7 @@ router.get("/students/:studentId", requireAuth, async (req, res) => {
 router.put("/students/:studentId", requireAuth, async (req, res) => {
     try {
         const { studentId } = req.params;
-        const { full_name, branch, roll_number, student_id, current_semester, cgpa } = req.body;
+        const { full_name, branch, roll_number, student_id, current_semester, cgpa, career_path } = req.body;
 
         // Update student_profile
         const updateData = {};
@@ -261,6 +262,7 @@ router.put("/students/:studentId", requireAuth, async (req, res) => {
         if (student_id) updateData.student_id = student_id;
         if (current_semester) updateData.current_semester = parseInt(current_semester);
         if (cgpa) updateData.cgpa = parseFloat(cgpa);
+        if (career_path) updateData.career_path = career_path;
 
         await db
             .update(student_profile)
@@ -333,6 +335,7 @@ router.post("/import", requireAuth, async (req, res) => {
                         student_id: studentData.student_id,
                         current_semester: studentData.current_semester,
                         cgpa: studentData.cgpa,
+                        career_path: studentData.career_path,
                     })
                     .where(eq(student_profile.id, studentProfile[0].id))
                     .returning();

@@ -53,6 +53,7 @@ export default function StudentData() {
         rollNumber: "",
         year: "",
         cgpa: "",
+        careerPath: "",
     });
     const [updating, setUpdating] = useState(false);
     const [importing, setImporting] = useState(false);
@@ -100,6 +101,7 @@ export default function StudentData() {
             rollNumber: student.rollNumber || "",
             year: student.year || "",
             cgpa: student.cgpa || "",
+            careerPath: student.careerPath || "",
         });
         setEditModalOpen(true);
     };
@@ -118,6 +120,7 @@ export default function StudentData() {
                 student_id: editForm.rollNumber,
                 current_semester: parseInt(editForm.year),
                 cgpa: parseFloat(editForm.cgpa),
+                career_path: editForm.careerPath,
             };
 
             await axios.put(
@@ -151,6 +154,7 @@ export default function StudentData() {
             "Roll Number": student.rollNumber || "",
             "Year": student.year || "",
             "CGPA": student.cgpa || "",
+            "Career Path": student.careerPath || "",
         }));
 
         const csv = Papa.unparse(csvData);
@@ -184,6 +188,7 @@ export default function StudentData() {
                         student_id: row["Roll Number"] || "",
                         current_semester: parseInt(row["Year"]) || null,
                         cgpa: parseFloat(row["CGPA"]) || null,
+                        career_path: row["Career Path"] || "",
                     })).filter(row => row.full_name || row.email); // Filter out empty rows
 
                     if (importData.length === 0) {
@@ -353,6 +358,7 @@ export default function StudentData() {
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Roll Number</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Year</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>CGPA</TableCell>
+                            <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Career Path</TableCell>
                             <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -360,13 +366,13 @@ export default function StudentData() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={8} align="center">
+                                <TableCell colSpan={10} align="center">
                                     <CircularProgress />
                                 </TableCell>
                             </TableRow>
                         ) : students.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={9} align="center">
+                                <TableCell colSpan={10} align="center">
                                     No students found
                                 </TableCell>
                             </TableRow>
@@ -402,6 +408,9 @@ export default function StudentData() {
                                     </TableCell>
                                     <TableCell sx={{ color: "text.primary" }}>
                                         {student.cgpa || "N/A"}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "text.primary" }}>
+                                        {student.careerPath || "N/A"}
                                     </TableCell>
                                     <TableCell sx={{ color: "text.primary" }}>
                                         <Button
@@ -466,6 +475,12 @@ export default function StudentData() {
                             label="CGPA"
                             value={editForm.cgpa}
                             onChange={(e) => setEditForm({ ...editForm, cgpa: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Career Path"
+                            value={editForm.careerPath}
+                            onChange={(e) => setEditForm({ ...editForm, careerPath: e.target.value })}
                             fullWidth
                         />
                     </Box>

@@ -117,6 +117,10 @@ export default function StudentDetail({ studentId }) {
                                 <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>{profile.twelfthScore || "N/A"}%</TableCell>
 
                             </TableRow>
+                            <TableRow>
+                                <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Career Path</TableCell>
+                                <TableCell colSpan={5} sx={{ color: "text.primary", py: 1 }}>{profile.careerPath || "N/A"}</TableCell>
+                            </TableRow>
 
 
                         </TableBody>
