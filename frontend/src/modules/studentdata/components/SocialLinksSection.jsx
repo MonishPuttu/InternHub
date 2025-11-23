@@ -3,6 +3,9 @@
 import React from "react";
 import { Paper, Typography, Box, Stack, IconButton, Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import LanguageIcon from "@mui/icons-material/Language";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import { useRouter } from "next/navigation";
 
 export default function SocialLinksSection({ socialLinks }) {
@@ -16,69 +19,21 @@ export default function SocialLinksSection({ socialLinks }) {
             key: "portfolioWebsite",
             label: "Portfolio",
             url: socialLinks?.portfolioWebsite,
-            icon: (
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="#8b5cf6"
-                    style={{ width: 24, height: 24 }}
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 21.75c-2.05 0-3.98-.632-5.556-1.72a12.08 12.08 0 01.665-6.479L12 14z"
-                    />
-                </svg>
-            ),
+            icon: <LanguageIcon sx={{ fontSize: 28, color: "text.primary" }} />,
             buttonLabel: "View Site",
         },
         {
             key: "linkedinProfile",
             label: "LinkedIn",
             url: socialLinks?.linkedinProfile,
-            icon: (
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="#8b5cf6"
-                    style={{ width: 24, height: 24 }}
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"
-                    />
-                    <rect width="4" height="12" x="2" y="9" rx="1" />
-                    <circle cx="4" cy="4" r="2" />
-                </svg>
-            ),
+            icon: <LinkedInIcon sx={{ fontSize: 28, color: "#0A66C2" }} />,
             buttonLabel: "View Profile",
         },
         {
             key: "githubProfile",
             label: "GitHub",
             url: socialLinks?.githubProfile,
-            icon: (
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="#8b5cf6"
-                    style={{ width: 24, height: 24 }}
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 2c-5.523 0-10 4.477-10 10a10 10 0 006.838 9.488c.5.092.682-.218.682-.484v-1.711c-2.782.605-3.369-1.342-3.369-1.342-.455-1.16-1.11-1.468-1.11-1.468-.908-.62.07-.608.07-.608 1.004.071 1.532 1.031 1.532 1.031.892 1.528 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.337-2.22-.252-4.555-1.113-4.555-4.95 0-1.093.39-1.986 1.029-2.688-.103-.253-.446-1.27.098-2.645 0 0 .84-.269 2.75 1.025a9.564 9.564 0 012.5-.336c.85.004 1.705.115 2.5.337 1.91-1.294 2.75-1.025 2.75-1.025.546 1.375.202 2.392.1 2.645.64.702 1.028 1.595 1.028 2.688 0 3.847-2.337 4.695-4.566 4.942.36.31.68.923.68 1.861v2.76c0 .268.18.58.688.483A10 10 0 0022 12c0-5.523-4.477-10-10-10z"
-                    />
-                </svg>
-            ),
+            icon: <GitHubIcon sx={{ fontSize: 28, color: "text.primary" }} />,
             buttonLabel: "View Profile",
         },
     ];

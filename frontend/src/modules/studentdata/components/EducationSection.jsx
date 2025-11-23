@@ -5,8 +5,7 @@ import { Paper, Typography, Box, Stack, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useRouter } from "next/navigation";
 
-
-export default function EducationSection({ education, }) {
+export default function EducationSection({ education }) {
     const router = useRouter();
     return (
         <Paper
@@ -49,7 +48,7 @@ export default function EducationSection({ education, }) {
             </Typography>
 
             <Stack spacing={3}>
-                {education.length === 0 ? (
+                {(!education || education.length === 0) ? (
                     <Box
                         sx={{
                             bgcolor: "background.paper",
@@ -131,20 +130,20 @@ export default function EducationSection({ education, }) {
                                             variant="h6"
                                             sx={{ color: "text.primary", fontWeight: 600, mb: 0.5 }}
                                         >
-                                            {edu.degree}
+                                            {edu.degree || "N/A"}
                                         </Typography>
                                         <Typography
                                             variant="body2"
                                             sx={{ color: "text.secondary", mb: 0.5 }}
                                         >
-                                            {edu.institution}
+                                            {edu.institution || "N/A"}
                                         </Typography>
-                                        {edu.field_of_study && (
+                                        {edu.fieldOfStudy && (
                                             <Typography
                                                 variant="body2"
                                                 sx={{ color: "text.secondary", mb: 1 }}
                                             >
-                                                {edu.field_of_study}
+                                                {edu.fieldOfStudy}
                                             </Typography>
                                         )}
                                         <Typography
@@ -155,17 +154,17 @@ export default function EducationSection({ education, }) {
                                                 mb: 1,
                                             }}
                                         >
-                                            {edu.start_date
-                                                ? new Date(edu.start_date).toLocaleDateString(
+                                            {edu.startDate
+                                                ? new Date(edu.startDate).toLocaleDateString(
                                                     "en-US",
-                                                    { month: "short", year: "numeric" }
+                                                    { year: "numeric" }
                                                 )
                                                 : "N/A"}{" "}
                                             -{" "}
-                                            {edu.end_date
-                                                ? new Date(edu.end_date).toLocaleDateString(
+                                            {edu.endDate
+                                                ? new Date(edu.endDate).toLocaleDateString(
                                                     "en-US",
-                                                    { month: "short", year: "numeric" }
+                                                    { year: "numeric" }
                                                 )
                                                 : "Present"}
                                         </Typography>

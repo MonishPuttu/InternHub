@@ -76,7 +76,6 @@ export default function StudentData() {
                 params.set("year", year);
             }
 
-
             const response = await axios.get(
                 `${BACKEND_URL}/api/studentdata/students?${params}`,
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -220,7 +219,12 @@ export default function StudentData() {
     };
 
     useEffect(() => {
-        fetchStudents();
+        if (searchValue.trim() || department || year) {
+            fetchStudents();
+        } else {
+            setStudents([]);
+            setLoading(false);
+        }
     }, [searchValue, department, year]);
 
     return (
@@ -237,113 +241,118 @@ export default function StudentData() {
                     mb: 3,
                     flexWrap: "wrap",
                     alignItems: "center",
+                    justifyContent: "space-between",
                 }}
             >
-                <TextField
-                    size="small"
-                    placeholder="Search students..."
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon sx={{ color: "text.secondary" }} />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{
-                        minWidth: 250,
-                        "& .MuiOutlinedInput-root": {
-                            color: "text.primary",
-                            bgcolor: "background.default",
-                            "& fieldset": { borderColor: "#334155" },
-                            "&:hover fieldset": { borderColor: "#8b5cf6" },
-                        },
-                        "& .MuiInputBase-input::placeholder": { color: "text.secondary" },
-                    }}
-                />
-
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel sx={{ color: "text.secondary" }}>Department</InputLabel>
-                    <Select
-                        value={department}
-                        label="Department"
-                        onChange={(e) => setDepartment(e.target.value)}
-                        sx={{
-                            color: "text.primary",
-                            bgcolor: "background.default",
-                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
-                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                {/* Left side - Search and Filters */}
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                    <TextField
+                        size="small"
+                        placeholder="Search students..."
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: "text.secondary" }} />
+                                </InputAdornment>
+                            ),
                         }}
-                    >
-                        <MenuItem value="">
-                            <em>All</em>
-                        </MenuItem>
-                        <MenuItem value="CSE">CSE</MenuItem>
-                        <MenuItem value="ECE">ECE</MenuItem>
-                        <MenuItem value="IT">IT</MenuItem>
-                        <MenuItem value="MECH">MECH</MenuItem>
-                        <MenuItem value="CIVIL">CIVIL</MenuItem>
-                    </Select>
-                </FormControl>
-
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel sx={{ color: "text.secondary" }}>Year</InputLabel>
-                    <Select
-                        value={year}
-                        label="Year"
-                        onChange={(e) => setYear(e.target.value)}
                         sx={{
-                            color: "text.primary",
-                            bgcolor: "background.default",
-                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
-                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                            minWidth: 250,
+                            "& .MuiOutlinedInput-root": {
+                                color: "text.primary",
+                                bgcolor: "background.default",
+                                "& fieldset": { borderColor: "#334155" },
+                                "&:hover fieldset": { borderColor: "#8b5cf6" },
+                            },
+                            "& .MuiInputBase-input::placeholder": { color: "text.secondary" },
                         }}
-                    >
-                        <MenuItem value="">
-                            <em>All</em>
-                        </MenuItem>
-                        <MenuItem value="1">1</MenuItem>
-                        <MenuItem value="2">2</MenuItem>
-                        <MenuItem value="3">3</MenuItem>
-                        <MenuItem value="4">4</MenuItem>
-                    </Select>
-                </FormControl>
-
-
-
-                <Button
-                    variant="outlined"
-                    startIcon={<FileDownloadIcon />}
-                    onClick={handleExportCSV}
-                    sx={{
-                        color: "text.primary",
-                        borderColor: "#334155",
-                        "&:hover": { borderColor: "#8b5cf6", bgcolor: "action.hover" },
-                    }}
-                >
-                    Export CSV
-                </Button>
-
-                <Button
-                    variant="contained"
-                    startIcon={<FileUploadIcon />}
-                    component="label"
-                    disabled={importing}
-                    sx={{
-                        bgcolor: "#8b5cf6",
-                        "&:hover": { bgcolor: "#7c3aed" },
-                    }}
-                >
-                    {importing ? "Importing..." : "Import CSV"}
-                    <input
-                        type="file"
-                        accept=".csv"
-                        hidden
-                        ref={fileInputRef}
-                        onChange={handleImportCSV}
                     />
-                </Button>
+
+                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <InputLabel sx={{ color: "text.secondary" }}>Department</InputLabel>
+                        <Select
+                            value={department}
+                            label="Department"
+                            onChange={(e) => setDepartment(e.target.value)}
+                            sx={{
+                                color: "text.primary",
+                                bgcolor: "background.default",
+                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                            }}
+                        >
+                            <MenuItem value="">
+                                <em>All</em>
+                            </MenuItem>
+                            <MenuItem value="CSE">CSE</MenuItem>
+                            <MenuItem value="ECE">ECE</MenuItem>
+                            <MenuItem value="IT">IT</MenuItem>
+                            <MenuItem value="MECH">MECH</MenuItem>
+                            <MenuItem value="CIVIL">CIVIL</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <InputLabel sx={{ color: "text.secondary" }}>Year</InputLabel>
+                        <Select
+                            value={year}
+                            label="Year"
+                            onChange={(e) => setYear(e.target.value)}
+                            sx={{
+                                color: "text.primary",
+                                bgcolor: "background.default",
+                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                            }}
+                        >
+                            <MenuItem value="">
+                                <em>All</em>
+                            </MenuItem>
+                            <MenuItem value="1">1</MenuItem>
+                            <MenuItem value="2">2</MenuItem>
+                            <MenuItem value="3">3</MenuItem>
+                            <MenuItem value="4">4</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Box>
+
+                {/* Right side - Export and Import */}
+                <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<FileDownloadIcon />}
+                        onClick={handleExportCSV}
+                        sx={{
+                            color: "text.primary",
+                            borderColor: "#334155",
+                            "&:hover": { borderColor: "#8b5cf6", bgcolor: "action.hover" },
+                        }}
+                    >
+                        Export CSV
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<FileUploadIcon />}
+                        component="label"
+                        disabled={importing}
+                        sx={{
+                            bgcolor: "#8b5cf6",
+                            "&:hover": { bgcolor: "#7c3aed" },
+                        }}
+                    >
+                        {importing ? "Importing..." : "Import CSV"}
+                        <input
+                            type="file"
+                            accept=".csv"
+                            hidden
+                            ref={fileInputRef}
+                            onChange={handleImportCSV}
+                        />
+                    </Button>
+                </Box>
             </Box>
 
             {/* Inline Success and Error Alerts */}
@@ -382,14 +391,20 @@ export default function StudentData() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={10} align="center">
+                                <TableCell colSpan={9} align="center">
                                     <CircularProgress />
+                                </TableCell>
+                            </TableRow>
+                        ) : students.length === 0 && (searchValue.trim() || department || year) ? (
+                            <TableRow>
+                                <TableCell colSpan={9} align="center">
+                                    No students found
                                 </TableCell>
                             </TableRow>
                         ) : students.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={10} align="center">
-                                    No students found
+                                <TableCell colSpan={9} align="center" sx={{ color: "text.secondary", py: 4 }}>
+                                    Search to view student details
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -508,8 +523,6 @@ export default function StudentData() {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-
         </Box>
     );
 }

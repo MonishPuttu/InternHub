@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box, Paper, Typography, Stack } from "@mui/material";
+import { Box, Paper, Typography, Stack, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import {
     Person,
@@ -10,6 +10,7 @@ import {
     School,
     FolderOpen,
     Link as LinkIcon,
+    ArrowBack,
 } from "@mui/icons-material";
 
 export default function StudentDashboardBoxes({ studentId }) {
@@ -69,15 +70,21 @@ export default function StudentDashboardBoxes({ studentId }) {
                 color: "text.primary",
             }}
         >
+            <Button
+                variant="contained"
+                startIcon={<ArrowBack />}
+                onClick={() => router.back()}
+                sx={{ mb: 3 }}
+            >
+                Back
+            </Button>
+
             <Box
                 sx={{
                     display: "grid",
-                    gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: "repeat(2, 1fr)",
-                        lg: "repeat(3, 1fr)",
-                    },
+                    gridTemplateColumns: "repeat(2, 1fr)",
                     gap: 3,
+                    height: "75%",
                 }}
             >
                 {sections.map(({ title, subtitle, icon: Icon, color, path }, idx) => (
@@ -85,12 +92,15 @@ export default function StudentDashboardBoxes({ studentId }) {
                         key={idx}
                         onClick={() => router.push(path)}
                         sx={{
-                            p: 2.5,
+                            p: 4,
+                            minHeight: 150,
                             bgcolor: "background.paper",
                             border: "1px solid #334155",
                             borderRadius: 2,
                             cursor: "pointer",
                             transition: "all 0.2s",
+                            display: "flex",
+                            alignItems: "center",
                             "&:hover": {
                                 borderColor: color,
                                 bgcolor: "background.default",
@@ -98,11 +108,11 @@ export default function StudentDashboardBoxes({ studentId }) {
                             },
                         }}
                     >
-                        <Stack direction="row" spacing={2} alignItems="center">
+                        <Stack direction="row" spacing={2} alignItems="center" sx={{ width: "100%" }}>
                             <Box
                                 sx={{
-                                    width: 48,
-                                    height: 48,
+                                    width: 64,
+                                    height: 64,
                                     borderRadius: 1.5,
                                     bgcolor: `${color}20`,
                                     display: "flex",
@@ -110,16 +120,16 @@ export default function StudentDashboardBoxes({ studentId }) {
                                     justifyContent: "center",
                                 }}
                             >
-                                <Icon sx={{ color: color, fontSize: 24 }} />
+                                <Icon sx={{ color: color, fontSize: 32 }} />
                             </Box>
                             <Box>
                                 <Typography
-                                    variant="body1"
+                                    variant="h6"
                                     sx={{ color: "text.primary", fontWeight: 600, mb: 0.25 }}
                                 >
                                     {title}
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
                                     {subtitle}
                                 </Typography>
                             </Box>

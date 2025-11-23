@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import EducationSection from "@/modules/studentdata/components/EducationSection";
@@ -8,7 +8,7 @@ import axios from "axios";
 import { getToken } from "@/lib/session";
 
 export default function EducationPage({ params }) {
-    const { studentId } = params;
+    const { studentId } = use(params);
     const router = useRouter();
     const [education, setEducation] = useState([]);
     const [error, setError] = useState("");
