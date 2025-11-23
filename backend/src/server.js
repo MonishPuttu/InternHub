@@ -22,6 +22,8 @@ import postsRoutes from "./routes/posts.js";
 import trainingRoutes from "./routes/training.js";
 import placementAnalyticsRoutes from "./routes/placement_analytics.js";
 import timelineRoutes from "./routes/timeline.js";
+import studentDataRoutes from "./routes/studentdata.js";
+// import { startTimelineUpdater } from "./jobs/timeline-updater.js";
 import offerRoutes from "./routes/offers.js";
 
 const app = express();
@@ -44,6 +46,7 @@ app.use("/api/applications", studentApplicationsRoutes); // for testing purpose
 app.use("/api", calendarRoutes);
 app.use("/api/training", trainingRoutes);
 app.use("/api/timeline", timelineRoutes);
+app.use("/api/studentdata", studentDataRoutes);
 app.use("/api/offers", offerRoutes);
 app.use("/api/placement-analytics", placementAnalyticsRoutes);
 

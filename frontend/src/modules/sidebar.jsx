@@ -80,6 +80,12 @@ const navigationItems = [
     roles: ["placement"],
   },
   {
+    text: "Student Data",
+    path: "/studentdata",
+    icon: <WorkOutlineIcon />,
+    roles: ["placement"],
+  },
+  {
     text: "Timeline",
     icon: <TimelineIcon />,
     path: "/timeline",
