@@ -1,55 +1,196 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, Box, Card, Chip, Button } from "@mui/material";
+
+import { Paper, Typography, Box, Stack, IconButton, Button, Chip } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useRouter } from "next/navigation";
+
+
+const ProjectIcon = () => (
+    <Box
+        sx={{
+            width: 48,
+            height: 48,
+            borderRadius: 1,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#334155" : "#f1f5f9"),
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+        }}
+    >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="#8b5cf6"
+            style={{ width: 24, height: 24 }}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 8c-1.657 0-3 1.567-3 3.5S10.343 15 12 15s3-1.567 3-3.5S13.657 8 12 8z"
+            />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 6.05L5.636 4.636m12.728 0l-1.414 1.414M7.05 17.95l-1.414 1.414"
+            />
+        </svg>
+    </Box>
+);
 
 export default function ProjectsSection({ projects }) {
+    const router = useRouter();
     return (
         <Paper
             elevation={2}
             sx={{
                 p: 2.5,
                 mb: 2,
-                bgcolor: "background.paper",
-                border: "1px solid #334155",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                position: "relative",
             }}
         >
-            <Typography variant="h6" sx={{ color: "text.primary", mb: 1.5, fontWeight: "bold" }}>
+            <IconButton
+                onClick={() => router.back()}
+                size="small"
+                sx={{
+                    color: "#8b5cf6",
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    display: "flex",
+                    alignItems: "center",
+                }}
+                aria-label="back"
+            >
+                <ArrowBackIcon />
+                <Typography
+                    component="span"
+                    sx={{ ml: 0.5, fontSize: 14, fontWeight: 500, userSelect: "none" }}
+                >
+                    Back
+                </Typography>
+            </IconButton>
+            <Typography
+                variant="h6"
+                sx={{ color: "text.primary", mb: 1.5, mt: 4, fontWeight: "bold" }}
+            >
                 Projects
             </Typography>
-            {projects.length === 0 ? (
-                <Typography sx={{ color: "text.secondary", fontSize: "0.9rem" }}>No projects available</Typography>
-            ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    {projects.map((project, index) => (
-                        <Card key={index} sx={{ bgcolor: "background.default", border: "1px solid #334155", p: 1.5 }}>
-                            <Typography variant="subtitle2" sx={{ color: "text.primary", fontWeight: "bold", mb: 0.5 }}>
-                                {project.title}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.85rem", mb: 1 }}>
-                                {project.description}
-                            </Typography>
-                            {project.technologies && project.technologies.length > 0 && (
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
-                                    {project.technologies.map((tech, techIndex) => (
-                                        <Chip key={techIndex} label={tech} size="small" sx={{ bgcolor: "#8b5cf620", color: "#8b5cf6", fontSize: "0.7rem", height: 20 }} />
-                                    ))}
+
+            <Stack spacing={3}>
+                {projects.length === 0 ? (
+                    <Box
+                        sx={{
+                            bgcolor: "background.paper",
+                            borderRadius: 2,
+                            border: "1px solid",
+                            borderColor: (theme) =>
+                                theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                            p: 6,
+                            textAlign: "center",
+                        }}
+                    >
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                            No projects available
+                        </Typography>
+                    </Box>
+                ) : (
+                    projects.map((project, index) => (
+                        <Box
+                            key={index}
+                            sx={{
+                                bgcolor: "background.paper",
+                                borderRadius: 2,
+                                border: "1px solid",
+                                borderColor: (theme) =>
+                                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                                p: 3,
+                                transition: "all 0.2s",
+                                "&:hover": {
+                                    borderColor: "#8b5cf6",
+                                    transform: "translateY(-2px)",
+                                    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.1)",
+                                },
+                            }}
+                        >
+                            <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ flex: 1 }}>
+                                <ProjectIcon />
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{ color: "text.primary", fontWeight: 600, mb: 0.5 }}
+                                    >
+                                        {project.title}
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: "text.secondary", mb: 1, lineHeight: 1.5 }}
+                                    >
+                                        {project.description}
+                                    </Typography>
+                                    {project.technologies && project.technologies.length > 0 && (
+                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}>
+                                            {project.technologies.map((tech, techIndex) => (
+                                                <Chip
+                                                    key={techIndex}
+                                                    label={tech}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: "#8b5cf620",
+                                                        color: "#8b5cf6",
+                                                        fontSize: "0.75rem",
+                                                        height: 24,
+                                                    }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                            {project.startDate
+                                                ? new Date(project.startDate).toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })
+                                                : "N/A"}{" "}
+                                            -{" "}
+                                            {project.endDate
+                                                ? new Date(project.endDate).toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })
+                                                : "Present"}
+                                        </Typography>
+                                        {project.projectUrl && (
+                                            <Button
+                                                href={project.projectUrl}
+                                                target="_blank"
+                                                size="small"
+                                                sx={{
+                                                    color: "#8b5cf6",
+                                                    textTransform: "none",
+                                                    p: 0,
+                                                    minWidth: "auto",
+                                                    fontSize: "0.8rem",
+                                                }}
+                                            >
+                                                View
+                                            </Button>
+                                        )}
+                                    </Stack>
                                 </Box>
-                            )}
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                    {project.startDate ? new Date(project.startDate).getFullYear() : "N/A"} - {project.endDate ? new Date(project.endDate).getFullYear() : "Present"}
-                                </Typography>
-                                {project.projectUrl && (
-                                    <Button href={project.projectUrl} target="_blank" size="small" sx={{ color: "#8b5cf6", textTransform: "none", p: 0, minWidth: "auto", fontSize: "0.8rem" }}>
-                                        View
-                                    </Button>
-                                )}
-                            </Box>
-                        </Card>
-                    ))}
-                </Box>
-            )}
+                            </Stack>
+                        </Box>
+                    ))
+                )}
+            </Stack>
         </Paper>
     );
 }

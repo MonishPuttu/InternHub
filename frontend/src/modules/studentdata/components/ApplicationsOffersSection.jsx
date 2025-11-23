@@ -1,20 +1,47 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button } from "@mui/material";
+import { useRouter } from "next/navigation";
+import { Paper, Typography, Button, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 export default function ApplicationsOffersSection({ applications, offers }) {
+    const router = useRouter();
     return (
         <Paper
             elevation={2}
             sx={{
                 mb: 2,
                 p: 2.5,
-                bgcolor: "background.paper",
-                border: "1px solid #334155",
+
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                position: "relative",
             }}
         >
-            <Typography variant="h6" sx={{ color: "text.primary", mb: 1.5, fontWeight: "bold" }}>
+            <IconButton
+                onClick={() => router.back()}
+                size="small"
+                sx={{
+                    color: "#8b5cf6",
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    display: "flex",
+                    alignItems: "center",
+                }}
+                aria-label="back"
+            >
+                <ArrowBackIcon />
+                <Typography
+                    component="span"
+                    sx={{ ml: 0.5, fontSize: 14, fontWeight: 500, userSelect: "none" }}
+                >
+                    Back
+                </Typography>
+            </IconButton>
+            <Typography variant="h6" sx={{ color: "text.primary", mb: 1.5, mt: 4, fontWeight: "bold" }}>
                 Applications & Offers
             </Typography>
             {applications.length === 0 && offers.length === 0 ? (

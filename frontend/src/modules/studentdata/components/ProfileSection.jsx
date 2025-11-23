@@ -1,12 +1,29 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, TableContainer, Table, TableBody, TableRow, TableCell } from "@mui/material";
+import { Paper, Typography, Box, Stack, IconButton } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useRouter } from "next/navigation";
 
 export default function ProfileSection({ profile }) {
     if (!profile) {
         return null;
     }
+
+    const router = useRouter();
+
+    const infoItems = [
+        { label: "Full Name", value: profile.fullName || "N/A" },
+        { label: "Roll Number", value: profile.rollNumber || "N/A" },
+        { label: "Branch", value: profile.branch || "N/A" },
+        { label: "Semester", value: profile.currentSemester || "N/A" },
+        { label: "Email", value: profile.email || "N/A" },
+        { label: "Phone", value: profile.contactNumber || "N/A" },
+        { label: "CGPA", value: profile.cgpa || "N/A" },
+        { label: "10th Score", value: profile.tenthScore ? profile.tenthScore + "%" : "N/A" },
+        { label: "12th Score", value: profile.twelfthScore ? profile.twelfthScore + "%" : "N/A" },
+        { label: "Career Path", value: profile.careerPath || "N/A" },
+    ];
 
     return (
         <Paper
@@ -15,103 +32,70 @@ export default function ProfileSection({ profile }) {
                 p: 3,
                 mb: 2,
                 bgcolor: "background.paper",
-                border: "1px solid #e5e7eb",
-                borderRadius: 1,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                position: "relative",
             }}
         >
+            <IconButton
+                onClick={() => router.back()}
+                size="small"
+                sx={{
+                    color: "#8b5cf6",
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    display: "flex",
+                    alignItems: "center",
+                }}
+                aria-label="back"
+            >
+                <ArrowBackIcon />
+                <Typography
+                    component="span"
+                    sx={{ ml: 0.5, fontSize: 14, fontWeight: 500, userSelect: "none" }}
+                >
+                    Back
+                </Typography>
+            </IconButton>
+
             <Typography
                 variant="h5"
                 sx={{
                     color: "text.primary",
                     fontWeight: 600,
                     mb: 3,
+                    mt: 4,
                     pb: 2,
-                    borderBottom: "1px solid #e5e7eb",
+                    borderBottom: (theme) =>
+                        `1px solid ${theme.palette.divider}`,
                 }}
             >
-                Profile & Academic Scores
+                Personal Details
             </Typography>
 
-            <TableContainer>
-                <Table size="small">
-                    <TableBody>
-                        <TableRow>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Full Name
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.fullName}
-                            </TableCell>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Roll Number
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.rollNumber}
-                            </TableCell>
-                        </TableRow>
-
-                        <TableRow>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Branch
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.branch || "N/A"}
-                            </TableCell>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Semester
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.currentSemester || "N/A"}
-                            </TableCell>
-                        </TableRow>
-
-                        <TableRow>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Email
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.email || "N/A"}
-                            </TableCell>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Phone
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.contactNumber || "N/A"}
-                            </TableCell>
-                        </TableRow>
-
-                        <TableRow>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                CGPA
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.cgpa || "N/A"}
-                            </TableCell>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                10th Score
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.tenthScore || "N/A"}%
-                            </TableCell>
-                        </TableRow>
-
-                        <TableRow>
-                            <TableCell sx={{ color: "text.secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                12th Score
-                            </TableCell>
-                            <TableCell sx={{ color: "text.primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.twelfthScore || "N/A"}%
-                            </TableCell>
-                            <TableCell sx={{ color: "text-secondary", fontWeight: "bold", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                Career Path
-                            </TableCell>
-                            <TableCell sx={{ color: "text-primary", py: 1, borderBottom: "1px solid #e5e7eb" }}>
-                                {profile.careerPath || "N/A"}
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 3,
+                }}
+            >
+                {infoItems.map(({ label, value }, idx) => (
+                    <Stack key={idx} spacing={0.5}>
+                        <Typography
+                            variant="caption"
+                            sx={{ color: "text.secondary", fontWeight: 600 }}
+                        >
+                            {label}
+                        </Typography>
+                        <Typography variant="body1" sx={{ color: "text.primary" }}>
+                            {value}
+                        </Typography>
+                    </Stack>
+                ))}
+            </Box>
         </Paper>
     );
 }

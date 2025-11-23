@@ -1,20 +1,48 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip, Box } from "@mui/material";
+import { useRouter } from "next/navigation";
+import { Paper, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 export default function AssessmentHistorySection({ assessmentHistory }) {
+    const router = useRouter();
+
     return (
         <Paper
             elevation={2}
             sx={{
                 p: 2.5,
                 mb: 2,
-                bgcolor: "background.paper",
-                border: "1px solid #334155",
+
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                position: "relative",
             }}
         >
-            <Typography variant="h6" sx={{ color: "text.primary", mb: 1.5, fontWeight: "bold" }}>
+            <IconButton
+                onClick={() => router.back()}
+                size="small"
+                sx={{
+                    color: "#8b5cf6",
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    display: "flex",
+                    alignItems: "center",
+                }}
+                aria-label="back"
+            >
+                <ArrowBackIcon />
+                <Typography
+                    component="span"
+                    sx={{ ml: 0.5, fontSize: 14, fontWeight: 500, userSelect: "none" }}
+                >
+                    Back
+                </Typography>
+            </IconButton>
+            <Typography variant="h6" sx={{ color: "text.primary", mb: 1.5, mt: 4, fontWeight: "bold" }}>
                 Assessment History
             </Typography>
             {assessmentHistory.length === 0 ? (
@@ -30,7 +58,7 @@ export default function AssessmentHistorySection({ assessmentHistory }) {
                                 <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Score</TableCell>
                                 <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>%</TableCell>
                                 <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Grade</TableCell>
-                                <TableCell align="center" sx={{ color: "text.secondary", fontWeight: "bold", py: 1 }}>Date</TableCell>
+                                <TableCell align="center" sx={{ color: "text.secondary", fontSize: "0.85rem" }}>Date</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
