@@ -1,8 +1,22 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { posts } from "../db/schema/post.js";
-import { placement_profile, student_profile, user, recruiter_profile } from "../db/schema/user.js";
-import { eq, desc, and, or, isNull, gt, arrayContains, inArray } from "drizzle-orm";
+import {
+  placement_profile,
+  student_profile,
+  user,
+  recruiter_profile,
+} from "../db/schema/user.js";
+import {
+  eq,
+  desc,
+  and,
+  or,
+  isNull,
+  gt,
+  arrayContains,
+  inArray,
+} from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 import { sendNotificationEmail } from "../lib/emailService.js";
 
@@ -72,10 +86,12 @@ router.post("/applications", requireAuth, async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    if (userRole !== "recruiter") {
-      return res
-        .status(403)
-        .json({ ok: false, error: "Only recruiters can create posts" });
+    // UPDATED: Allow both recruiters AND placement officers to create posts
+    if (userRole !== "recruiter" && userRole !== "placement") {
+      return res.status(403).json({
+        ok: false,
+        error: "Only recruiters and placement officers can create posts",
+      });
     }
 
     const {
@@ -113,6 +129,9 @@ router.post("/applications", requireAuth, async (req, res) => {
       }
     }
 
+    // UPDATED: For placement officers, auto-approve their own posts
+    const approvalStatus = userRole === "placement" ? "approved" : "pending";
+
     const newPost = await db
       .insert(posts)
       .values({
@@ -131,12 +150,16 @@ router.post("/applications", requireAuth, async (req, res) => {
           ? new Date(application_deadline)
           : null,
         target_departments: validatedDepartments,
-        approval_status: "pending",
+        approval_status: approvalStatus, // UPDATED
       })
       .returning();
 
-    // --- Email Notification Logic Start ---
-    if (newPost.length > 0 && validatedDepartments.length > 0) {
+    // --- Email Notification Logic (only for recruiter posts) ---
+    if (
+      userRole === "recruiter" &&
+      newPost.length > 0 &&
+      validatedDepartments.length > 0
+    ) {
       const createdPost = newPost[0];
 
       // Fetch recruiter details
@@ -157,7 +180,6 @@ router.post("/applications", requireAuth, async (req, res) => {
         companyName: "N/A",
       };
 
-      // Fetch placement officers' emails for target departments
       const placementOfficers = await db
         .select({ email: user.email })
         .from(user)
@@ -176,50 +198,39 @@ router.post("/applications", requireAuth, async (req, res) => {
       if (recipientEmails.length > 0) {
         const subject = `New Job Post from ${recruiterInfo.companyName} - ${createdPost.position}`;
         const htmlContent = `
-          <p>Dear Placement Officer,</p>
-          <p>A new job post has been created by a recruiter. Please find the details below:</p>
-          <h3>Recruiter Information:</h3>
-          <ul>
-            <li><strong>Name:</strong> ${recruiterInfo.fullName}</li>
-            <li><strong>Company:</strong> ${recruiterInfo.companyName}</li>
-            <li><strong>Email:</strong> ${recruiterInfo.email}</li>
-          </ul>
-          <h3>Job Post Information:</h3>
-          <ul>
-            <li><strong>Company Name:</strong> ${createdPost.company_name}</li>
-            <li><strong>Position:</strong> ${createdPost.position}</li>
-            <li><strong>Industry:</strong> ${createdPost.industry}</li>
-            <li><strong>Application Deadline:</strong> ${
-              createdPost.application_deadline
-                ? new Date(createdPost.application_deadline).toDateString()
-                : "N/A"
-            }</li>
-            <li><strong>Target Departments:</strong> ${
-              createdPost.target_departments
-                ? createdPost.target_departments.join(", ")
-                : "N/A"
-            }</li>
-            <li><strong>Package Offered:</strong> ${
-              createdPost.package_offered || "N/A"
-            }</li>
-          </ul>
-          <p>Please review the post and take necessary action.</p>
-          <p>Regards,<br>InternHub Team</p>
+Dear Placement Officer,
+
+A new job post has been created by a recruiter. Please find the details below:
+
+Company: ${createdPost.company_name}
+Position: ${createdPost.position}
+Industry: ${createdPost.industry}
+Package: ${
+          createdPost.package_offered
+            ? `₹${createdPost.package_offered}L`
+            : "N/A"
+        }
+
+Please review the post and take necessary action.
+
+Regards,
+InternHub Team
         `;
 
-        for (const email of recipientEmails) {
-          console.log(`Attempting to send email to: ${email}`);
-          await sendNotificationEmail(email, subject, htmlContent);
+        try {
+          await sendNotificationEmail(recipientEmails, subject, htmlContent);
+          console.log("✅ Email notifications sent successfully");
+        } catch (emailError) {
+          console.error("❌ Failed to send email notifications:", emailError);
         }
-      } else {
-        console.log("No recipient emails found for notification.");
       }
-    } else {
-      console.log("No new post created or no target departments for notification.");
     }
-    // --- Email Notification Logic End ---
 
-    res.status(201).json({ ok: true, application: newPost[0] });
+    res.json({
+      ok: true,
+      message: "Post created successfully",
+      post: newPost[0],
+    });
   } catch (e) {
     console.error("Error creating post:", e);
     res.status(500).json({ ok: false, error: String(e) });

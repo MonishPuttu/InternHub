@@ -12,6 +12,10 @@ import {
   Chip,
   TextField,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Edit,
@@ -22,6 +26,11 @@ import {
   Warning,
   Add,
   Work,
+  Email as EmailIcon,
+  School as SchoolIcon,
+  Book as BookIcon,
+  Public as PublicIcon,
+  AccountBalance as AccountBalanceIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -53,6 +62,10 @@ export default function ProfilePage() {
   const [currentEducation, setCurrentEducation] = useState(null);
   const [formData, setFormData] = useState({});
   const [userRole, setUserRole] = useState(null);
+
+  // NEW: States for higher studies dialog
+  const [editDialog, setEditDialog] = useState(null);
+  const [editData, setEditData] = useState({});
 
   useEffect(() => {
     fetchOverview();
@@ -132,6 +145,37 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Error updating personal info:", error);
       alert("Failed to update personal information");
+    }
+  };
+
+  // NEW: Handlers for higher studies dialog
+  const handleOpenDialog = (dialogType) => {
+    setEditDialog(dialogType);
+
+    if (dialogType === "higher_studies") {
+      setEditData({
+        higher_studies_info: data.profile?.higher_studies_info || {},
+      });
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setEditDialog(null);
+    setEditData({});
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const token = getToken();
+      await axios.put(`${BACKEND_URL}/api/profile/personal`, editData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("Updated successfully!");
+      handleCloseDialog();
+      fetchOverview();
+    } catch (error) {
+      console.error("Error updating:", error);
+      alert(error.response?.data?.error || "Failed to update");
     }
   };
 
@@ -611,6 +655,201 @@ export default function ProfilePage() {
                 </Typography>
               )}
             </Box>
+
+            {/* NEW: Higher Studies Card - Only for students with higher_education career path */}
+            {userRole === "student" &&
+              data.profile?.career_path === "higher_education" && (
+                <Box
+                  sx={{
+                    bgcolor: "background.paper",
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    p: 3,
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ color: "text.primary", fontWeight: 600 }}
+                    >
+                      Higher Studies Plans
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpenDialog("higher_studies")}
+                      sx={{ color: "#8b5cf6" }}
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  </Stack>
+
+                  {data.profile?.higher_studies_info ? (
+                    <Stack spacing={2}>
+                      {data.profile.higher_studies_info.degree && (
+                        <Stack direction="row" spacing={2}>
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 1,
+                              bgcolor:
+                                theme.palette.mode === "dark"
+                                  ? "#334155"
+                                  : "#f1f5f9",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <SchoolIcon
+                              sx={{ color: "#8b5cf6", fontSize: 20 }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Degree
+                            </Typography>
+                            <Typography
+                              sx={{ color: "text.primary", fontWeight: 500 }}
+                            >
+                              {data.profile.higher_studies_info.degree}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      )}
+
+                      {data.profile.higher_studies_info.field && (
+                        <Stack direction="row" spacing={2}>
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 1,
+                              bgcolor:
+                                theme.palette.mode === "dark"
+                                  ? "#334155"
+                                  : "#f1f5f9",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <BookIcon sx={{ color: "#8b5cf6", fontSize: 20 }} />
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Field of Study
+                            </Typography>
+                            <Typography
+                              sx={{ color: "text.primary", fontWeight: 500 }}
+                            >
+                              {data.profile.higher_studies_info.field}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      )}
+
+                      {data.profile.higher_studies_info.country && (
+                        <Stack direction="row" spacing={2}>
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 1,
+                              bgcolor:
+                                theme.palette.mode === "dark"
+                                  ? "#334155"
+                                  : "#f1f5f9",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <PublicIcon
+                              sx={{ color: "#8b5cf6", fontSize: 20 }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Target Country
+                            </Typography>
+                            <Typography
+                              sx={{ color: "text.primary", fontWeight: 500 }}
+                            >
+                              {data.profile.higher_studies_info.country}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      )}
+
+                      {data.profile.higher_studies_info.target_universities && (
+                        <Stack direction="row" spacing={2}>
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 1,
+                              bgcolor:
+                                theme.palette.mode === "dark"
+                                  ? "#334155"
+                                  : "#f1f5f9",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <AccountBalanceIcon
+                              sx={{ color: "#8b5cf6", fontSize: 20 }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Target Universities
+                            </Typography>
+                            <Typography
+                              sx={{ color: "text.primary", fontWeight: 500 }}
+                            >
+                              {
+                                data.profile.higher_studies_info
+                                  .target_universities
+                              }
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      )}
+                    </Stack>
+                  ) : (
+                    <Typography
+                      sx={{ color: "text.secondary", fontStyle: "italic" }}
+                    >
+                      Click edit to add your higher studies information
+                    </Typography>
+                  )}
+                </Box>
+              )}
           </Box>
         </Box>
       )}
@@ -643,6 +882,7 @@ export default function ProfilePage() {
               gap: 3,
             }}
           >
+            {/* All your existing fields stay exactly the same */}
             {/* Full Name */}
             {canEditPersonalInfo ? (
               <TextField
@@ -959,7 +1199,7 @@ export default function ProfilePage() {
               </Box>
             )}
 
-            {/* 12th */}
+            {/* 12th Score */}
             {canEditPersonalInfo ? (
               <TextField
                 label="12th Score (%)"
@@ -999,7 +1239,7 @@ export default function ProfilePage() {
               </Box>
             )}
 
-            {/* LinkedIn */}
+            {/* LinkedIn Profile */}
             {canEditPersonalInfo ? (
               <TextField
                 label="LinkedIn Profile"
@@ -1029,7 +1269,8 @@ export default function ProfilePage() {
                 }}
               />
             ) : (
-              (formData.linkedin_profile && formData.linkedin_profile !== "N/A") && (
+              formData.linkedin_profile &&
+              formData.linkedin_profile !== "N/A" && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     LinkedIn Profile
@@ -1040,54 +1281,325 @@ export default function ProfilePage() {
                 </Box>
               )
             )}
+
+            {/* Skills */}
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Skills"
+                value={formData.skills || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, skills: e.target.value })
+                }
+                multiline
+                rows={2}
+                fullWidth
+                placeholder="React, Node.js, Python, Machine Learning"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
+                  },
+                }}
+              />
+            ) : (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Skills
+                </Typography>
+                <Typography variant="body1" color="text.primary">
+                  {formData.skills || "N/A"}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Professional Email */}
+            {canEditPersonalInfo ? (
+              <TextField
+                label="Professional Email"
+                type="email"
+                value={formData.professional_email || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    professional_email: e.target.value,
+                  })
+                }
+                fullWidth
+                placeholder="your.name@company.com"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    color: "text.primary",
+                    bgcolor: "background.default",
+                    "& fieldset": {
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#8b5cf6",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "#8b5cf6" },
+                  },
+                }}
+              />
+            ) : (
+              formData.professional_email &&
+              formData.professional_email !== "N/A" && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Professional Email
+                  </Typography>
+                  <Typography variant="body1" color="text.primary">
+                    {formData.professional_email}
+                  </Typography>
+                </Box>
+              )
+            )}
           </Box>
 
-          {/* Skills */}
-          {canEditPersonalInfo ? (
-            <TextField
-              label="Skills"
-              value={formData.skills || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, skills: e.target.value })
-              }
-              multiline
-              rows={2}
-              fullWidth
-              placeholder="React, Node.js, Python, Machine Learning"
-              sx={{
-                mt: 3,
-                "& .MuiOutlinedInput-root": {
-                  color: "text.primary",
-                  bgcolor: "background.default",
-                  "& fieldset": {
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#8b5cf6",
-                  },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                  "&.Mui-focused": { color: "#8b5cf6" },
-                },
-              }}
-            />
-          ) : (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="caption" color="text.secondary">
-                Skills
-              </Typography>
-              <Typography variant="body1" color="text.primary">
-                {formData.skills || "N/A"}
-              </Typography>
-            </Box>
-          )}
+          {/* NEW: Higher Studies Section - Only for higher_education students */}
+          {userRole === "student" &&
+            formData.career_path === "higher_education" && (
+              <>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "text.primary",
+                    fontWeight: 600,
+                    mt: 4,
+                    mb: 2,
+                  }}
+                >
+                  Higher Studies Plans
+                </Typography>
+
+                {canEditPersonalInfo ? (
+                  // Edit mode - show text fields
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                      gap: 3,
+                    }}
+                  >
+                    <TextField
+                      label="Degree/Program"
+                      value={formData.higher_studies_info?.degree || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          higher_studies_info: {
+                            ...(formData.higher_studies_info || {}),
+                            degree: e.target.value,
+                          },
+                        })
+                      }
+                      fullWidth
+                      placeholder="e.g., MS, M.E, MBA, PhD"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "text.primary",
+                          bgcolor: "background.default",
+                          "& fieldset": {
+                            borderColor:
+                              theme.palette.mode === "dark"
+                                ? "#334155"
+                                : "#e2e8f0",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8b5cf6",
+                          },
+                          "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "text.secondary",
+                          "&.Mui-focused": { color: "#8b5cf6" },
+                        },
+                      }}
+                    />
+
+                    <TextField
+                      label="Field of Study"
+                      value={formData.higher_studies_info?.field || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          higher_studies_info: {
+                            ...(formData.higher_studies_info || {}),
+                            field: e.target.value,
+                          },
+                        })
+                      }
+                      fullWidth
+                      placeholder="e.g., Computer Science, Business"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "text.primary",
+                          bgcolor: "background.default",
+                          "& fieldset": {
+                            borderColor:
+                              theme.palette.mode === "dark"
+                                ? "#334155"
+                                : "#e2e8f0",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8b5cf6",
+                          },
+                          "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "text.secondary",
+                          "&.Mui-focused": { color: "#8b5cf6" },
+                        },
+                      }}
+                    />
+
+                    <TextField
+                      label="Target Country"
+                      value={formData.higher_studies_info?.country || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          higher_studies_info: {
+                            ...(formData.higher_studies_info || {}),
+                            country: e.target.value,
+                          },
+                        })
+                      }
+                      fullWidth
+                      placeholder="e.g., USA, UK, Canada"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "text.primary",
+                          bgcolor: "background.default",
+                          "& fieldset": {
+                            borderColor:
+                              theme.palette.mode === "dark"
+                                ? "#334155"
+                                : "#e2e8f0",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8b5cf6",
+                          },
+                          "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "text.secondary",
+                          "&.Mui-focused": { color: "#8b5cf6" },
+                        },
+                      }}
+                    />
+
+                    <TextField
+                      label="Target Universities"
+                      value={
+                        formData.higher_studies_info?.target_universities || ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          higher_studies_info: {
+                            ...(formData.higher_studies_info || {}),
+                            target_universities: e.target.value,
+                          },
+                        })
+                      }
+                      fullWidth
+                      placeholder="e.g., MIT, Stanford"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "text.primary",
+                          bgcolor: "background.default",
+                          "& fieldset": {
+                            borderColor:
+                              theme.palette.mode === "dark"
+                                ? "#334155"
+                                : "#e2e8f0",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8b5cf6",
+                          },
+                          "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "text.secondary",
+                          "&.Mui-focused": { color: "#8b5cf6" },
+                        },
+                      }}
+                    />
+                  </Box>
+                ) : (
+                  // View mode - display format exactly like your screenshot
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                      gap: 3,
+                    }}
+                  >
+                    {/* Degree/Program */}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Degree/Program
+                      </Typography>
+                      <Typography variant="body1" color="text.primary">
+                        {formData.higher_studies_info?.degree || "N/A"}
+                      </Typography>
+                    </Box>
+
+                    {/* Field of Study */}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Field of Study
+                      </Typography>
+                      <Typography variant="body1" color="text.primary">
+                        {formData.higher_studies_info?.field || "N/A"}
+                      </Typography>
+                    </Box>
+
+                    {/* Target Country */}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Target Country
+                      </Typography>
+                      <Typography variant="body1" color="text.primary">
+                        {formData.higher_studies_info?.country || "N/A"}
+                      </Typography>
+                    </Box>
+
+                    {/* Target Universities */}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Target Universities
+                      </Typography>
+                      <Typography variant="body1" color="text.primary">
+                        {formData.higher_studies_info?.target_universities ||
+                          "N/A"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </>
+            )}
         </Box>
       )}
 
-      {/* Education Tab */}
+      {/* Education Tab - Keep exactly as is */}
       {activeTab === "education" && (
         <Box>
           <Stack
@@ -1147,7 +1659,7 @@ export default function ProfilePage() {
         </Box>
       )}
 
-      {/* Experience Tab */}
+      {/* Experience Tab - Keep exactly as is */}
       {activeTab === "experience" && (
         <Box>
           <Typography
@@ -1208,7 +1720,7 @@ export default function ProfilePage() {
         </Box>
       )}
 
-      {/* Offer Letters Tab - NEW */}
+      {/* Offer Letters Tab */}
       {activeTab === "offers" && <OfferLettersSection />}
 
       <EditEducationDialog
@@ -1220,6 +1732,146 @@ export default function ProfilePage() {
         education={currentEducation}
         onSave={handleSaveEducation}
       />
+
+      {/* NEW: Higher Studies Dialog */}
+      <Dialog
+        open={editDialog === "higher_studies"}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: "background.paper",
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "text.primary", fontWeight: 600 }}>
+          Higher Studies Information
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Stack spacing={2.5}>
+              <TextField
+                fullWidth
+                label="Degree/Program"
+                value={editData.higher_studies_info?.degree || ""}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    higher_studies_info: {
+                      ...(editData.higher_studies_info || {}),
+                      degree: e.target.value,
+                    },
+                  })
+                }
+                placeholder="e.g., MS, M.E, MBA, PhD"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "background.default",
+                    "& fieldset": { borderColor: "divider" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#8b5cf6" },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="Field of Study"
+                value={editData.higher_studies_info?.field || ""}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    higher_studies_info: {
+                      ...(editData.higher_studies_info || {}),
+                      field: e.target.value,
+                    },
+                  })
+                }
+                placeholder="e.g., Computer Science"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "background.default",
+                    "& fieldset": { borderColor: "divider" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#8b5cf6" },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="Target Country"
+                value={editData.higher_studies_info?.country || ""}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    higher_studies_info: {
+                      ...(editData.higher_studies_info || {}),
+                      country: e.target.value,
+                    },
+                  })
+                }
+                placeholder="e.g., USA, UK"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "background.default",
+                    "& fieldset": { borderColor: "divider" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#8b5cf6" },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="Target Universities"
+                value={editData.higher_studies_info?.target_universities || ""}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    higher_studies_info: {
+                      ...(editData.higher_studies_info || {}),
+                      target_universities: e.target.value,
+                    },
+                  })
+                }
+                placeholder="e.g., MIT, Stanford"
+                multiline
+                rows={2}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "background.default",
+                    "& fieldset": { borderColor: "divider" },
+                    "&:hover fieldset": { borderColor: "#8b5cf6" },
+                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#8b5cf6" },
+                }}
+              />
+            </Stack>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} sx={{ color: "text.secondary" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            variant="contained"
+            sx={{
+              bgcolor: "#8b5cf6",
+              "&:hover": { bgcolor: "#7c3aed" },
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

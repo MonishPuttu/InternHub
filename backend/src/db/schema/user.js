@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, json } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -32,6 +32,7 @@ export const student_profile = pgTable("student_profile", {
   // Academic info
   website: text("website"),
   linkedin: text("linkedin"),
+  professional_email: text("professional_email"),
   branch: text("branch"),
   current_semester: text("current_semester"),
   cgpa: text("cgpa"),
@@ -44,6 +45,7 @@ export const student_profile = pgTable("student_profile", {
   skills: text("skills"),
   extra_activities: text("extra_activities"),
   career_path: text("career_path").default("placement"), // "placement", "higher_education", or "entrepreneurship"
+  higher_studies_info: json("higher_studies_info"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
