@@ -134,46 +134,60 @@ router.get("/personal", requireAuth, async (req, res) => {
 router.put("/personal", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const role = req.user.role;
+    const userRole = req.user.role;
+    const updateData = { ...req.body };
 
-    const excludedFields = [
-      "id",
-      "user_id",
-      "created_at",
-      "updated_at",
-      "date_of_birth",
-    ];
+    // NEW: Validate professional_email if provided
+    if (updateData.professional_email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(updateData.professional_email)) {
+        return res.status(400).json({
+          ok: false,
+          error: "Invalid professional email format",
+        });
+      }
+    }
 
-    const bodyData = {};
-    for (const [key, value] of Object.entries(req.body)) {
-      if (excludedFields.includes(key)) continue;
-      if (value === null || value === undefined || value === "") continue;
-      bodyData[key] = value;
+    // NEW: Validate higher_studies_info if provided
+    if (updateData.higher_studies_info) {
+      const hsInfo = updateData.higher_studies_info;
+      if (typeof hsInfo !== "object") {
+        return res.status(400).json({
+          ok: false,
+          error: "Higher studies info must be an object",
+        });
+      }
     }
 
     let updated;
-    if (role === "student") {
-      const existing = await db
-        .select()
-        .from(student_profile)
-        .where(eq(student_profile.user_id, userId))
-        .limit(1);
 
-      if (existing.length === 0) {
-        updated = await db
-          .insert(student_profile)
-          .values({
-            user_id: userId,
-            ...bodyData,
-          })
-          .returning();
-      } else {
-        updated = await db
-          .update(student_profile)
-          .set(bodyData)
-          .where(eq(student_profile.user_id, userId))
-          .returning();
-      }
+    if (userRole === "student") {
+      updated = await db
+        .update(student_profile)
+        .set({
+          ...updateData,
+          updated_at: new Date(),
+        })
+        .where(eq(student_profile.user_id, userId))
+        .returning();
+    } else if (userRole === "placement") {
+      updated = await db
+        .update(placement_profile)
+        .set({
+          ...updateData,
+          updated_at: new Date(),
+        })
+        .where(eq(placement_profile.user_id, userId))
+        .returning();
+    } else if (userRole === "recruiter") {
+      updated = await db
+        .update(recruiter_profile)
+        .set({
+          ...updateData,
+          updated_at: new Date(),
+        })
+        .where(eq(recruiter_profile.user_id, userId))
+        .returning();
     }
 
     if (!updated || updated.length === 0) {
@@ -182,8 +196,8 @@ router.put("/personal", requireAuth, async (req, res) => {
 
     res.json({ ok: true, profile: updated[0] });
   } catch (e) {
-    console.error("Error updating personal info:", e);
-    res.status(500).json({ ok: false, error: e.message || String(e) });
+    console.error("Error updating profile:", e);
+    res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
