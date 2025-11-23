@@ -7,11 +7,13 @@ import ProjectsSection from "@/modules/studentdata/components/ProjectsSection";
 import axios from "axios";
 import { getToken } from "@/lib/session";
 
+
 export default function ProjectsPage({ params }) {
     const { studentId } = use(params);
     const router = useRouter();
     const [projects, setProjects] = useState([]);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -24,13 +26,28 @@ export default function ProjectsPage({ params }) {
                     }
                 );
                 if (response.data && response.data.ok) {
-                    setProjects(response.data.projects || []);
+                    // Previous code: setProjects(response.data.projects || []);
+                    // Transform projects to ensure technologies is an array
+                    const transformedProjects = (response.data.projects || []).map(project => {
+                        let techArray = [];
+                        if (project.technologies && typeof project.technologies === "string") {
+                            techArray = project.technologies.split(",").map(t => t.trim()).filter(t => t.length > 0);
+                        }
+                        return {
+                            ...project,
+                            technologies: techArray,
+                        };
+                    });
+                    setProjects(transformedProjects);
                 } else {
                     setError("Failed to load projects.");
                 }
             } catch (err) {
                 setError("Error fetching projects data.");
                 console.error(err);
+            }
+            finally {
+                setLoading(false);
             }
         };
 
@@ -47,7 +64,7 @@ export default function ProjectsPage({ params }) {
         );
     }
 
-    if (!projects) {
+    if (loading) {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography>Loading projects...</Typography>

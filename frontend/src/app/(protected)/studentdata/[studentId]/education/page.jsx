@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import EducationSection from "@/modules/studentdata/components/EducationSection";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -12,9 +12,11 @@ export default function EducationPage({ params }) {
     const router = useRouter();
     const [education, setEducation] = useState([]);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchEducation = async () => {
+            console.log("EducationPage: Starting fetchEducation, setting loading true");
             try {
                 const token = getToken();
                 const response = await axios.get(
@@ -25,6 +27,7 @@ export default function EducationPage({ params }) {
                 );
                 if (response.data && response.data.ok) {
                     setEducation(response.data.education || []);
+                    setError("");
                 } else {
                     setError("Failed to load education details.");
                 }
@@ -32,6 +35,7 @@ export default function EducationPage({ params }) {
                 setError("Error fetching education data.");
                 console.error(err);
             }
+            setLoading(false);
         };
 
         fetchEducation();
@@ -47,7 +51,7 @@ export default function EducationPage({ params }) {
         );
     }
 
-    if (!education) {
+    if (loading) {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography>Loading education details...</Typography>

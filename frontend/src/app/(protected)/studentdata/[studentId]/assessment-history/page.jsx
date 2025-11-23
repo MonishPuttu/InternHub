@@ -12,6 +12,7 @@ export default function AssessmentHistoryPage({ params }) {
     const router = useRouter();
     const [assessmentHistory, setAssessmentHistory] = useState([]);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchAssessmentHistory = async () => {
@@ -31,6 +32,8 @@ export default function AssessmentHistoryPage({ params }) {
             } catch (err) {
                 setError("Error fetching assessment history data.");
                 console.error(err);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -47,7 +50,7 @@ export default function AssessmentHistoryPage({ params }) {
         );
     }
 
-    if (!assessmentHistory) {
+    if (loading) {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography>Loading assessment history...</Typography>

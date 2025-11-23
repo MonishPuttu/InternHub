@@ -346,6 +346,22 @@ export default function StudentData() {
                 </Button>
             </Box>
 
+            {/* Inline Success and Error Alerts */}
+            {(success || error) && (
+                <Box sx={{ mb: 2 }}>
+                    {success && (
+                        <Alert severity="success" onClose={() => setSuccess("")} sx={{ width: "100%" }}>
+                            {success}
+                        </Alert>
+                    )}
+                    {error && (
+                        <Alert severity="error" onClose={() => setError("")} sx={{ width: "100%" }}>
+                            {error}
+                        </Alert>
+                    )}
+                </Box>
+            )}
+
             {/* Table */}
             <TableContainer component={Paper} sx={{ bgcolor: "background.paper" }}>
                 <Table>
@@ -493,27 +509,7 @@ export default function StudentData() {
                 </DialogActions>
             </Dialog>
 
-            {/* Success Snackbar */}
-            <Snackbar
-                open={!!success}
-                autoHideDuration={4000}
-                onClose={() => setSuccess("")}
-            >
-                <Alert severity="success" onClose={() => setSuccess("")} sx={{ width: "100%" }}>
-                    {success}
-                </Alert>
-            </Snackbar>
 
-            {/* Error Snackbar */}
-            <Snackbar
-                open={!!error}
-                autoHideDuration={4000}
-                onClose={() => setError("")}
-            >
-                <Alert severity="error" onClose={() => setError("")} sx={{ width: "100%" }}>
-                    {error}
-                </Alert>
-            </Snackbar>
         </Box>
     );
 }
