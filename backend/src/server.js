@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+
 if (process.env.NODE_ENV === "test") {
   dotenv.config({ path: ".env.test" });
 } else {
@@ -8,8 +9,8 @@ if (process.env.NODE_ENV === "test") {
 import express from "express";
 import cors from "cors";
 import http from "http";
-
 import { Server } from "socket.io";
+
 import authRoutes from "./routes/auth.js";
 import chatSocket from "./routes/chat.js";
 import chatRoutes from "./routes/chatRooms.js";
@@ -23,22 +24,43 @@ import trainingRoutes from "./routes/training.js";
 import placementAnalyticsRoutes from "./routes/placement_analytics.js";
 import timelineRoutes from "./routes/timeline.js";
 import studentDataRoutes from "./routes/studentdata.js";
-// import { startTimelineUpdater } from "./jobs/timeline-updater.js";
 import offerRoutes from "./routes/offers.js";
 
 const app = express();
 
-const allowedOrigins = [
-  process.env.CLIENT_URL ||
-    "http://localhost:3000" ||
-    "https://internhub-git-dev2-monishs-projects-002a95eb.vercel.app",
-];
+const allowedOrigins = ["http://localhost:3000"];
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(
+        `⚠️  CORS blocked request from unauthorized origin: ${origin}`
+      );
+      callback(new Error("Not allowed by CORS"), false);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options("/{*splat}", cors(corsOptions));
+
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ limit: "5mb", extended: true }));
 
-// Register routes
 app.use("/api/auth", authRoutes);
 app.use("/api", chatRoutes);
 app.use("/api/analytics", analyticsRoutes);
@@ -46,7 +68,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/posts", postsRoutes);
 app.use("/api/student-applications", studentApplicationsRoutes);
-app.use("/api/applications", studentApplicationsRoutes); // for testing purpose
+app.use("/api/applications", studentApplicationsRoutes);
 app.use("/api", calendarRoutes);
 app.use("/api/training", trainingRoutes);
 app.use("/api/timeline", timelineRoutes);
@@ -54,14 +76,24 @@ app.use("/api/studentdata", studentDataRoutes);
 app.use("/api/offers", offerRoutes);
 app.use("/api/placement-analytics", placementAnalyticsRoutes);
 
-app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
 
 app.set("trust proxy", 1);
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ["GET", "POST"] },
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 chatSocket(io);
@@ -74,5 +106,6 @@ if (process.env.NODE_ENV !== "test") {
   server.listen(port, () => {
     console.log(`🚀 Server running on port ${port}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`🔒 CORS enabled for origins:`, allowedOrigins);
   });
 }

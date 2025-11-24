@@ -200,13 +200,22 @@ export default function StudentPosts() {
     return filtered.filter((post) => {
       const matchesIndustry =
         filterIndustry === "all" || post.industry === filterIndustry;
+
       const matchesSearch =
-        post.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.company_name.toLowerCase().includes(searchQuery.toLowerCase());
+        (Array.isArray(post.positions) &&
+          post.positions.some(
+            (pos) =>
+              pos.title &&
+              pos.title.toLowerCase().includes(searchQuery.toLowerCase())
+          )) ||
+        (post.position &&
+          post.position.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (post.company_name &&
+          post.company_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
       return matchesIndustry && matchesSearch;
     });
   };
-
   const filteredPosts = getFilteredPosts();
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;

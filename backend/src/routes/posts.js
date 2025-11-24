@@ -35,11 +35,13 @@ const ALLOWED_DEPARTMENTS = [
   "MCA",
 ];
 
+// GET /api/posts/applications - Fetch applications
 router.get("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
     const { status, industry, limit = 50 } = req.query;
+
     let conditions = [];
 
     if (userRole === "placement") {
@@ -81,6 +83,7 @@ router.get("/applications", requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/posts/applications - Create new post with multiple positions
 router.post("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -96,22 +99,40 @@ router.post("/applications", requireAuth, async (req, res) => {
 
     const {
       company_name,
-      position,
+      positions, // NEW: Array of positions instead of single position
       industry,
       application_date,
       status,
-      package_offered,
       notes,
       media,
       application_deadline,
       target_departments,
     } = req.body;
 
-    if (!company_name || !position || !industry) {
+    // UPDATED: Validate company_name, positions array, and industry
+    if (!company_name || !industry) {
       return res.status(400).json({
         ok: false,
-        error: "Company name, position and industry are required",
+        error: "Company name and industry are required",
       });
+    }
+
+    // NEW: Validate positions array
+    if (!Array.isArray(positions) || positions.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "At least one position is required",
+      });
+    }
+
+    // NEW: Validate each position has required fields
+    for (const pos of positions) {
+      if (!pos.title || !pos.title.trim()) {
+        return res.status(400).json({
+          ok: false,
+          error: "All positions must have a title",
+        });
+      }
     }
 
     // ✅ Validate departments
@@ -121,6 +142,7 @@ router.post("/applications", requireAuth, async (req, res) => {
       const invalid = validatedDepartments.filter(
         (d) => !ALLOWED_DEPARTMENTS.includes(d)
       );
+
       if (invalid.length > 0) {
         return res.status(400).json({
           ok: false,
@@ -137,20 +159,19 @@ router.post("/applications", requireAuth, async (req, res) => {
       .values({
         user_id: userId,
         company_name,
-        position,
+        positions, // NEW: Store positions array as JSONB
         industry,
         application_date: application_date
           ? new Date(application_date)
           : new Date(),
         status: status || "applied",
-        package_offered: package_offered || null,
         notes: notes || null,
         media: media || null,
         application_deadline: application_deadline
           ? new Date(application_deadline)
           : null,
         target_departments: validatedDepartments,
-        approval_status: approvalStatus, // UPDATED
+        approval_status: approvalStatus,
       })
       .returning();
 
@@ -196,19 +217,26 @@ router.post("/applications", requireAuth, async (req, res) => {
       console.log("Recipient Emails for notification:", recipientEmails);
 
       if (recipientEmails.length > 0) {
-        const subject = `New Job Post from ${recruiterInfo.companyName} - ${createdPost.position}`;
+        // NEW: Build position list for email
+        const positionsList = createdPost.positions
+          .map((pos, idx) => {
+            return `${idx + 1}. ${pos.title}${
+              pos.package_offered ? ` - ₹${pos.package_offered}L` : ""
+            }${pos.vacancies ? ` (${pos.vacancies} positions)` : ""}`;
+          })
+          .join("\n");
+
+        const subject = `New Job Post from ${recruiterInfo.companyName} - Multiple Positions`;
         const htmlContent = `
 Dear Placement Officer,
 
 A new job post has been created by a recruiter. Please find the details below:
 
 Company: ${createdPost.company_name}
-Position: ${createdPost.position}
 Industry: ${createdPost.industry}
-Package: ${createdPost.package_offered
-            ? `₹${createdPost.package_offered}L`
-            : "N/A"
-          }
+
+Positions:
+${positionsList}
 
 Please review the post and take necessary action.
 
@@ -236,12 +264,36 @@ InternHub Team
   }
 });
 
+// PUT /api/posts/applications/:id - Update post
 router.put("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
     const { id } = req.params;
+
     const updateData = { ...req.body };
+
+    // NEW: Validate positions if being updated
+    if (updateData.positions) {
+      if (
+        !Array.isArray(updateData.positions) ||
+        updateData.positions.length === 0
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: "At least one position is required",
+        });
+      }
+
+      for (const pos of updateData.positions) {
+        if (!pos.title || !pos.title.trim()) {
+          return res.status(400).json({
+            ok: false,
+            error: "All positions must have a title",
+          });
+        }
+      }
+    }
 
     if (updateData.target_departments) {
       updateData.target_departments = updateData.target_departments.map(
@@ -250,6 +302,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
       const invalid = updateData.target_departments.filter(
         (d) => !ALLOWED_DEPARTMENTS.includes(d)
       );
+
       if (invalid.length > 0) {
         return res.status(400).json({
           ok: false,
@@ -258,7 +311,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
       }
     }
 
-    const nullableFields = ["package_offered", "notes", "media"];
+    const nullableFields = ["notes", "media"];
     nullableFields.forEach((f) => {
       if (updateData[f] === "") updateData[f] = null;
     });
@@ -266,6 +319,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     updateData.updated_at = new Date();
 
     let conditions = [eq(posts.id, id)];
+
     if (userRole === "placement") {
       const placementProfile = await db
         .select()
@@ -305,6 +359,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/posts/applications/:id - Delete post
 router.delete("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -320,6 +375,7 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
 
       if (placementProfile.length > 0) {
         const officerDepartment = placementProfile[0].department_branch;
+
         await db
           .delete(posts)
           .where(
@@ -345,6 +401,7 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/my-posts - Get recruiter's own posts
 router.get("/my-posts", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "recruiter") {
@@ -364,10 +421,12 @@ router.get("/my-posts", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/approved-posts - Get approved posts for students
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "student" && req.user.role !== "placement")
+    if (req.user.role !== "student" && req.user.role !== "placement") {
       return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
 
     const { limit = 200 } = req.query;
     const currentDate = new Date();
@@ -410,8 +469,6 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
 
       if (placementProfile.length > 0) {
         const officerDepartment = placementProfile[0].department_branch;
-
-        // FIXED: Only filter if department_branch exists
         if (officerDepartment) {
           conditions.push(
             or(
@@ -420,7 +477,6 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
             )
           );
         }
-        // If no department_branch, show all approved posts (no additional filter)
       }
     }
 
@@ -439,9 +495,11 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/applications/:id - Get specific post
 router.get("/applications/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+
     const post = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
 
     if (post.length === 0) {
@@ -449,6 +507,7 @@ router.get("/applications/:id", requireAuth, async (req, res) => {
     }
 
     const p = post[0];
+
     const isOwner = p.user_id === req.user.id;
     const isPlacement = req.user.role === "placement";
     const isStudentApproved =
