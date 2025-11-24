@@ -28,7 +28,11 @@ import offerRoutes from "./routes/offers.js";
 
 const app = express();
 
-const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
+const allowedOrigins = [
+  process.env.CLIENT_URL ||
+    "http://localhost:3000" ||
+    "https://internhub-git-dev2-monishs-projects-002a95eb.vercel.app",
+];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: "5mb" }));
