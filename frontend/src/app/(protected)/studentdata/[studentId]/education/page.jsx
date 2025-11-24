@@ -3,7 +3,7 @@
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
-import EducationSection from "@/modules/studentdata/components/EducationSection";
+import EducationSection from "@/components/studentdata/EducationSection";
 import axios from "axios";
 import { getToken } from "@/lib/session";
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, use } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/session";
-import StudentDashboardBoxes from "@/modules/studentdata/components/StudentDashboardBoxes";
+import StudentDashboardBoxes from "@/components/studentdata/StudentDashboardBoxes";
 
 export default function StudentDetailPage({ params }) {
     const router = useRouter();

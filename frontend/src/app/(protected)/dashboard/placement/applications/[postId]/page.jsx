@@ -28,7 +28,7 @@ import {
 import {
   ArrowBack,
   Download as DownloadIcon,
-  Upload as UploadIcon,
+
   Send as SendIcon,
   Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
@@ -530,27 +530,7 @@ export default function PlacementApplicationsPage() {
               >
                 Download CSV
               </Button>
-              <Button
-                component="label"
-                startIcon={<UploadIcon />}
-                variant="outlined"
-                sx={{
-                  color: "#8b5cf6",
-                  borderColor: "#8b5cf6",
-                  "&:hover": {
-                    borderColor: "#7c3aed",
-                    bgcolor: "rgba(139, 92, 246, 0.08)",
-                  },
-                }}
-              >
-                Upload CSV
-                <input
-                  type="file"
-                  hidden
-                  accept=".csv"
-                  onChange={handleImportCSV}
-                />
-              </Button>
+
             </Stack>
           )}
         </Box>
@@ -612,9 +592,8 @@ export default function PlacementApplicationsPage() {
                         }
                         size="small"
                         sx={{
-                          bgcolor: `${
-                            statusColors[app.application_status] || "#64748b"
-                          }20`,
+                          bgcolor: `${statusColors[app.application_status] || "#64748b"
+                            }20`,
                           color:
                             statusColors[app.application_status] || "#64748b",
                           fontWeight: 600,
@@ -628,27 +607,27 @@ export default function PlacementApplicationsPage() {
                       <Stack direction="row" spacing={0.5}>
                         {(isOfferPending(app.application_status) ||
                           isOfferApproved(app.application_status)) && (
-                          <>
-                            <Tooltip title="View Offer">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleViewOffer(app)}
-                                sx={{ color: "#8b5cf6" }}
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Download Offer">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDownloadOffer(app)}
-                                sx={{ color: "#10b981" }}
-                              >
-                                <DownloadIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
+                            <>
+                              <Tooltip title="View Offer">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewOffer(app)}
+                                  sx={{ color: "#8b5cf6" }}
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Download Offer">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDownloadOffer(app)}
+                                  sx={{ color: "#10b981" }}
+                                >
+                                  <DownloadIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
 
                         {isOfferPending(app.application_status) && (
                           <>

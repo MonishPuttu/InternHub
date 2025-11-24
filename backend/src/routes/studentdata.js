@@ -46,7 +46,32 @@ const buildStudentFilters = (search, department, year) => {
     }
 
     if (year) {
-        conditions.push(eq(student_profile.current_semester, parseInt(year)));
+        // Map year (1-4) to current_semester ranges
+        let semesters = [];
+        switch (parseInt(year, 10)) {
+            case 1:
+                semesters = [1, 2];
+                break;
+            case 2:
+                semesters = [3, 4];
+                break;
+            case 3:
+                semesters = [5, 6];
+                break;
+            case 4:
+                semesters = [7, 8];
+                break;
+            default:
+                semesters = [];
+        }
+        if (semesters.length === 1) {
+            conditions.push(eq(student_profile.current_semester, semesters[0]));
+        } else if (semesters.length > 1) {
+            conditions.push(or(
+                eq(student_profile.current_semester, semesters[0]),
+                eq(student_profile.current_semester, semesters[1])
+            ));
+        }
     }
 
     return conditions;
@@ -238,7 +263,7 @@ router.get("/students", requireAuth, async (req, res) => {
                 department: student_profile.branch,
                 registerNumber: student_profile.roll_number,
                 rollNumber: student_profile.student_id,
-                year: student_profile.current_semester,
+                currentSemester: student_profile.current_semester,
                 cgpa: student_profile.cgpa,
                 careerPath: student_profile.career_path,
             })
@@ -247,10 +272,23 @@ router.get("/students", requireAuth, async (req, res) => {
             .where(and(...whereConditions))
             .orderBy(student_profile.full_name);
 
-        const processedStudents = students.map((student) => ({
-            ...student,
-            ...splitName(student.firstName),
-        }));
+        const processedStudents = students.map((student) => {
+            const yearMapping = (semester) => {
+                const sem = parseInt(semester, 10);
+                if (!sem || sem < 1) return null;
+                if (sem <= 2) return 1;
+                if (sem <= 4) return 2;
+                if (sem <= 6) return 3;
+                if (sem <= 8) return 4;
+                return null;
+            };
+
+            return {
+                ...student,
+                ...splitName(student.firstName),
+                year: yearMapping(student.currentSemester),
+            };
+        });
 
         res.json({ ok: true, students: processedStudents });
     } catch (error) {

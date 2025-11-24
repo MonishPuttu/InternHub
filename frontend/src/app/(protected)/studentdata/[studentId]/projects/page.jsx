@@ -3,7 +3,7 @@
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Typography } from "@mui/material";
-import ProjectsSection from "@/modules/studentdata/components/ProjectsSection";
+import ProjectsSection from "@/components/studentdata/ProjectsSection";
 import axios from "axios";
 import { getToken } from "@/lib/session";
 
