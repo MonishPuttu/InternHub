@@ -215,7 +215,7 @@ router.post("/reject", requireAuth, async (req, res) => {
       });
     }
 
-    // Update application status
+    // ✅ Fixed: Update application_status instead of status
     await db
       .update(student_applications)
       .set({

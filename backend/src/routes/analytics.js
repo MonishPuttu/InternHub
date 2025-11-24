@@ -200,7 +200,6 @@ router.get("/industry-focus", requireAuth, async (req, res) => {
     // Group by industry manually
     const industryCount = {};
     let total = 0;
-
     apps.forEach((app) => {
       const industry = app.industry || "Other";
       industryCount[industry] = (industryCount[industry] || 0) + 1;

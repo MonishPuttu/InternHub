@@ -397,6 +397,12 @@ router.get("/me", requireAuth, async (req, res) => {
   try {
     const userName = await getUserName(req.user.id, req.user.role);
 
+    // Check if student has opted for higher education
+    let isHigherEducationOpted = false;
+    if (u.role === "student" && profile) {
+      isHigherEducationOpted = profile.career_path === "higher_education";
+    }
+
     res.json({
       user: {
         id: req.user.id,
