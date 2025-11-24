@@ -68,7 +68,7 @@ export default function ManageCandidatePage() {
       try {
         const token = getToken();
 
-        // ✅ Fixed: Use correct endpoint for single application
+        // Fetch application
         const applicationResponse = await axios.get(
           `${BACKEND_URL}/api/student-applications/application/${applicationId}`,
           {
@@ -97,7 +97,7 @@ export default function ManageCandidatePage() {
           }
         }
 
-        // ✅ Fixed: Use correct endpoint for single post
+        // Fetch post
         const postResponse = await axios.get(
           `${BACKEND_URL}/api/student-applications/${postId}`,
           {
@@ -164,9 +164,8 @@ export default function ManageCandidatePage() {
     setError("");
 
     try {
-      const studentId = searchParams.get("studentId");
-      const postId = searchParams.get("postId");
       const applicationId = searchParams.get("applicationId");
+      const postId = searchParams.get("postId");
 
       const payload = {
         applicationId,
@@ -203,44 +202,49 @@ export default function ManageCandidatePage() {
     setError("");
 
     try {
-      const studentId = searchParams.get("studentId");
       const postId = searchParams.get("postId");
       const applicationId = searchParams.get("applicationId");
 
+      // Use student_id from the fetched application data, not from URL
+      const studentId = studentInfo?.student_id;
+
+      // Client-side validation
       if (!studentId || !postId || !applicationId) {
-        setError("Missing required parameters");
+        setError("Missing required parameters. Please refresh and try again.");
         setLoading(false);
         return;
       }
 
-      if (!formData.companyname.trim()) {
+      if (!formData.companyname?.trim()) {
         setError("Company name is required");
         setLoading(false);
         return;
       }
 
-      if (!formData.position.trim()) {
+      if (!formData.position?.trim()) {
         setError("Position is required");
         setLoading(false);
         return;
       }
 
+      const packageValue = parseFloat(formData.packageoffered);
       if (
         !formData.packageoffered ||
-        isNaN(parseFloat(formData.packageoffered))
+        isNaN(packageValue) ||
+        packageValue <= 0
       ) {
         setError("Please enter a valid package (LPA)");
         setLoading(false);
         return;
       }
 
-      if (!formData.joiningdate.trim()) {
+      if (!formData.joiningdate?.trim()) {
         setError("Joining date is required");
         setLoading(false);
         return;
       }
 
-      if (!formData.location.trim()) {
+      if (!formData.location?.trim()) {
         setError("Location is required");
         setLoading(false);
         return;
@@ -252,22 +256,29 @@ export default function ManageCandidatePage() {
         return;
       }
 
+      // Convert file to base64
       const base64File = await convertFileToBase64(file);
 
+      // Build payload matching backend expectations
       const payload = {
         student_id: studentId,
         post_id: postId,
         application_id: applicationId,
-        company_name: formData.companyname,
-        position: formData.position,
-        package_offered: parseFloat(formData.packageoffered),
+        company_name: formData.companyname.trim(),
+        position: formData.position.trim(),
+        package_offered: packageValue,
         joining_date: formData.joiningdate,
-        location: formData.location,
+        location: formData.location.trim(),
         offer_letter_file: base64File,
         file_name: file.name,
         file_type: file.type,
-        notes: formData.notes || "",
+        notes: formData.notes?.trim() || "",
       };
+
+      console.log("Sending payload:", {
+        ...payload,
+        offer_letter_file: "base64_data_omitted",
+      });
 
       const token = getToken();
       const response = await axios.post(
@@ -286,7 +297,21 @@ export default function ManageCandidatePage() {
       }
     } catch (err) {
       console.error("Error sending offer letter:", err);
-      setError(err.response?.data?.error || "An unexpected error occurred");
+
+      // Enhanced error logging
+      if (err.response) {
+        console.error("Response error:", err.response.data);
+        setError(
+          err.response.data.error ||
+            `Server error: ${err.response.status} - ${err.response.statusText}`
+        );
+      } else if (err.request) {
+        console.error("Request error:", err.request);
+        setError("No response from server. Please check your connection.");
+      } else {
+        console.error("Error:", err.message);
+        setError(err.message || "An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -454,6 +479,7 @@ export default function ManageCandidatePage() {
                 label="Package Offered (LPA) *"
                 name="packageoffered"
                 type="number"
+                inputProps={{ min: 0, step: 0.01 }}
                 value={formData.packageoffered}
                 onChange={handleInputChange}
                 fullWidth
@@ -481,9 +507,22 @@ export default function ManageCandidatePage() {
               disabled={offerSent || candidateRejected}
             />
 
+            <TextField
+              label="Notes (Optional)"
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              fullWidth
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+              placeholder="Any additional notes for placement cell..."
+              disabled={offerSent || candidateRejected}
+            />
+
             <Box sx={{ mb: 3 }}>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                Upload Offer Letter (PDF or PNG, max 5MB)
+                Upload Offer Letter (PDF or PNG, max 5MB) *
               </Typography>
               <Button
                 component="label"

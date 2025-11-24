@@ -14,7 +14,6 @@ import {
   Stack,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
-import { useTheme } from "@mui/material/styles";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
   StyledTextField,
@@ -22,14 +21,16 @@ import {
   roleOptions,
   genderOptions,
   branchOptions,
+  collegeOptions,
+  semesterOptions,
 } from "@/components/auth/authcomp";
+import { signupSchema, studentProfileSchema } from "@/lib/validationUtils";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function SignUp() {
   const router = useRouter();
-  const theme = useTheme();
   const [role, setRole] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -37,7 +38,8 @@ export default function SignUp() {
     confirmPassword: "",
   });
   const [profileData, setProfileData] = useState({
-    career_path: "placement", // Default value
+    career_path: "placement",
+    entry_type: "regular",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,19 +50,40 @@ export default function SignUp() {
     e.preventDefault();
     setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    console.log("Role:", role);
+    console.log("FormData:", formData);
+    console.log("ProfileData:", profileData);
+
+    // Zod validation
+    const authValidation = signupSchema.safeParse({
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      role: role,
+    });
+
+    if (!authValidation.success) {
+      // Fixed: Properly access Zod errors
+      const firstError = authValidation.error.issues[0];
+      console.error("Validation errors:", authValidation.error.issues);
+      setError(firstError.message);
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
+    // Validate profile data for students
+    if (role === "student") {
+      const profileValidation = studentProfileSchema.safeParse(profileData);
 
-    if (!role) {
-      setError("Please select a role");
-      return;
+      if (!profileValidation.success) {
+        // Fixed: Properly access Zod errors
+        const firstError = profileValidation.error.issues[0];
+        console.error(
+          "Profile validation errors:",
+          profileValidation.error.issues
+        );
+        setError(`${firstError.path.join(".")}: ${firstError.message}`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -110,6 +133,7 @@ export default function SignUp() {
         options={[
           { value: "placement", label: "Opting for Placements" },
           { value: "higher_education", label: "Choosing Higher Education" },
+          { value: "entrepreneurship", label: "Pursuing Entrepreneurship" },
         ]}
         required
       />
@@ -124,7 +148,11 @@ export default function SignUp() {
         <StyledTextField
           label="Roll Number"
           value={profileData.roll_number || ""}
-          onChange={(e) => updateProfileData("roll_number", e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value.toUpperCase();
+            updateProfileData("roll_number", value);
+          }}
+          inputProps={{ maxLength: 15 }}
         />
       </Stack>
 
@@ -133,11 +161,16 @@ export default function SignUp() {
           label="Student ID"
           value={profileData.student_id || ""}
           onChange={(e) => updateProfileData("student_id", e.target.value)}
+          inputProps={{ maxLength: 20 }}
         />
         <StyledTextField
           label="Contact Number"
           value={profileData.contact_number || ""}
-          onChange={(e) => updateProfileData("contact_number", e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, "");
+            updateProfileData("contact_number", value);
+          }}
+          inputProps={{ maxLength: 10, inputMode: "numeric" }}
         />
       </Stack>
 
@@ -154,14 +187,16 @@ export default function SignUp() {
           value={profileData.date_of_birth || ""}
           onChange={(e) => updateProfileData("date_of_birth", e.target.value)}
           InputLabelProps={{ shrink: true }}
+          inputProps={{ max: new Date().toISOString().split("T")[0] }}
         />
       </Stack>
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <StyledTextField
+        <StyledSelect
           label="College Name"
           value={profileData.college_name || ""}
           onChange={(e) => updateProfileData("college_name", e.target.value)}
+          options={collegeOptions}
         />
         <StyledSelect
           label="Branch/Department"
@@ -173,31 +208,76 @@ export default function SignUp() {
       </Stack>
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <StyledTextField
+        <StyledSelect
           label="Current Semester"
           value={profileData.current_semester || ""}
           onChange={(e) =>
             updateProfileData("current_semester", e.target.value)
           }
+          options={semesterOptions}
         />
         <StyledTextField
           label="CGPA"
           value={profileData.cgpa || ""}
-          onChange={(e) => updateProfileData("cgpa", e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value.replace(/[^\d.]/g, "");
+            updateProfileData("cgpa", value);
+          }}
+          inputProps={{ maxLength: 4, inputMode: "decimal" }}
         />
       </Stack>
 
+      {/* 10th Score, Entry Type, 12th/Diploma Score - FIXED ROW */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <StyledTextField
-          label="10th Score"
-          value={profileData.tenth_score || ""}
-          onChange={(e) => updateProfileData("tenth_score", e.target.value)}
-        />
-        <StyledTextField
-          label="12th Score"
-          value={profileData.twelfth_score || ""}
-          onChange={(e) => updateProfileData("twelfth_score", e.target.value)}
-        />
+        <Box sx={{ flex: { xs: 1, sm: 1 } }}>
+          <StyledSelect
+            label="Entry Type"
+            value={profileData.entry_type || "regular"}
+            onChange={(e) => updateProfileData("entry_type", e.target.value)}
+            options={[
+              { value: "regular", label: "Regular (10+2)" },
+              { value: "lateral", label: "Lateral (Diploma)" },
+            ]}
+          />
+        </Box>
+
+        <Box sx={{ flex: { xs: 1, sm: 0.8 } }}>
+          <StyledTextField
+            label="10th Score"
+            value={profileData.tenth_score || ""}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^\d.]/g, "");
+              updateProfileData("tenth_score", value);
+            }}
+            placeholder="%"
+            inputProps={{ maxLength: 5, inputMode: "decimal" }}
+          />
+        </Box>
+
+        <Box sx={{ flex: { xs: 1, sm: 0.8 } }}>
+          <StyledTextField
+            label={
+              profileData.entry_type === "lateral"
+                ? "Diploma Score"
+                : "12th Score"
+            }
+            value={
+              profileData.entry_type === "lateral"
+                ? profileData.diploma_score || ""
+                : profileData.twelfth_score || ""
+            }
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^\d.]/g, "");
+              if (profileData.entry_type === "lateral") {
+                updateProfileData("diploma_score", value);
+              } else {
+                updateProfileData("twelfth_score", value);
+              }
+            }}
+            placeholder="%"
+            inputProps={{ maxLength: 5, inputMode: "decimal" }}
+          />
+        </Box>
       </Stack>
 
       <StyledTextField
@@ -214,6 +294,8 @@ export default function SignUp() {
         placeholder="e.g., JavaScript, Python, React"
         multiline
         rows={2}
+        inputProps={{ maxLength: 150 }}
+        helperText={`${profileData.skills?.length || 0}/150 characters`}
       />
     </Stack>
   );
@@ -238,7 +320,11 @@ export default function SignUp() {
         <StyledTextField
           label="Contact Number"
           value={profileData.contact_number || ""}
-          onChange={(e) => updateProfileData("contact_number", e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, "");
+            updateProfileData("contact_number", value);
+          }}
+          inputProps={{ maxLength: 10 }}
         />
         <StyledSelect
           label="Gender"
@@ -418,7 +504,8 @@ export default function SignUp() {
                   onChange={(e) => {
                     setRole(e.target.value);
                     setProfileData({
-                      career_path: "placement", // Reset to default when role changes
+                      career_path: "placement",
+                      entry_type: "regular",
                     });
                   }}
                   options={roleOptions}

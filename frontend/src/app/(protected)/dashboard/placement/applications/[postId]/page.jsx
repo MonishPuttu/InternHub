@@ -28,7 +28,7 @@ import {
 import {
   ArrowBack,
   Download as DownloadIcon,
-  Upload as UploadIcon,
+
   Send as SendIcon,
   Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
@@ -86,6 +86,9 @@ export default function PlacementApplicationsPage() {
   // ✅ New state for checking if list already sent
   const [listAlreadySent, setListAlreadySent] = useState(false);
 
+  // New state to hold post creator role
+  const [postCreatorRole, setPostCreatorRole] = useState(null);
+
   useEffect(() => {
     if (postId) {
       fetchPostDetails();
@@ -105,6 +108,7 @@ export default function PlacementApplicationsPage() {
       );
       if (response.data.ok) {
         setPost(response.data.application);
+        setPostCreatorRole(response.data.creator_role); // Set creator role
       }
     } catch (error) {
       console.error("Error fetching post:", error);
@@ -503,18 +507,20 @@ export default function PlacementApplicationsPage() {
           {/* Right Side - Action Buttons */}
           {applications.length > 0 && (
             <Stack direction="row" spacing={2}>
-              <Button
-                startIcon={<SendIcon />}
-                variant="contained"
-                onClick={handleSendListClick}
-                disabled={listAlreadySent} // ✅ Disable if already sent
-                sx={{
-                  bgcolor: listAlreadySent ? "#gray" : "#3b82f6",
-                  "&:hover": { bgcolor: listAlreadySent ? "#gray" : "#2563eb" },
-                }}
-              >
-                {listAlreadySent ? "List Already Sent" : "Send List"}
-              </Button>
+              {postCreatorRole !== "placement" && (
+                <Button
+                  startIcon={<SendIcon />}
+                  variant="contained"
+                  onClick={handleSendListClick}
+                  disabled={listAlreadySent} // ✅ Disable if already sent
+                  sx={{
+                    bgcolor: listAlreadySent ? "#gray" : "#3b82f6",
+                    "&:hover": { bgcolor: listAlreadySent ? "#gray" : "#2563eb" },
+                  }}
+                >
+                  {listAlreadySent ? "List Already Sent" : "Send List"}
+                </Button>
+              )}
               <Button
                 startIcon={<DownloadIcon />}
                 variant="outlined"
@@ -529,27 +535,6 @@ export default function PlacementApplicationsPage() {
                 }}
               >
                 Download CSV
-              </Button>
-              <Button
-                component="label"
-                startIcon={<UploadIcon />}
-                variant="outlined"
-                sx={{
-                  color: "#8b5cf6",
-                  borderColor: "#8b5cf6",
-                  "&:hover": {
-                    borderColor: "#7c3aed",
-                    bgcolor: "rgba(139, 92, 246, 0.08)",
-                  },
-                }}
-              >
-                Upload CSV
-                <input
-                  type="file"
-                  hidden
-                  accept=".csv"
-                  onChange={handleImportCSV}
-                />
               </Button>
             </Stack>
           )}
@@ -612,9 +597,8 @@ export default function PlacementApplicationsPage() {
                         }
                         size="small"
                         sx={{
-                          bgcolor: `${
-                            statusColors[app.application_status] || "#64748b"
-                          }20`,
+                          bgcolor: `${statusColors[app.application_status] || "#64748b"
+                            }20`,
                           color:
                             statusColors[app.application_status] || "#64748b",
                           fontWeight: 600,
@@ -628,27 +612,27 @@ export default function PlacementApplicationsPage() {
                       <Stack direction="row" spacing={0.5}>
                         {(isOfferPending(app.application_status) ||
                           isOfferApproved(app.application_status)) && (
-                          <>
-                            <Tooltip title="View Offer">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleViewOffer(app)}
-                                sx={{ color: "#8b5cf6" }}
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Download Offer">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDownloadOffer(app)}
-                                sx={{ color: "#10b981" }}
-                              >
-                                <DownloadIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
+                            <>
+                              <Tooltip title="View Offer">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewOffer(app)}
+                                  sx={{ color: "#8b5cf6" }}
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Download Offer">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDownloadOffer(app)}
+                                  sx={{ color: "#10b981" }}
+                                >
+                                  <DownloadIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
 
                         {isOfferPending(app.application_status) && (
                           <>

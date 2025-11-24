@@ -22,6 +22,7 @@ import {
   TextField,
 } from "@mui/material";
 import {
+  Add as AddIcon, // NEW IMPORT
   MoreVert as MoreVertIcon,
   CheckCircle as CheckCircleIcon,
   Edit as EditIcon,
@@ -32,6 +33,7 @@ import {
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
+import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal"; // NEW IMPORT
 import {
   BACKEND_URL,
   INDUSTRIES,
@@ -53,6 +55,7 @@ export default function PlacementPosts() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+  const [openCreateModal, setOpenCreateModal] = useState(false); // NEW STATE
 
   useEffect(() => {
     fetchAllApplications();
@@ -75,6 +78,12 @@ export default function PlacementPosts() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // NEW HANDLER
+  const handleModalClose = () => {
+    setOpenCreateModal(false);
+    fetchAllApplications(); // Refresh the list
   };
 
   const handleApprove = async () => {
@@ -203,17 +212,45 @@ export default function PlacementPosts() {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header */}
+      {/* Header - MODIFIED TO ADD BUTTON */}
       <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "start",
+            mb: 2,
+          }}
         >
-          Post Management
-        </Typography>
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
-          Review and manage posted opportunities
-        </Typography>
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
+            >
+              Post Management
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Review and manage posted opportunities
+            </Typography>
+          </Box>
+
+          {/* NEW: Create Post Button */}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenCreateModal(true)}
+            sx={{
+              bgcolor: "#8b5cf6",
+              "&:hover": { bgcolor: "#7c3aed" },
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+            }}
+          >
+            Create Post
+          </Button>
+        </Box>
+
         <Box sx={{ mt: 2, display: "flex", gap: 3 }}>
           <Box>
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
@@ -883,6 +920,12 @@ export default function PlacementPosts() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* NEW: Create Post Modal */}
+      <CreateApplicationModal
+        open={openCreateModal}
+        onClose={handleModalClose}
+      />
 
       {/* Notifications */}
       <Snackbar

@@ -278,7 +278,8 @@ export default function PlacementAnalytics() {
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Grid item xs={12} sm={6} md={3} key={index}>
+            // FIX: Removed 'item' and kept the responsive props (xs, sm, md)
+            <Grid xs={12} sm={6} md={3} key={index}>
               <Card
                 sx={{
                   bgcolor: "background.paper",

@@ -1,8 +1,22 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { posts } from "../db/schema/post.js";
-import { placement_profile, student_profile, user, recruiter_profile } from "../db/schema/user.js";
-import { eq, desc, and, or, isNull, gt, arrayContains, inArray } from "drizzle-orm";
+import {
+  placement_profile,
+  student_profile,
+  user,
+  recruiter_profile,
+} from "../db/schema/user.js";
+import {
+  eq,
+  desc,
+  and,
+  or,
+  isNull,
+  gt,
+  arrayContains,
+  inArray,
+} from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 import { sendNotificationEmail } from "../lib/emailService.js";
 
@@ -21,11 +35,13 @@ const ALLOWED_DEPARTMENTS = [
   "MCA",
 ];
 
+// GET /api/posts/applications - Fetch applications
 router.get("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
     const { status, industry, limit = 50 } = req.query;
+
     let conditions = [];
 
     if (userRole === "placement") {
@@ -67,35 +83,56 @@ router.get("/applications", requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/posts/applications - Create new post with multiple positions
 router.post("/applications", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    if (userRole !== "recruiter") {
-      return res
-        .status(403)
-        .json({ ok: false, error: "Only recruiters can create posts" });
+    // UPDATED: Allow both recruiters AND placement officers to create posts
+    if (userRole !== "recruiter" && userRole !== "placement") {
+      return res.status(403).json({
+        ok: false,
+        error: "Only recruiters and placement officers can create posts",
+      });
     }
 
     const {
       company_name,
-      position,
+      positions, // NEW: Array of positions instead of single position
       industry,
       application_date,
       status,
-      package_offered,
       notes,
       media,
       application_deadline,
       target_departments,
     } = req.body;
 
-    if (!company_name || !position || !industry) {
+    // UPDATED: Validate company_name, positions array, and industry
+    if (!company_name || !industry) {
       return res.status(400).json({
         ok: false,
-        error: "Company name, position and industry are required",
+        error: "Company name and industry are required",
       });
+    }
+
+    // NEW: Validate positions array
+    if (!Array.isArray(positions) || positions.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "At least one position is required",
+      });
+    }
+
+    // NEW: Validate each position has required fields
+    for (const pos of positions) {
+      if (!pos.title || !pos.title.trim()) {
+        return res.status(400).json({
+          ok: false,
+          error: "All positions must have a title",
+        });
+      }
     }
 
     // ✅ Validate departments
@@ -105,6 +142,7 @@ router.post("/applications", requireAuth, async (req, res) => {
       const invalid = validatedDepartments.filter(
         (d) => !ALLOWED_DEPARTMENTS.includes(d)
       );
+
       if (invalid.length > 0) {
         return res.status(400).json({
           ok: false,
@@ -113,30 +151,36 @@ router.post("/applications", requireAuth, async (req, res) => {
       }
     }
 
+    // UPDATED: For placement officers, auto-approve their own posts
+    const approvalStatus = userRole === "placement" ? "approved" : "pending";
+
     const newPost = await db
       .insert(posts)
       .values({
         user_id: userId,
         company_name,
-        position,
+        positions, // NEW: Store positions array as JSONB
         industry,
         application_date: application_date
           ? new Date(application_date)
           : new Date(),
         status: status || "applied",
-        package_offered: package_offered || null,
         notes: notes || null,
         media: media || null,
         application_deadline: application_deadline
           ? new Date(application_deadline)
           : null,
         target_departments: validatedDepartments,
-        approval_status: "pending",
+        approval_status: approvalStatus,
       })
       .returning();
 
-    // --- Email Notification Logic Start ---
-    if (newPost.length > 0 && validatedDepartments.length > 0) {
+    // --- Email Notification Logic (only for recruiter posts) ---
+    if (
+      userRole === "recruiter" &&
+      newPost.length > 0 &&
+      validatedDepartments.length > 0
+    ) {
       const createdPost = newPost[0];
 
       // Fetch recruiter details
@@ -157,7 +201,6 @@ router.post("/applications", requireAuth, async (req, res) => {
         companyName: "N/A",
       };
 
-      // Fetch placement officers' emails for target departments
       const placementOfficers = await db
         .select({ email: user.email })
         .from(user)
@@ -174,64 +217,83 @@ router.post("/applications", requireAuth, async (req, res) => {
       console.log("Recipient Emails for notification:", recipientEmails);
 
       if (recipientEmails.length > 0) {
-        const subject = `New Job Post from ${recruiterInfo.companyName} - ${createdPost.position}`;
+        // NEW: Build position list for email
+        const positionsList = createdPost.positions
+          .map((pos, idx) => {
+            return `${idx + 1}. ${pos.title}${
+              pos.package_offered ? ` - ₹${pos.package_offered}L` : ""
+            }${pos.vacancies ? ` (${pos.vacancies} positions)` : ""}`;
+          })
+          .join("\n");
+
+        const subject = `New Job Post from ${recruiterInfo.companyName} - Multiple Positions`;
         const htmlContent = `
-          <p>Dear Placement Officer,</p>
-          <p>A new job post has been created by a recruiter. Please find the details below:</p>
-          <h3>Recruiter Information:</h3>
-          <ul>
-            <li><strong>Name:</strong> ${recruiterInfo.fullName}</li>
-            <li><strong>Company:</strong> ${recruiterInfo.companyName}</li>
-            <li><strong>Email:</strong> ${recruiterInfo.email}</li>
-          </ul>
-          <h3>Job Post Information:</h3>
-          <ul>
-            <li><strong>Company Name:</strong> ${createdPost.company_name}</li>
-            <li><strong>Position:</strong> ${createdPost.position}</li>
-            <li><strong>Industry:</strong> ${createdPost.industry}</li>
-            <li><strong>Application Deadline:</strong> ${
-              createdPost.application_deadline
-                ? new Date(createdPost.application_deadline).toDateString()
-                : "N/A"
-            }</li>
-            <li><strong>Target Departments:</strong> ${
-              createdPost.target_departments
-                ? createdPost.target_departments.join(", ")
-                : "N/A"
-            }</li>
-            <li><strong>Package Offered:</strong> ${
-              createdPost.package_offered || "N/A"
-            }</li>
-          </ul>
-          <p>Please review the post and take necessary action.</p>
-          <p>Regards,<br>InternHub Team</p>
+Dear Placement Officer,
+
+A new job post has been created by a recruiter. Please find the details below:
+
+Company: ${createdPost.company_name}
+Industry: ${createdPost.industry}
+
+Positions:
+${positionsList}
+
+Please review the post and take necessary action.
+
+Regards,
+InternHub Team
         `;
 
-        for (const email of recipientEmails) {
-          console.log(`Attempting to send email to: ${email}`);
-          await sendNotificationEmail(email, subject, htmlContent);
+        try {
+          await sendNotificationEmail(recipientEmails, subject, htmlContent);
+          console.log("✅ Email notifications sent successfully");
+        } catch (emailError) {
+          console.error("❌ Failed to send email notifications:", emailError);
         }
-      } else {
-        console.log("No recipient emails found for notification.");
       }
-    } else {
-      console.log("No new post created or no target departments for notification.");
     }
-    // --- Email Notification Logic End ---
 
-    res.status(201).json({ ok: true, application: newPost[0] });
+    res.json({
+      ok: true,
+      message: "Post created successfully",
+      post: newPost[0],
+    });
   } catch (e) {
     console.error("Error creating post:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
+// PUT /api/posts/applications/:id - Update post
 router.put("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
     const { id } = req.params;
+
     const updateData = { ...req.body };
+
+    // NEW: Validate positions if being updated
+    if (updateData.positions) {
+      if (
+        !Array.isArray(updateData.positions) ||
+        updateData.positions.length === 0
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: "At least one position is required",
+        });
+      }
+
+      for (const pos of updateData.positions) {
+        if (!pos.title || !pos.title.trim()) {
+          return res.status(400).json({
+            ok: false,
+            error: "All positions must have a title",
+          });
+        }
+      }
+    }
 
     if (updateData.target_departments) {
       updateData.target_departments = updateData.target_departments.map(
@@ -240,6 +302,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
       const invalid = updateData.target_departments.filter(
         (d) => !ALLOWED_DEPARTMENTS.includes(d)
       );
+
       if (invalid.length > 0) {
         return res.status(400).json({
           ok: false,
@@ -248,7 +311,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
       }
     }
 
-    const nullableFields = ["package_offered", "notes", "media"];
+    const nullableFields = ["notes", "media"];
     nullableFields.forEach((f) => {
       if (updateData[f] === "") updateData[f] = null;
     });
@@ -256,6 +319,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     updateData.updated_at = new Date();
 
     let conditions = [eq(posts.id, id)];
+
     if (userRole === "placement") {
       const placementProfile = await db
         .select()
@@ -295,6 +359,7 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/posts/applications/:id - Delete post
 router.delete("/applications/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -310,6 +375,7 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
 
       if (placementProfile.length > 0) {
         const officerDepartment = placementProfile[0].department_branch;
+
         await db
           .delete(posts)
           .where(
@@ -335,6 +401,7 @@ router.delete("/applications/:id", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/my-posts - Get recruiter's own posts
 router.get("/my-posts", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "recruiter") {
@@ -354,10 +421,12 @@ router.get("/my-posts", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/approved-posts - Get approved posts for students
 router.get("/approved-posts", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "student" && req.user.role !== "placement")
+    if (req.user.role !== "student" && req.user.role !== "placement") {
       return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
 
     const { limit = 200 } = req.query;
     const currentDate = new Date();
@@ -400,8 +469,6 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
 
       if (placementProfile.length > 0) {
         const officerDepartment = placementProfile[0].department_branch;
-
-        // FIXED: Only filter if department_branch exists
         if (officerDepartment) {
           conditions.push(
             or(
@@ -410,7 +477,6 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
             )
           );
         }
-        // If no department_branch, show all approved posts (no additional filter)
       }
     }
 
@@ -429,9 +495,11 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/applications/:id - Get specific post
 router.get("/applications/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+
     const post = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
 
     if (post.length === 0) {
@@ -439,6 +507,7 @@ router.get("/applications/:id", requireAuth, async (req, res) => {
     }
 
     const p = post[0];
+
     const isOwner = p.user_id === req.user.id;
     const isPlacement = req.user.role === "placement";
     const isStudentApproved =
@@ -448,7 +517,19 @@ router.get("/applications/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    res.json({ ok: true, application: p });
+    // Fetch the creator's role from user table
+    const creatorUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, p.user_id))
+      .limit(1);
+
+    let creatorRole = null;
+    if (creatorUser.length > 0) {
+      creatorRole = creatorUser[0].role || null;
+    }
+
+    res.json({ ok: true, application: p, creator_role: creatorRole });
   } catch (e) {
     console.error("Error fetching post by ID:", e);
     res.status(500).json({ ok: false, error: String(e) });

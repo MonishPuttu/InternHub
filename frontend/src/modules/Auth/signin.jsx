@@ -16,13 +16,13 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import SchoolIcon from "@mui/icons-material/School";
 import BusinessIcon from "@mui/icons-material/Business";
-import { useTheme } from "@mui/material/styles";
 import WorkIcon from "@mui/icons-material/Work";
 import {
   StyledTextField,
   StyledSelect,
   roleOptions,
 } from "@/components/auth/authcomp";
+import { signinSchema } from "@/lib/validationUtils";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -50,7 +50,6 @@ const roleContent = {
 
 export default function SignIn() {
   const router = useRouter();
-  const theme = useTheme();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -63,36 +62,59 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    if (!formData.role) {
-      setError("Please select your role");
-      setLoading(false);
+    // Zod validation
+    const validation = signinSchema.safeParse({
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0];
+      setError(firstError.message);
       return;
     }
+
+    setLoading(true);
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/signin`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.toLowerCase().trim(),
+          password: formData.password,
+          role: formData.role,
+        }),
       });
 
       const data = await response.json();
 
-      if (!data.ok) {
-        setError(data.error || "Sign in failed");
+      if (!response.ok || !data.ok) {
+        setError(data.error || "Sign in failed. Please try again.");
         setLoading(false);
         return;
       }
 
+      // Store authentication data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("sessionExpires", data.expiresAt);
 
+      if (data.expiresAt) {
+        localStorage.setItem("sessionExpires", data.expiresAt);
+      }
+
+      // Clear form data
+      setFormData({ email: "", password: "", role: "" });
+
+      // Redirect to single dashboard (handles role-based content internally)
       router.push("/dashboard");
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error("Login error:", err);
+      setError("Network error. Please check your connection and try again.");
       setLoading(false);
     }
   };
@@ -176,6 +198,7 @@ export default function SignIn() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
+                autoComplete="email"
               />
             </Box>
 
@@ -188,6 +211,7 @@ export default function SignIn() {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 required
+                autoComplete="current-password"
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -195,6 +219,9 @@ export default function SignIn() {
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
                         sx={{ color: "text.secondary" }}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>

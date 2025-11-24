@@ -6,6 +6,19 @@ import { requireAuth } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
+// Helper function to extract highest package from positions array
+function getHighestPackage(positions) {
+  if (!positions || !Array.isArray(positions) || positions.length === 0) {
+    return null;
+  }
+
+  const packages = positions
+    .map((pos) => parseFloat(pos.package_offered))
+    .filter((pkg) => !isNaN(pkg) && pkg > 0);
+
+  return packages.length > 0 ? Math.max(...packages) : null;
+}
+
 // Get overview stats
 router.get("/overview", requireAuth, async (req, res) => {
   try {
@@ -49,10 +62,11 @@ router.get("/overview", requireAuth, async (req, res) => {
         )
       );
 
-    // Average package from posts where student got offers
+    // FIXED: Average package from posts where student got offers
+    // Now handles positions array
     const offeredApplications = await db
       .select({
-        package: posts.package_offered,
+        positions: posts.positions, // NEW: Get positions array
       })
       .from(student_applications)
       .leftJoin(posts, eq(student_applications.post_id, posts.id))
@@ -60,7 +74,7 @@ router.get("/overview", requireAuth, async (req, res) => {
         and(
           eq(student_applications.student_id, userId),
           sql`${student_applications.application_status} IN ('offer-approved', 'offer_approved', 'offered')`,
-          isNotNull(posts.package_offered)
+          isNotNull(posts.positions)
         )
       );
 
@@ -68,14 +82,17 @@ router.get("/overview", requireAuth, async (req, res) => {
     const interviewed = parseInt(interviewedApps[0]?.value || 0);
     const offers = parseInt(offersReceived[0]?.value || 0);
 
-    // Calculate average package
+    // FIXED: Calculate average package from positions array
     let avgPkg = 0;
     if (offeredApplications.length > 0) {
-      const sum = offeredApplications.reduce(
-        (acc, app) => acc + parseFloat(app.package || 0),
-        0
-      );
-      avgPkg = sum / offeredApplications.length;
+      const packages = offeredApplications
+        .map((app) => getHighestPackage(app.positions))
+        .filter((pkg) => pkg !== null);
+
+      if (packages.length > 0) {
+        const sum = packages.reduce((acc, pkg) => acc + pkg, 0);
+        avgPkg = sum / packages.length;
+      }
     }
 
     res.json({

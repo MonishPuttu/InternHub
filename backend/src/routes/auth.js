@@ -1,5 +1,8 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
+import { body, validationResult } from "express-validator";
 import { db } from "../db/index.js";
+import { completeSignupSchema, signinSchema } from "../lib/validationSchema.js";
 import {
   user,
   session,
@@ -15,7 +18,83 @@ import nodemailer from "nodemailer";
 
 const router = express.Router();
 
-// Helper function to get user name from profile tables
+// ============= RATE LIMITERS =============
+
+// General auth rate limiter (for signup)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per 15 minutes
+  message: {
+    ok: false,
+    error: "Too many requests. Please try again after 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Strict rate limiter for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per 15 minutes
+  message: {
+    ok: false,
+    error: "Too many login attempts. Please try again after 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+// Password reset rate limiter
+const resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 requests per hour
+  message: {
+    ok: false,
+    error: "Too many password reset requests. Please try again later.",
+  },
+});
+
+// ============= VALIDATION MIDDLEWARE =============
+
+const signupValidation = [
+  body("email")
+    .isEmail()
+    .withMessage("Invalid email format")
+    .normalizeEmail()
+    .trim(),
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/
+    )
+    .withMessage(
+      "Password must contain uppercase, lowercase, number, and special character"
+    ),
+  body("role")
+    .isIn(["student", "placement", "recruiter"])
+    .withMessage("Invalid role"),
+];
+
+const signinValidation = [
+  body("email")
+    .isEmail()
+    .withMessage("Invalid email format")
+    .normalizeEmail()
+    .trim(),
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters"),
+  body("role")
+    .isIn(["student", "placement", "recruiter"])
+    .withMessage("Invalid role"),
+];
+
+// ============= HELPER FUNCTIONS =============
+
 async function getUserName(userId, role) {
   try {
     if (role === "student") {
@@ -53,7 +132,6 @@ const SESSION_DURATIONS = {
   recruiter: 1 * 24 * 60 * 60 * 1000, // 1 day
 };
 
-// Email transporter configuration
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: process.env.SMTP_PORT || 587,
@@ -64,61 +142,50 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Helper function to send reset email or log for development
 async function sendResetEmail(email, resetUrl) {
   const mailOptions = {
     from: process.env.SMTP_USER || "noreply@internhub.com",
     to: email,
     subject: "Password Reset Request - InternHub",
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #8b5cf6;">Password Reset Request</h2>
-        <p>You requested a password reset for your InternHub account.</p>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetUrl}" style="background-color: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 16px 0;">Reset Password</a>
-        <p>This link will expire in 15 minutes.</p>
-        <p>If you didn't request this reset, please ignore this email.</p>
-        <p>Best regards,<br>InternHub Team</p>
-      </div>
+      <h2>Password Reset Request</h2>
+      <p>You requested a password reset for your InternHub account.</p>
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetUrl}">Reset Password</a>
+      <p>This link will expire in 15 minutes.</p>
+      <p>If you didn't request this reset, please ignore this email.</p>
+      <p>Best regards,<br/>InternHub Team</p>
     `,
   };
 
-  // Check if SMTP credentials are configured
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log("SMTP credentials not configured. Reset link:", resetUrl);
-    console.log(
-      "For production, set SMTP_USER and SMTP_PASS environment variables"
-    );
-    return true; // Return success for development
-  }
-
-  try {
+  if (process.env.NODE_ENV === "production") {
     await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error("Email sending failed:", error);
-    throw error;
+  } else {
+    console.log("📧 Password reset email (DEV MODE):");
+    console.log(`To: ${email}`);
+    console.log(`Reset URL: ${resetUrl}`);
   }
 }
 
-router.post("/signup", async (req, res) => {
+// ============= ROUTES =============
+
+// ========== SIGNUP ==========
+router.post("/signup", authLimiter, signupValidation, async (req, res) => {
   try {
-    const { email, password, role, profileData } = req.body;
+    const validationResult = completeSignupSchema.safeParse(req.body);
 
-    if (!email || !password || !role) {
+    if (!validationResult.success) {
+      const errors = validationResult.error.format();
       return res.status(400).json({
         ok: false,
-        error: "Email, password, and role are required",
+        error: Object.values(errors)[1]?._errors[0] || "Validation failed",
+        errors: errors,
       });
     }
 
-    if (!["student", "placement", "recruiter"].includes(role)) {
-      return res.status(400).json({
-        ok: false,
-        error: "Invalid role. Must be student, placement, or recruiter",
-      });
-    }
+    const { email, password, role, profileData } = validationResult.data;
 
+    // Check if user already exists
     const existingUser = await db
       .select()
       .from(user)
@@ -128,99 +195,97 @@ router.post("/signup", async (req, res) => {
     if (existingUser.length > 0) {
       return res.status(400).json({
         ok: false,
-        error: "User already exists",
+        error: "An account with this email already exists",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    const newUsers = await db
+    // Create user
+    const [newUser] = await db
       .insert(user)
       .values({
-        email,
+        id: crypto.randomUUID(),
+        email: email.toLowerCase(),
         password: hashedPassword,
         role,
+        email_verified: null,
+        created_at: new Date(),
       })
       .returning();
 
-    const newUser = newUsers[0];
-
+    // Create profile based on role
     if (role === "student" && profileData) {
-      await db
-        .insert(student_profile)
-        .values({
-          user_id: newUser.id,
-          full_name: profileData.full_name || "Unknown",
-          roll_number: profileData.roll_number || null,
-          student_id: profileData.student_id || null,
-          date_of_birth: profileData.date_of_birth
-            ? new Date(profileData.date_of_birth)
-            : null,
-          gender: profileData.gender || null,
-          contact_number: profileData.contact_number || null,
-          college_name: profileData.college_name || null,
-          branch: profileData.branch || null,
-          current_semester: profileData.current_semester || null,
-          cgpa: profileData.cgpa || null,
-          tenth_score: profileData.tenth_score || null,
-          twelfth_score: profileData.twelfth_score || null,
-          linkedin: profileData.linkedin || null,
-          skills: profileData.skills || null,
-          career_path: profileData.career_path || "placement",
-        })
-        .returning();
+      await db.insert(student_profile).values({
+        id: crypto.randomUUID(),
+        user_id: newUser.id,
+        full_name: profileData.full_name || "",
+        roll_number: profileData.roll_number,
+        student_id: profileData.student_id,
+        gender: profileData.gender,
+        contact_number: profileData.contact_number,
+        date_of_birth: profileData.date_of_birth
+          ? new Date(profileData.date_of_birth)
+          : null,
+        college_name: profileData.college_name,
+        branch: profileData.branch,
+        current_semester: profileData.current_semester,
+        cgpa: profileData.cgpa,
+        tenth_score: profileData.tenth_score,
+        twelfth_score: profileData.twelfth_score,
+        diploma_score: profileData.diploma_score, // NEW
+        entry_type: profileData.entry_type || "regular", // NEW
+        career_path: profileData.career_path || "placement", // NEW
+        linkedin: profileData.linkedin,
+        skills: profileData.skills,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
     } else if (role === "placement" && profileData) {
-      await db
-        .insert(placement_profile)
-        .values({
-          user_id: newUser.id,
-          name: profileData.name || "Unknown",
-          employee_id: profileData.employee_id || null,
-          date_of_birth: profileData.date_of_birth
-            ? new Date(profileData.date_of_birth)
-            : null,
-          gender: profileData.gender || null,
-          contact_number: profileData.contact_number || null,
-          role_designation: profileData.role_designation || null,
-          department_branch: profileData.department_branch || null,
-          college_name: profileData.college_name || null,
-          linkedin: profileData.linkedin || null,
-        })
-        .returning();
+      await db.insert(placement_profile).values({
+        id: crypto.randomUUID(),
+        user_id: newUser.id,
+        name: profileData.name || "",
+        employee_id: profileData.employee_id,
+        gender: profileData.gender,
+        contact_number: profileData.contact_number,
+        role_designation: profileData.role_designation,
+        department_branch: profileData.department_branch,
+        college_name: profileData.college_name,
+        linkedin: profileData.linkedin,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
     } else if (role === "recruiter" && profileData) {
-      await db
-        .insert(recruiter_profile)
-        .values({
-          user_id: newUser.id,
-          full_name: profileData.full_name || "Unknown",
-          date_of_birth: profileData.date_of_birth
-            ? new Date(profileData.date_of_birth)
-            : null,
-          gender: profileData.gender || null,
-          company_name: profileData.company_name || null,
-          role_designation: profileData.role_designation || null,
-          industry_sector: profileData.industry_sector || null,
-          website: profileData.website || null,
-          linkedin: profileData.linkedin || null,
-          headquarters_location: profileData.headquarters_location || null,
-        })
-        .returning();
+      await db.insert(recruiter_profile).values({
+        id: crypto.randomUUID(),
+        user_id: newUser.id,
+        full_name: profileData.full_name || "",
+        company_name: profileData.company_name,
+        role_designation: profileData.role_designation,
+        gender: profileData.gender,
+        industry_sector: profileData.industry_sector,
+        website: profileData.website,
+        linkedin: profileData.linkedin,
+        headquarters_location: profileData.headquarters_location,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
     }
 
-    const token = crypto.randomUUID();
-    const sessionDuration =
-      SESSION_DURATIONS[role] || SESSION_DURATIONS.student;
-    const expiresAt = new Date(Date.now() + sessionDuration);
-
-    await db.insert(session).values({
-      token,
-      userId: newUser.id,
-      expiresAt,
-      ipAddress: req.ip ?? null,
-      userAgent: req.get("user-agent") ?? null,
-    });
-
-    const name = await getUserName(newUser.id, newUser.role);
+    // Create session
+    const sessionDuration = SESSION_DURATIONS[role];
+    const [newSession] = await db
+      .insert(session)
+      .values({
+        id: crypto.randomUUID(),
+        userId: newUser.id,
+        token: crypto.randomBytes(32).toString("hex"),
+        expiresAt: new Date(Date.now() + sessionDuration),
+        createdAt: new Date(),
+      })
+      .returning();
 
     res.status(201).json({
       ok: true,
@@ -228,179 +293,109 @@ router.post("/signup", async (req, res) => {
         id: newUser.id,
         email: newUser.email,
         role: newUser.role,
-        name,
       },
-      token,
-      expiresAt: expiresAt.toISOString(), // Send expiry to frontend
+      token: newSession.token,
     });
-  } catch (e) {
-    console.error("Signup error:", e);
-    res.status(500).json({ ok: false, error: String(e) });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "An error occurred during signup. Please try again.",
+    });
   }
 });
 
-router.post("/signin", async (req, res) => {
+// ========== SIGNIN ==========
+router.post("/signin", loginLimiter, signinValidation, async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-
-    if (!email || !password || !role) {
+    // Validate input
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         ok: false,
-        error: "Email, password, and role are required",
+        error: errors.array()[0].msg,
       });
     }
 
-    const users = await db
+    const { email, password, role } = req.body;
+
+    // Find user by email
+    const [existingUser] = await db
       .select()
       .from(user)
-      .where(eq(user.email, email))
+      .where(eq(user.email, email.toLowerCase()))
       .limit(1);
 
-    if (users.length === 0) {
+    // Generic error message (don't leak whether user exists)
+    const genericError = "Invalid email or password";
+
+    if (!existingUser) {
       return res.status(401).json({
         ok: false,
-        error: "Invalid credentials",
+        error: genericError,
       });
     }
 
-    const foundUser = users[0];
-
-    if (foundUser.role !== role) {
+    // Verify role matches
+    if (existingUser.role !== role) {
       return res.status(401).json({
         ok: false,
-        error: "Invalid credentials or role mismatch",
+        error: genericError,
       });
     }
 
-    const isValidPassword = await bcrypt.compare(password, foundUser.password);
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
 
-    if (!isValidPassword) {
+    if (!isPasswordValid) {
       return res.status(401).json({
         ok: false,
-        error: "Invalid credentials",
+        error: genericError,
       });
     }
 
-    const token = crypto.randomUUID();
-    const sessionDuration =
-      SESSION_DURATIONS[foundUser.role] || SESSION_DURATIONS.student;
-    const expiresAt = new Date(Date.now() + sessionDuration);
+    // Get user name from profile
+    const userName = await getUserName(existingUser.id, role);
 
-    await db.insert(session).values({
-      id: crypto.randomUUID(),
-      token,
-      userId: foundUser.id,
-      expiresAt,
-      ipAddress: req.ip ?? null,
-      userAgent: req.get("user-agent") ?? null,
-    });
+    // Create new session
+    const sessionDuration = SESSION_DURATIONS[role];
+    const [newSession] = await db
+      .insert(session)
+      .values({
+        id: crypto.randomUUID(),
+        userId: existingUser.id,
+        token: crypto.randomBytes(32).toString("hex"),
+        expiresAt: new Date(Date.now() + sessionDuration),
+        createdAt: new Date(),
+      })
+      .returning();
 
-    const name = await getUserName(foundUser.id, foundUser.role);
-
-    // Fetch role-specific profile
-    let profile = null;
-    if (foundUser.role === "student") {
-      const profiles = await db
-        .select()
-        .from(student_profile)
-        .where(eq(student_profile.user_id, foundUser.id))
-        .limit(1);
-      profile = profiles[0];
-    } else if (foundUser.role === "placement") {
-      const profiles = await db
-        .select()
-        .from(placement_profile)
-        .where(eq(placement_profile.user_id, foundUser.id))
-        .limit(1);
-      profile = profiles[0];
-    } else if (foundUser.role === "recruiter") {
-      const profiles = await db
-        .select()
-        .from(recruiter_profile)
-        .where(eq(recruiter_profile.user_id, foundUser.id))
-        .limit(1);
-      profile = profiles[0];
-    }
-
-    // Check if student has opted for higher education
-    let isHigherEducationOpted = false;
-    if (foundUser.role === "student" && profile) {
-      isHigherEducationOpted = profile.career_path === "higher_education";
-    }
-
-    res.json({
+    res.status(200).json({
       ok: true,
       user: {
-        id: foundUser.id,
-        email: foundUser.email,
-        role: foundUser.role,
-        name,
-        profile,
-        isHigherEducationOpted,
+        id: existingUser.id,
+        email: existingUser.email,
+        role: existingUser.role,
+        name: userName,
       },
-      token,
-      expiresAt: expiresAt.toISOString(),
+      token: newSession.token,
     });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
+  } catch (error) {
+    console.error("Signin error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "An error occurred during signin. Please try again.",
+    });
   }
 });
 
+// ========== GET CURRENT USER ==========
 router.get("/me", requireAuth, async (req, res) => {
   try {
-    const token = req.get("authorization")?.replace("Bearer ", "");
-
-    if (!token)
-      return res.status(401).json({ ok: false, error: "missing token" });
-
-    const rows = await db
-      .select()
-      .from(session)
-      .where(eq(session.token, token))
-      .limit(1);
-
-    const s = rows[0];
-
-    if (!s) return res.status(401).json({ ok: false, error: "invalid token" });
-
-    const users = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, s.userId))
-      .limit(1);
-    const u = users[0];
-
-    if (!u) return res.status(404).json({ ok: false, error: "user not found" });
-
-    // Fetch role-specific profile and name
-    let profile = null;
-    let name = "Unknown";
-
-    if (u.role === "student") {
-      const profiles = await db
-        .select()
-        .from(student_profile)
-        .where(eq(student_profile.user_id, u.id))
-        .limit(1);
-      profile = profiles[0];
-      name = profile?.full_name || "Unknown";
-    } else if (u.role === "placement") {
-      const profiles = await db
-        .select()
-        .from(placement_profile)
-        .where(eq(placement_profile.user_id, u.id))
-        .limit(1);
-      profile = profiles[0];
-      name = profile?.name || "Unknown";
-    } else if (u.role === "recruiter") {
-      const profiles = await db
-        .select()
-        .from(recruiter_profile)
-        .where(eq(recruiter_profile.user_id, u.id))
-        .limit(1);
-      profile = profiles[0];
-      name = profile?.full_name || "Unknown";
-    }
+    const userName = await getUserName(req.user.id, req.user.role);
 
     // Check if student has opted for higher education
     let isHigherEducationOpted = false;
@@ -409,58 +404,46 @@ router.get("/me", requireAuth, async (req, res) => {
     }
 
     res.json({
-      ok: true,
       user: {
-        ...u,
-        name, // Add name field for backward compatibility
-        profile,
-        isHigherEducationOpted,
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role,
+        name: userName,
       },
     });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
+  } catch (error) {
+    console.error("Get user error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to fetch user information",
+    });
   }
 });
 
-router.post("/signout", requireAuth, async (req, res) => {
+// ========== LOGOUT ==========
+router.post("/logout", requireAuth, async (req, res) => {
   try {
-    const token = req.get("authorization")?.replace("Bearer ", "");
+    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ ok: false, error: "Missing token" });
+    if (token) {
+      await db.delete(session).where(eq(session.token, token));
     }
 
-    await db.delete(session).where(eq(session.token, token));
-
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-router.post("/sessions", async (req, res) => {
-  try {
-    const { id, token, userId, expiresAt } = req.body ?? {};
-    const ipAddress = req.ip ?? null;
-    const userAgent = req.get("user-agent") ?? null;
-
-    await db.insert(session).values({
-      id,
-      token,
-      userId,
-      expiresAt: new Date(expiresAt),
-      ipAddress,
-      userAgent,
+    res.json({
+      ok: true,
+      message: "Logged out successfully",
     });
-
-    res.status(201).json({ ok: true });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Logout failed",
+    });
   }
 });
 
-// Forgot password route
-router.post("/forgot-password", async (req, res) => {
+// ========== FORGOT PASSWORD ==========
+router.post("/forgot-password", resetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -471,138 +454,49 @@ router.post("/forgot-password", async (req, res) => {
       });
     }
 
-    const users = await db
+    const [existingUser] = await db
       .select()
       .from(user)
-      .where(eq(user.email, email))
+      .where(eq(user.email, email.toLowerCase()))
       .limit(1);
 
-    if (users.length === 0) {
-      // Don't reveal if email exists or not for security
+    // Always return success (don't leak if email exists)
+    if (!existingUser) {
       return res.json({
         ok: true,
-        message:
-          "If an account with that email exists, a reset link has been sent.",
+        message: "If an account exists, a password reset link has been sent.",
       });
     }
 
-    const foundUser = users[0];
-
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const resetExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Update user with reset token
     await db
       .update(user)
       .set({
         reset_token: resetToken,
-        reset_token_expires: resetTokenExpires,
+        reset_token_expiry: resetExpiry,
       })
-      .where(eq(user.id, foundUser.id));
+      .where(eq(user.id, existingUser.id));
 
-    // Send reset email
-    const resetUrl = `${
-      process.env.CLIENT_URL || "http://localhost:3000"
-    }/reset-password?token=${resetToken}`;
-
+    const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
     await sendResetEmail(email, resetUrl);
 
     res.json({
       ok: true,
-      message:
-        "If an account with that email exists, a reset link has been sent.",
+      message: "If an account exists, a password reset link has been sent.",
     });
-  } catch (e) {
-    console.error("Forgot password error:", e);
-    res.status(500).json({ ok: false, error: "Internal server error" });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to process password reset request",
+    });
   }
 });
 
-// Change password route (for authenticated users)
-router.post("/change-password", requireAuth, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        ok: false,
-        error: "Current password and new password are required",
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        ok: false,
-        error: "New password must be at least 6 characters long",
-      });
-    }
-
-    // Get user from auth middleware
-    const userId = req.user.id;
-
-    const users = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, userId))
-      .limit(1);
-
-    if (users.length === 0) {
-      return res.status(404).json({
-        ok: false,
-        error: "User not found",
-      });
-    }
-
-    const foundUser = users[0];
-
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(
-      currentPassword,
-      foundUser.password
-    );
-
-    if (!isCurrentPasswordValid) {
-      return res.status(400).json({
-        ok: false,
-        error: "Current password is incorrect",
-      });
-    }
-
-    // Check if new password is different from current
-    const isSamePassword = await bcrypt.compare(
-      newPassword,
-      foundUser.password
-    );
-    if (isSamePassword) {
-      return res.status(400).json({
-        ok: false,
-        error: "New password must be different from current password",
-      });
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    await db
-      .update(user)
-      .set({
-        password: hashedPassword,
-      })
-      .where(eq(user.id, foundUser.id));
-
-    res.json({
-      ok: true,
-      message: "Password changed successfully",
-    });
-  } catch (e) {
-    console.error("Change password error:", e);
-    res.status(500).json({ ok: false, error: "Internal server error" });
-  }
-});
-
-// Reset password route
+// ========== RESET PASSWORD ==========
 router.post("/reset-password", async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -614,59 +508,58 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    // Validate password strength
+    if (newPassword.length < 8) {
       return res.status(400).json({
         ok: false,
-        error: "Password must be at least 6 characters long",
+        error: "Password must be at least 8 characters long",
       });
     }
 
-    const users = await db
+    const [existingUser] = await db
       .select()
       .from(user)
       .where(eq(user.reset_token, token))
       .limit(1);
 
-    if (users.length === 0) {
+    if (!existingUser || !existingUser.reset_token_expiry) {
       return res.status(400).json({
         ok: false,
         error: "Invalid or expired reset token",
       });
     }
 
-    const foundUser = users[0];
-
-    // Check if token is expired
-    if (
-      !foundUser.reset_token_expires ||
-      foundUser.reset_token_expires < new Date()
-    ) {
+    if (new Date() > existingUser.reset_token_expiry) {
       return res.status(400).json({
         ok: false,
         error: "Reset token has expired",
       });
     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password and clear reset token
     await db
       .update(user)
       .set({
         password: hashedPassword,
         reset_token: null,
-        reset_token_expires: null,
+        reset_token_expiry: null,
       })
-      .where(eq(user.id, foundUser.id));
+      .where(eq(user.id, existingUser.id));
+
+    // Invalidate all existing sessions
+    await db.delete(session).where(eq(session.userId, existingUser.id));
 
     res.json({
       ok: true,
-      message: "Password has been reset successfully",
+      message: "Password reset successfully",
     });
-  } catch (e) {
-    console.error("Reset password error:", e);
-    res.status(500).json({ ok: false, error: "Internal server error" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to reset password",
+    });
   }
 });
 

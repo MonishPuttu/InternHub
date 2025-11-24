@@ -15,21 +15,18 @@ import { user } from "./user.js";
 export const offer_letters = pgTable("offer_letters", {
   id: serial("id").primaryKey(),
 
-  application_id: uuid("application_id")
-    .notNull()
-    .references(() => student_applications.id, { onDelete: "cascade" }),
+  application_id: uuid("application_id").references(
+    () => student_applications.id,
+    { onDelete: "cascade" }
+  ),
 
   student_id: uuid("student_id")
     .notNull()
     .references(() => user.id),
 
-  post_id: uuid("post_id")
-    .notNull()
-    .references(() => posts.id),
+  post_id: uuid("post_id").references(() => posts.id),
 
-  recruiter_id: uuid("recruiter_id")
-    .notNull()
-    .references(() => user.id),
+  recruiter_id: uuid("recruiter_id").references(() => user.id),
 
   company_name: varchar("company_name", { length: 255 }).notNull(),
   position: varchar("position", { length: 255 }).notNull(),
