@@ -205,11 +205,10 @@ A new job post has been created by a recruiter. Please find the details below:
 Company: ${createdPost.company_name}
 Position: ${createdPost.position}
 Industry: ${createdPost.industry}
-Package: ${
-          createdPost.package_offered
+Package: ${createdPost.package_offered
             ? `₹${createdPost.package_offered}L`
             : "N/A"
-        }
+          }
 
 Please review the post and take necessary action.
 
@@ -459,7 +458,19 @@ router.get("/applications/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    res.json({ ok: true, application: p });
+    // Fetch the creator's role from user table
+    const creatorUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, p.user_id))
+      .limit(1);
+
+    let creatorRole = null;
+    if (creatorUser.length > 0) {
+      creatorRole = creatorUser[0].role || null;
+    }
+
+    res.json({ ok: true, application: p, creator_role: creatorRole });
   } catch (e) {
     console.error("Error fetching post by ID:", e);
     res.status(500).json({ ok: false, error: String(e) });
