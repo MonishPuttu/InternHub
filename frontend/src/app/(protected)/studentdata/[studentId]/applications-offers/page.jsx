@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import ApplicationsOffersSection from "@/modules/studentdata/components/ApplicationsOffersSection";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -15,15 +15,20 @@ export default function ApplicationsOffersPage({ params }) {
     const [applications, setApplications] = useState([]);
     const [offers, setOffers] = useState([]);
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchApplicationsAndOffers = async () => {
             try {
+                setIsLoading(true);
                 const token = getToken();
                 const response = await axios.get(
                     `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/api/studentdata/students/${studentId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+
+                console.log('API Response:', response.data);
+
                 if (response.data && response.data.ok) {
                     setApplications(response.data.student.applications || []);
                     setOffers(response.data.student.offers || []);
@@ -32,7 +37,9 @@ export default function ApplicationsOffersPage({ params }) {
                 }
             } catch (err) {
                 setError("Error fetching applications and offers.");
-                console.error(err);
+                console.error('Error:', err);
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -49,7 +56,7 @@ export default function ApplicationsOffersPage({ params }) {
         );
     }
 
-    if (!applications.length && !offers.length) {
+    if (isLoading) {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography>Loading applications and offers...</Typography>
