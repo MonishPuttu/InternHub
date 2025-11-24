@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Paper,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -24,11 +25,11 @@ import {
   Business as BusinessIcon,
   Work as WorkIcon,
   CalendarToday as CalendarIcon,
+  School as SchoolIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { BACKEND_URL } from "@/constants/postConstants";
 import ApplyDialog from "@/components/Post/ApplyDialog";
-import { formatDate } from "@/lib/dateUtils";
 import useApplyToPost from "@/hooks/useApplyToPost";
 import { useTheme } from "@mui/material/styles";
 import { getUser } from "@/lib/session";
@@ -45,7 +46,6 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
     applyDialogOpen,
     setApplyDialogOpen,
     hasApplied,
-    applying,
     snackbar,
     checkApplicationStatus,
     handleApply,
@@ -57,6 +57,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
       fetchPostDetails();
       checkApplicationStatus();
     }
+    // eslint-disable-next-line
   }, [postId]);
 
   const fetchPostDetails = async () => {
@@ -67,25 +68,21 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         `${BACKEND_URL}/api/posts/applications/${postId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (response.data.ok) {
         setPost(response.data.application);
       } else {
         setError("Post not found");
       }
     } catch (error) {
-      console.error("Error fetching post details:", error);
       setError("Failed to load post details");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBack = () => {
-    router.back();
-  };
+  const handleBack = () => router.back();
 
-  if (loading) {
+  if (loading)
     return (
       <Box
         sx={{
@@ -98,9 +95,8 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         <CircularProgress sx={{ color: "#8b5cf6" }} />
       </Box>
     );
-  }
 
-  if (error || !post) {
+  if (error || !post)
     return (
       <Box sx={{ p: 4 }}>
         <Button
@@ -133,7 +129,13 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         </Card>
       </Box>
     );
-  }
+
+  // Positions array from backend
+  const positions = Array.isArray(post.positions) ? post.positions : [];
+  const mainTitle =
+    positions.length === 1
+      ? positions[0].title
+      : `${positions.length} Open Positions`;
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
@@ -158,26 +160,10 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
           border: "1px solid",
           borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           borderRadius: 2,
-          overflow: "hidden",
         }}
       >
-        {post.media && (
-          <Box
-            component="img"
-            src={post.media}
-            alt={post.company_name}
-            sx={{
-              width: "100%",
-              maxHeight: 400,
-              objectFit: "cover",
-              borderBottom: "2px solid",
-              borderColor:
-                theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-            }}
-          />
-        )}
-
         <Box sx={{ p: 4 }}>
+          {/* HEADER */}
           <Box sx={{ mb: 4 }}>
             <Box sx={{ display: "flex", alignItems: "start", gap: 2, mb: 2 }}>
               <Box sx={{ flex: 1 }}>
@@ -185,7 +171,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                   variant="h4"
                   sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
                 >
-                  {post.position}
+                  {mainTitle}
                 </Typography>
                 <Typography
                   variant="h6"
@@ -194,45 +180,8 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                   {post.company_name}
                 </Typography>
               </Box>
-
-              {user && user.role !== "student" && (
-                <Box>
-                  <Chip
-                    label={
-                      post.approval_status === "approved"
-                        ? "Approved"
-                        : post.approval_status === "disapproved"
-                        ? "Disapproved"
-                        : "Pending Approval"
-                    }
-                    sx={{
-                      bgcolor:
-                        post.approval_status === "approved"
-                          ? "rgba(16, 185, 129, 0.1)"
-                          : post.approval_status === "disapproved"
-                          ? "rgba(239, 68, 68, 0.1)"
-                          : "rgba(251, 191, 36, 0.1)",
-                      color:
-                        post.approval_status === "approved"
-                          ? "#10b981"
-                          : post.approval_status === "disapproved"
-                          ? "#ef4444"
-                          : "#fbbf24",
-                      fontWeight: 600,
-                      border: `1px solid ${
-                        post.approval_status === "approved"
-                          ? "rgba(16, 185, 129, 0.3)"
-                          : post.approval_status === "disapproved"
-                          ? "rgba(239, 68, 68, 0.3)"
-                          : "rgba(251, 191, 36, 0.3)"
-                      }`,
-                    }}
-                  />
-                </Box>
-              )}
             </Box>
           </Box>
-
           <Divider
             sx={{
               bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
@@ -240,270 +189,52 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             }}
           />
 
+          {/* QUICK INFO GRID */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {post.industry && (
               <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
+                <InfoBox
+                  icon={
                     <BusinessIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Industry
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {post.industry}
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {post.package_offered && (
-              <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    <AttachMoneyIcon sx={{ fontSize: 20, color: "#10b981" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Package Offered
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    ₹{post.package_offered}L per annum
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {post.location && (
-              <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    <LocationOnIcon sx={{ fontSize: 20, color: "#0ea5e9" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Location
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {post.location}
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {post.job_type && (
-              <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    <WorkIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Job Type
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {post.job_type}
-                  </Typography>
-                </Box>
+                  }
+                  label="Industry"
+                  value={post.industry}
+                  theme={theme}
+                />
               </Grid>
             )}
 
             {post.application_date && (
               <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
+                <InfoBox
+                  icon={
                     <CalendarIcon
                       sx={{ fontSize: 20, color: "text.secondary" }}
                     />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Posted Date
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(post.application_date).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </Typography>
-                </Box>
+                  }
+                  label="Posted Date"
+                  value={new Date(post.application_date).toLocaleDateString(
+                    "en-IN",
+                    { year: "numeric", month: "long", day: "numeric" }
+                  )}
+                  theme={theme}
+                />
               </Grid>
             )}
 
-            {post.application_deadline &&
-              !isNaN(new Date(post.application_deadline).getTime()) && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: "background.default",
-                      borderRadius: 2,
-                      border: "1px solid",
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 1,
-                      }}
-                    >
-                      <AccessTimeIcon sx={{ fontSize: 20, color: "#ef4444" }} />
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        Application Deadline
-                      </Typography>
-                    </Box>
-                    <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                      {new Date(post.application_deadline).toLocaleString(
-                        "en-IN",
-                        {
-                          timeZone: "Asia/Kolkata",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
-                    </Typography>
-                  </Box>
-                </Grid>
-              )}
-
-            {post.interview_date && (
+            {post.application_deadline && (
               <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    <CalendarIcon sx={{ fontSize: 20, color: "#0ea5e9" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Interview Date
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(post.interview_date).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </Typography>
-                </Box>
+                <InfoBox
+                  icon={
+                    <AccessTimeIcon sx={{ fontSize: 20, color: "#ef4444" }} />
+                  }
+                  label="Deadline"
+                  value={new Date(post.application_deadline).toLocaleDateString(
+                    "en-IN",
+                    { year: "numeric", month: "long", day: "numeric" }
+                  )}
+                  theme={theme}
+                />
               </Grid>
             )}
 
@@ -517,6 +248,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                     border: "1px solid",
                     borderColor:
                       theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    height: "100%",
                   }}
                 >
                   <Box
@@ -527,270 +259,71 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                       mb: 1,
                     }}
                   >
-                    <PersonIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      Targeted Departments
+                    <SchoolIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
+                      Target Departments
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                    {post.target_departments.map((dept, index) => (
-                      <Chip
-                        key={index}
-                        label={dept}
-                        size="small"
-                        sx={{
-                          bgcolor:
-                            theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                          color: "text.primary",
-                          fontSize: "0.75rem",
-                          height: 24,
-                          fontWeight: 600,
-                        }}
-                      />
-                    ))}
+                    {post.target_departments.map(
+                      (dept, idx) =>
+                        typeof dept === "string" &&
+                        dept.trim() && (
+                          <Chip
+                            key={idx}
+                            label={dept}
+                            size="small"
+                            sx={{
+                              bgcolor:
+                                theme.palette.mode === "dark"
+                                  ? "#334155"
+                                  : "#e2e8f0",
+                              color: "text.primary",
+                              fontSize: "0.75rem",
+                              height: 24,
+                              fontWeight: 600,
+                            }}
+                          />
+                        )
+                    )}
                   </Box>
                 </Box>
               </Grid>
             )}
           </Grid>
 
-          {(post.contact_person || post.contact_email) && (
-            <>
-              <Divider
-                sx={{
-                  bgcolor:
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  mb: 3,
-                }}
-              />
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{ color: "text.primary", fontWeight: 700, mb: 3 }}
-                >
-                  Contact Information
-                </Typography>
-                <Grid container spacing={3}>
-                  {post.contact_person && (
-                    <Grid item xs={12} sm={6}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          bgcolor: "background.default",
-                          borderRadius: 2,
-                          border: "1px solid",
-                          borderColor:
-                            theme.palette.mode === "dark"
-                              ? "#334155"
-                              : "#e2e8f0",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 1,
-                          }}
-                        >
-                          <PersonIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                          <Typography
-                            variant="caption"
-                            sx={{ color: "text.secondary" }}
-                          >
-                            Contact Person
-                          </Typography>
-                        </Box>
-                        <Typography
-                          sx={{ color: "text.primary", fontWeight: 600 }}
-                        >
-                          {post.contact_person}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-
-                  {post.contact_email && (
-                    <Grid item xs={12} sm={6}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          bgcolor: "background.default",
-                          borderRadius: 2,
-                          border: "1px solid",
-                          borderColor:
-                            theme.palette.mode === "dark"
-                              ? "#334155"
-                              : "#e2e8f0",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 1,
-                          }}
-                        >
-                          <EmailIcon sx={{ fontSize: 20, color: "#10b981" }} />
-                          <Typography
-                            variant="caption"
-                            sx={{ color: "text.secondary" }}
-                          >
-                            Contact Email
-                          </Typography>
-                        </Box>
-                        <Typography
-                          component="a"
-                          href={`mailto:${post.contact_email}`}
-                          sx={{
-                            color: "#8b5cf6",
-                            fontWeight: 600,
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
-                          }}
-                        >
-                          {post.contact_email}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            </>
-          )}
-
-          {post.job_link && (
-            <>
-              <Divider
-                sx={{
-                  bgcolor:
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  mb: 3,
-                }}
-              />
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
-                >
-                  Application Link
-                </Typography>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                  }}
-                >
-                  <LinkIcon sx={{ color: "#8b5cf6" }} />
-                  <Typography
-                    component="a"
-                    href={post.job_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      color: "#8b5cf6",
-                      fontWeight: 600,
-                      textDecoration: "none",
-                      wordBreak: "break-all",
-                      "&:hover": { textDecoration: "underline" },
-                    }}
-                  >
-                    {post.job_link}
-                  </Typography>
-                </Box>
-              </Box>
-            </>
-          )}
-
+          {/* DESCRIPTION / NOTES */}
           {post.notes && (
             <>
-              <Divider
+              <Typography
+                variant="h6"
+                sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
+              >
+                Description & Notes
+              </Typography>
+              <Box
                 sx={{
-                  bgcolor:
+                  p: 3,
+                  bgcolor: "background.default",
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor:
                     theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  mb: 3,
+                  mb: 4,
                 }}
-              />
-              <Box sx={{ mb: 4 }}>
+              >
                 <Typography
-                  variant="h6"
-                  sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
-                >
-                  Description
-                </Typography>
-                <Box
                   sx={{
-                    p: 3,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    color: "text.secondary",
+                    lineHeight: 1.8,
+                    whiteSpace: "pre-wrap",
                   }}
                 >
-                  <Typography
-                    sx={{
-                      color: "text.secondary",
-                      lineHeight: 1.8,
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {post.notes}
-                  </Typography>
-                </Box>
-              </Box>
-            </>
-          )}
-
-          {post.skills_required && post.skills_required.length > 0 && (
-            <>
-              <Divider
-                sx={{
-                  bgcolor:
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  mb: 3,
-                }}
-              />
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
-                >
-                  Skills Required
+                  {post.notes}
                 </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-                  {post.skills_required.map((skill, index) => (
-                    <Chip
-                      key={index}
-                      label={skill}
-                      sx={{
-                        bgcolor:
-                          theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                        color: "text.primary",
-                        fontWeight: 600,
-                        fontSize: "0.875rem",
-                        px: 1,
-                        border: "1px solid",
-                        borderColor:
-                          theme.palette.mode === "dark" ? "#475569" : "#cbd5e1",
-                        "&:hover": {
-                          bgcolor:
-                            theme.palette.mode === "dark"
-                              ? "#475569"
-                              : "#cbd5e1",
-                        },
-                      }}
-                    />
-                  ))}
-                </Box>
               </Box>
             </>
           )}
@@ -798,88 +331,135 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
           <Divider
             sx={{
               bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-              mb: 3,
+              mb: 4,
             }}
           />
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
-            >
-              Additional Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "text.secondary", display: "block", mb: 0.5 }}
-                  >
-                    Created At
-                  </Typography>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(
-                      post.created_at || post.application_date
-                    ).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </Typography>
-                </Box>
-              </Grid>
 
-              {post.updated_at && (
-                <Grid item xs={12} sm={6}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: "background.default",
-                      borderRadius: 2,
-                      border: "1px solid",
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
+          {/* POSITIONS & ROLES */}
+          {positions.length > 0 && (
+            <Box sx={{ mb: 4 }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "text.primary", fontWeight: 700, mb: 3 }}
+              >
+                Positions & Roles
+              </Typography>
+              <Grid container spacing={3}>
+                {positions.map((pos, index) => (
+                  <Grid item xs={12} md={4} key={index}>
+                    <Paper
+                      variant="outlined"
                       sx={{
-                        color: "text.secondary",
-                        display: "block",
-                        mb: 0.5,
+                        p: 3,
+                        borderColor:
+                          theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                        borderRadius: 2,
+                        minHeight: 140,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
                       }}
                     >
-                      Last Updated
-                    </Typography>
-                  <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {new Date(post.updated_at).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </Typography>
-                  </Box>
-                </Grid>
-              )}
-            </Grid>
-          </Box>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
+                      >
+                        {pos.title}
+                      </Typography>
+                      {pos.package && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <AttachMoneyIcon
+                            sx={{ fontSize: 18, color: "#10b981" }}
+                          />
+                          <Typography
+                            sx={{ fontWeight: 700, color: "text.primary" }}
+                          >
+                            {pos.package}
+                          </Typography>
+                        </Box>
+                      )}
+                      {typeof pos.openings !== "undefined" && (
+                        <Typography
+                          sx={{ color: "text.secondary", fontWeight: 700 }}
+                        >
+                          Openings: {pos.openings}
+                        </Typography>
+                      )}
+                      {pos.description && (
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          {pos.description}
+                        </Typography>
+                      )}
+                      {/* Add chips/line/anything else as needed */}
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+
+          <Divider
+            sx={{
+              bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+              mb: 4,
+            }}
+          />
+
+          {/* POSTER / MEDIA -- ONLY IF MEDIA EXISTS */}
+          {post.media && (
+            <Box sx={{ mb: 4, textAlign: "center" }}>
+              <Box sx={{ position: "relative", mb: 3 }}>
+                <Chip
+                  label="POSTER / MEDIA"
+                  sx={{
+                    position: "relative",
+                    bgcolor:
+                      theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9",
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    zIndex: 1,
+                  }}
+                />
+              </Box>
+              <Button
+                component="a"
+                href={post.media}
+                target="_blank"
+                rel="noopener noreferrer"
+                startIcon={<LinkIcon />}
+                sx={{
+                  mb: 2,
+                  textTransform: "none",
+                  color: "#8b5cf6",
+                }}
+              >
+                Open Original File
+              </Button>
+              <Box
+                component="img"
+                src={post.media}
+                alt="Job Poster"
+                sx={{
+                  maxWidth: "100%",
+                  maxHeight: 600,
+                  borderRadius: 2,
+                  border: `1px solid ${
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0"
+                  }`,
+                  boxShadow: theme.shadows[4],
+                }}
+              />
+            </Box>
+          )}
         </Box>
       </Card>
 
@@ -905,12 +485,19 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
         </Alert>
       </Snackbar>
 
+      {/* Action Buttons */}
       {showApplyButtons &&
         user &&
         user.role !== "recruiter" &&
         user.role !== "placement" && (
           <Box
-            sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 2,
+              mt: 4,
+              mb: 4,
+            }}
           >
             <Button
               variant="outlined"
@@ -939,6 +526,10 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                   textTransform: "none",
                   fontWeight: 600,
                   px: 4,
+                  "&.Mui-disabled": {
+                    bgcolor: "rgba(16, 185, 129, 0.5)",
+                    color: "white",
+                  },
                 }}
               >
                 Applied
@@ -960,6 +551,38 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             )}
           </Box>
         )}
+    </Box>
+  );
+}
+
+// Reusable InfoBox component for highlights
+function InfoBox({ icon, label, value, theme }) {
+  return (
+    <Box
+      sx={{
+        p: 2,
+        bgcolor: "background.default",
+        borderRadius: 2,
+        border: "1px solid",
+        borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+        {icon}
+        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+          {label}
+        </Typography>
+      </Box>
+      <Typography
+        component="div"
+        sx={{ color: "text.primary", fontWeight: 600 }}
+      >
+        {value}
+      </Typography>
     </Box>
   );
 }
