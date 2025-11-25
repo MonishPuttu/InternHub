@@ -62,12 +62,10 @@ export default function PlacementAnalytics() {
     "CSE",
     "IT",
     "AIML",
-    "AIDS",
     "MECH",
-    "CSBS",
     "CIVIL",
     "EEE",
-    "EIE",
+
   ];
 
   useEffect(() => {

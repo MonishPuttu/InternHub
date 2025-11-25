@@ -139,19 +139,7 @@ export default function UpcomingEventsCard({ events }) {
                       {formatTime(event.eventTime)}
                     </Typography>
                   </Stack>
-                  {event.location && (
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      <LocationOn
-                        sx={{ fontSize: 14, color: "text.secondary" }}
-                      />
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        {event.location}
-                      </Typography>
-                    </Stack>
-                  )}
+
                 </Stack>
                 {event.description && (
                   <Typography

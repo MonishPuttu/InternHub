@@ -16,6 +16,7 @@ import { getToken, getUser } from "@/lib/session";
 import { useTheme } from "@mui/material/styles";
 import RecentApplicationsCard from "@/components/dashboard/RecentApplicationsCard";
 import UpcomingEventsCard from "@/components/dashboard/UpcomingEventsCard";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -24,8 +25,12 @@ export default function StudentDashboard() {
   const router = useRouter();
   const user = getUser();
 
+  const {
+    events,
+    loading: eventsLoading,
+  } = useCalendarEvents();
+
   const [applications, setApplications] = useState([]);
-  const [events, setEvents] = useState([]);
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
 
@@ -38,39 +43,18 @@ export default function StudentDashboard() {
       setLoading(true);
       const token = getToken();
 
-      const results = await Promise.allSettled([
-        axios.get(`${BACKEND_URL}/api/dashboard/recent-applications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        //   axios.get(`${BACKEND_URL}/api/calendar`, {
-        //     headers: { Authorization: `Bearer ${token}` },
-        //   }),
-      ]);
-
-      // Handle applications result
-      if (results[0]?.status === "fulfilled" && results[0]?.value?.data) {
-        setApplications(results[0].value.data.applications || []);
+      // Fetch recent applications only via backend API
+      const response = await axios.get(`${BACKEND_URL}/api/dashboard/recent-applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data && response.data.applications) {
+        setApplications(response.data.applications);
       } else {
-        console.error("Failed to fetch applications:", results[0]?.reason);
         setApplications([]);
-      }
-
-      // Handle events result (only if calendar endpoint is enabled)
-      if (results[1]) {
-        if (results[1].status === "fulfilled" && results[1].value?.data) {
-          setEvents(results[1].value.data.calevents || []);
-        } else {
-          console.error("Failed to fetch events:", results[1].reason);
-          setEvents([]);
-        }
-      } else {
-        // Calendar endpoint is commented out, set empty events
-        setEvents([]);
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       setApplications([]);
-      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -177,15 +161,21 @@ export default function StudentDashboard() {
     company: app.company_name || "Unknown Company",
     location: app.industry || "Unknown Location",
     position: app.position || "Unknown Position",
-    type: "Internship",
+    type: app.job_type || "N/A",
     stipend: formatPackage(app.package_offered), // ✅ Now shows "₹10.00 LPA"
     status: formatStatus(app.status || app.application_status), // ✅ Now shows "Offer Approved"
     applied: formatDate(app.application_date),
   }));
 
-  const upcomingEvents = events.slice(0, 4);
+  // Sort and select top 4 recent events from useCalendarEvents hook
+  const upcomingEvents = events
+    .filter(event => event.eventDate)
+    .sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate))
+    .slice(0, 3);
 
-  if (loading) {
+  const isLoading = loading || eventsLoading;
+
+  if (isLoading) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography sx={{ color: "text.primary" }}>
