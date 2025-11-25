@@ -311,6 +311,11 @@ export default function StudentData() {
                             <MenuItem value="IT">IT</MenuItem>
                             <MenuItem value="MECH">MECH</MenuItem>
                             <MenuItem value="CIVIL">CIVIL</MenuItem>
+                            <MenuItem value="EEE">EEE</MenuItem>
+                            <MenuItem value="MBA">MBA</MenuItem>
+                            <MenuItem value="AIML">AIML</MenuItem>
+                            <MenuItem value="MCA">MCA</MenuItem>
+
                         </Select>
                     </FormControl>
 
