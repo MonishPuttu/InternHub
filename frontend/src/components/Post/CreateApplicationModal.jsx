@@ -211,7 +211,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     setErrorMsg("");
     setSuccessMsg("");
     setLoading(true);
-    // ... [rest of the handleSubmit logic remains the same] ...
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -219,16 +219,36 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         setLoading(false);
         return;
       }
-      const positionArray = positions.map((pos) => ({
-        title: pos.position,
-        job_type: pos.job_type,
-        package_offered: pos.package_offered,
-        duration: pos.duration,
-        skills: pos.skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-      }));
+
+      // FIXED: Transform UI fields to backend format
+      const positionArray = positions.map((pos) => {
+        // Build description from available fields
+        const descriptionParts = [];
+        if (pos.job_type) descriptionParts.push(pos.job_type);
+        if (pos.skills) {
+          const skillsList = pos.skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          if (skillsList.length > 0) {
+            descriptionParts.push(`Required skills: ${skillsList.join(", ")}`);
+          }
+        }
+        if (pos.duration) descriptionParts.push(`Duration: ${pos.duration}`);
+
+        const description =
+          descriptionParts.length > 0
+            ? descriptionParts.join(" | ")
+            : `Looking for talented ${pos.position} with strong technical skills`;
+
+        return {
+          title: pos.position,
+          package: pos.package_offered,
+          openings: 1, // Default to 1, you can add a field in UI if needed
+          description: description,
+        };
+      });
+
       const payload = {
         company_name: formData.company_name,
         industry: formData.industry,
@@ -238,6 +258,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         media: mediaPreview,
         positions: positionArray,
       };
+
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"

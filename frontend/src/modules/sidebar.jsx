@@ -99,7 +99,7 @@ const navigationItems = [
     roles: ["recruiter", "placement"],
   },
 
-  { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: null },
+  // { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: [] },
 ];
 
 const getFilteredNavigationItems = (user) => {
@@ -107,13 +107,13 @@ const getFilteredNavigationItems = (user) => {
 
   // If student has opted for higher education, show only Dashboard and Profile & Resume
   if (user.role === "student" && user.isHigherEducationOpted) {
-    return navigationItems.filter(item =>
-      item.text === "Dashboard" || item.text === "Profile & Resume"
+    return navigationItems.filter(
+      (item) => item.text === "Dashboard" || item.text === "Profile & Resume"
     );
   }
 
   // Default filtering by roles
-  return navigationItems.filter(item => {
+  return navigationItems.filter((item) => {
     if (!item.roles) return true;
     return item.roles.includes(user.role);
   });
@@ -122,7 +122,7 @@ const getFilteredNavigationItems = (user) => {
 export default function Sidebar({
   variant = "permanent",
   open = false,
-  onClose = () => { },
+  onClose = () => {},
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -216,8 +216,8 @@ export default function Sidebar({
                       color: isActive
                         ? "#a78bfa"
                         : theme.palette.mode === "dark"
-                          ? "#94a3b8"
-                          : "#64748b", // Dynamic text color
+                        ? "#94a3b8"
+                        : "#64748b", // Dynamic text color
                       "&:hover": {
                         backgroundColor: isActive
                           ? alpha("#8b5cf6", 0.18)
@@ -231,8 +231,8 @@ export default function Sidebar({
                         color: isActive
                           ? "#a78bfa"
                           : theme.palette.mode === "dark"
-                            ? "#64748b"
-                            : "#94a3b8", // Dynamic icon color
+                          ? "#64748b"
+                          : "#94a3b8", // Dynamic icon color
                       }}
                     >
                       {item.icon}
