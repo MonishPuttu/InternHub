@@ -12,7 +12,7 @@ import {
 } from "../db/schema/index.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
 import nodemailer from "nodemailer";
 
@@ -397,18 +397,25 @@ router.get("/me", requireAuth, async (req, res) => {
   try {
     const userName = await getUserName(req.user.id, req.user.role);
 
-    // Check if student has opted for higher education
     let isHigherEducationOpted = false;
-    if (u.role === "student" && profile) {
-      isHigherEducationOpted = profile.career_path === "higher_education";
+    if (req.user.role === "student") {
+      const profile = await db
+        .select({ career_path: student_profile.career_path })
+        .from(student_profile)
+        .where(eq(student_profile.user_id, req.user.id))
+        .limit(1);
+
+      isHigherEducationOpted = profile[0]?.career_path === "higher_education";
     }
 
     res.json({
+      ok: true,
       user: {
         id: req.user.id,
         email: req.user.email,
         role: req.user.role,
         name: userName,
+        isHigherEducationOpted,
       },
     });
   } catch (error) {
@@ -419,7 +426,6 @@ router.get("/me", requireAuth, async (req, res) => {
     });
   }
 });
-
 // ========== LOGOUT ==========
 router.post("/logout", requireAuth, async (req, res) => {
   try {
@@ -559,6 +565,105 @@ router.post("/reset-password", async (req, res) => {
     res.status(500).json({
       ok: false,
       error: "Failed to reset password",
+    });
+  }
+});
+
+// ========== CHANGE PASSWORD (for authenticated users) ==========
+router.post("/change-password", requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "Current password and new password are required",
+      });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        ok: false,
+        error: "New password must be at least 8 characters long",
+      });
+    }
+
+    // Check if new password has required complexity
+    // const passwordRegex =
+    //   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/;
+    // if (!passwordRegex.test(newPassword)) {
+    //   return res.status(400).json({
+    //     ok: false,
+    //     error:
+    //       "Password must contain uppercase, lowercase, number, and special character",
+    //   });
+    // }
+
+    // Check if new password is same as current
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "New password must be different from current password",
+      });
+    }
+
+    // Get user from database
+    const [existingUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, req.user.id))
+      .limit(1);
+
+    if (!existingUser) {
+      return res.status(404).json({
+        ok: false,
+        error: "User not found",
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      existingUser.password
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        ok: false,
+        error: "Current password is incorrect",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await db
+      .update(user)
+      .set({
+        password: hashedPassword,
+      })
+      .where(eq(user.id, req.user.id));
+
+    // Optional: Invalidate all other sessions except current
+    const currentToken = req.headers.authorization?.split(" ")[1];
+    await db
+      .delete(session)
+      .where(
+        and(eq(session.userId, req.user.id), ne(session.token, currentToken))
+      );
+
+    res.json({
+      ok: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to change password",
     });
   }
 });
