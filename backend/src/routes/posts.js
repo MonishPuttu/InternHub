@@ -487,7 +487,6 @@ router.get("/approved-posts", requireAuth, async (req, res) => {
       .orderBy(desc(posts.application_date))
       .limit(parseInt(limit));
 
-    console.log("Approved posts query result:", approvedPosts.length);
     res.json({ ok: true, posts: approvedPosts });
   } catch (e) {
     console.error("Error fetching approved posts:", e);

@@ -58,7 +58,7 @@ export const useCalendarEvents = () => {
                 const postEvents = (postsData.posts || []).map((post) => ({
                     id: `post-${post.id}`,
                     postId: post.id,
-                    title: `${post.position} @ ${post.company_name}`,
+                    title: `${post.positions && Array.isArray(post.positions) && post.positions.length > 0 ? post.positions.map(p => p.title).join(", ") : 'Unknown Position'} @ ${post.company_name}`,
                     eventDate: post.application_date
                         ? new Date(post.application_date).toISOString().split("T")[0]
                         : null,

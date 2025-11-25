@@ -38,15 +38,21 @@ export default function ThemeRegistry({ children }) {
         palette: {
           mode,
           primary: {
-            main: "#8b5cf6",
+            main: "#8b5cf6", // Your purple
+          },
+          secondary: {
+            main: mode === "dark" ? "#822659" : "#8b5cf6", // Ruby in dark, purple in light
           },
           background: {
-            default: mode === "dark" ? "#0f172a" : "#f1f5f9",
-            paper: mode === "dark" ? "#1e293b" : "#ffffff",
+            default: mode === "dark" ? "#1A1A1A" : "#f1f5f9",
+            paper: mode === "dark" ? "#232323" : "#ffffff",
           },
           text: {
-            primary: mode === "dark" ? "#e2e8f0" : "#0f172a",
-            secondary: mode === "dark" ? "#94a3b8" : "#64748b",
+            primary: mode === "dark" ? "#F0F0F0" : "#0f172a",
+            secondary: mode === "dark" ? "#888888" : "#64748b",
+          },
+          action: {
+            active: mode === "dark" ? "#8b5cf6" : "#8b5cf6", // Purple for buttons in both modes
           },
         },
         typography: {

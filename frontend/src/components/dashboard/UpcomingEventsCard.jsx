@@ -86,10 +86,13 @@ export default function UpcomingEventsCard({ events }) {
     >
       <Typography
         variant="h6"
-        sx={{ color: "text.primary", fontWeight: 600, mb: 3 }}
+        sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
       >
         Upcoming Events
       </Typography>
+
+      <Typography variant="caption" sx={{ color: "text.secondary", mb: 3, display: "block" }}>
+        Track your Upcoming Events       </Typography>
 
       <Stack spacing={2}>
         {events.map((event, idx) => (
@@ -139,19 +142,7 @@ export default function UpcomingEventsCard({ events }) {
                       {formatTime(event.eventTime)}
                     </Typography>
                   </Stack>
-                  {event.location && (
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      <LocationOn
-                        sx={{ fontSize: 14, color: "text.secondary" }}
-                      />
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        {event.location}
-                      </Typography>
-                    </Stack>
-                  )}
+
                 </Stack>
                 {event.description && (
                   <Typography

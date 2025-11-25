@@ -131,7 +131,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
       position: "",
       job_type: "Full Time",
       package_offered: "",
-      duration: "",
+      openings: 1,
       skills: "",
     },
   ]);
@@ -158,8 +158,6 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     setPositions((prev) => {
       const newArr = [...prev];
       newArr[idx][field] = value;
-      if (field === "job_type" && value !== "Internship")
-        newArr[idx].duration = "";
       return newArr;
     });
   };
@@ -173,7 +171,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
           position: "",
           job_type: "Full Time",
           package_offered: "",
-          duration: "",
+          openings: 1,
           skills: "",
         },
       ]);
@@ -220,34 +218,17 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         return;
       }
 
-      // FIXED: Transform UI fields to backend format
-      const positionArray = positions.map((pos) => {
-        // Build description from available fields
-        const descriptionParts = [];
-        if (pos.job_type) descriptionParts.push(pos.job_type);
-        if (pos.skills) {
-          const skillsList = pos.skills
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-          if (skillsList.length > 0) {
-            descriptionParts.push(`Required skills: ${skillsList.join(", ")}`);
-          }
-        }
-        if (pos.duration) descriptionParts.push(`Duration: ${pos.duration}`);
-
-        const description =
-          descriptionParts.length > 0
-            ? descriptionParts.join(" | ")
-            : `Looking for talented ${pos.position} with strong technical skills`;
-
-        return {
-          title: pos.position,
-          package: pos.package_offered,
-          openings: 1, // Default to 1, you can add a field in UI if needed
-          description: description,
-        };
-      });
+      // UPDATED: Store all fields from UI directly
+      const positionArray = positions.map((pos) => ({
+        title: pos.position,
+        job_type: pos.job_type,
+        package: pos.package_offered,
+        openings: parseInt(pos.openings) || 1,
+        skills: pos.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      }));
 
       const payload = {
         company_name: formData.company_name,
@@ -255,7 +236,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         application_deadline: formData.deadline || null,
         notes: formData.notes || null,
         target_departments: formData.target_departments,
-        media: mediaPreview,
+        // media: mediaPreview, // COMMENTED OUT
         positions: positionArray,
       };
 
@@ -272,7 +253,9 @@ export const CreateApplicationModal = ({ open, onClose }) => {
           body: JSON.stringify(payload),
         }
       );
+
       const result = await response.json();
+
       if (result.ok) {
         setSuccessMsg("Opportunity posted successfully!");
         setFormData({
@@ -287,7 +270,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
             position: "",
             job_type: "Full Time",
             package_offered: "",
-            duration: "",
+            openings: 1,
             skills: "",
           },
         ]);
@@ -622,10 +605,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                     sx={{
                       mt: 2,
                       display: "grid",
-                      gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: pos.job_type === "Internship" ? "1fr 1fr" : "1fr",
-                      },
+                      gridTemplateColumns: { xs: "1fr", sm: "2fr 1fr" },
                       gap: 2,
                     }}
                   >
@@ -642,18 +622,21 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                       }
                       disabled={loading}
                     />
-                    {pos.job_type === "Internship" && (
-                      <TextField
-                        label="Duration (e.g. 3-6 months)"
-                        fullWidth
-                        value={pos.duration}
-                        onChange={(e) =>
-                          handlePositionChange(idx, "duration", e.target.value)
-                        }
-                        disabled={loading}
-                      />
-                    )}
+
+                    <TextField
+                      label="Number of Openings *"
+                      type="number"
+                      fullWidth
+                      required
+                      value={pos.openings}
+                      onChange={(e) =>
+                        handlePositionChange(idx, "openings", e.target.value)
+                      }
+                      disabled={loading}
+                      inputProps={{ min: 1 }}
+                    />
                   </Box>
+
                   <TextField
                     sx={{ mt: 2 }}
                     label="Required Skills (comma separated)"
@@ -693,14 +676,14 @@ export const CreateApplicationModal = ({ open, onClose }) => {
               </Box>
             </Box>
 
-            {/* Upload Section - Title Only */}
+            {/* Upload Section - Title Only
             <Typography
               variant="subtitle1"
               sx={{ fontWeight: 600, color: "text.primary", mt: 2, mb: 1 }}
             >
               Poster/Media (Optional)
             </Typography>
-            {/* Removed Divider */}
+ 
             <Paper
               elevation={0}
               sx={{
@@ -756,7 +739,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                   onDelete={removeMediaFile}
                 />
               </Box>
-            )}
+            )} */}
 
             {/* Action Buttons (Divider kept here to separate content from footer actions) */}
             <Box

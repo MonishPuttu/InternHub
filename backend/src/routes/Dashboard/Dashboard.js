@@ -21,18 +21,45 @@ router.get("/recent-applications", requireAuth, async (req, res) => {
       .limit(3);
 
     // Transform the data to flat structure
-    const formattedApplications = results.map((row) => ({
-      id: row.student_applications?.id,
-      company_name: row.posts?.company_name || "Unknown Company",
-      position: row.posts?.position || "Unknown Position",
-      industry: row.posts?.industry || "Technology",
-      status: row.student_applications?.application_status || "applied",
-      application_date: row.student_applications?.applied_at,
-      package_offered: row.posts?.package_offered || null,
-      notes: row.posts
-        ? `Applied for ${row.posts.position} at ${row.posts.company_name}`
-        : "Application details",
-    }));
+    const formattedApplications = results.map((row) => {
+      let positionTitle = "Unknown Position";
+      let jobType = "N/A";
+      let packageOffered = null;
+
+      try {
+        const positionsArray = row.posts?.positions || [];
+
+
+
+        if (Array.isArray(positionsArray) && positionsArray.length > 0) {
+          positionTitle = positionsArray[0]?.title || "Unknown Position";
+          jobType = positionsArray[0]?.job_type || "N/A";
+          packageOffered = positionsArray[0]?.package_offered;
+
+
+        }
+      } catch (error) {
+        console.error("Error parsing positions:", error);
+        positionTitle = "Unknown Position";
+        jobType = "N/A";
+      }
+
+      return {
+        id: row.student_applications?.id,
+        company_name: row.posts?.company_name || "Unknown Company",
+        position: positionTitle,
+        job_type: jobType,
+        industry: row.posts?.industry || "Technology",
+        status: row.student_applications?.application_status || "applied",
+        application_date: row.student_applications?.applied_at,
+        package_offered: packageOffered,
+        notes: row.posts
+          ? `Applied for ${positionTitle} at ${row.posts.company_name}`
+          : "Application details",
+      };
+    });
+
+
 
     res.json({ ok: true, applications: formattedApplications });
   } catch (e) {
