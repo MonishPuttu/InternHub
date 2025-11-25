@@ -272,9 +272,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
           body: JSON.stringify(payload),
         }
       );
-
       const result = await response.json();
-
       if (result.ok) {
         setSuccessMsg("Opportunity posted successfully!");
         setFormData({
