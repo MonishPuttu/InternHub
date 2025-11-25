@@ -157,7 +157,7 @@ export default function PlacementAnalytics() {
       title: "Total Students",
       value: statistics?.total_students || 0,
       icon: People,
-      color: "#8b5cf6", // ✅ Changed to purple
+      color: "#8b5cf6",
     },
     {
       title: "Students Placed",
@@ -272,17 +272,35 @@ export default function PlacementAnalytics() {
         </Typography>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 3,
+          mb: 4,
+        }}
+      >
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            // FIX: Removed 'item' and kept the responsive props (xs, sm, md)
-            <Grid xs={12} sm={6} md={3} key={index}>
+            <Box
+              key={index}
+              sx={{
+                flex: {
+                  xs: "1 1 100%",
+                  sm: "1 1 calc(50% - 12px)",
+                  md: "1 1 calc(50% - 12px)",
+                  lg: "1 1 calc(20% - 19.2px)",
+                },
+                minWidth: 0,
+              }}
+            >
               <Card
                 sx={{
                   bgcolor: "background.paper",
                   border: "1px solid #334155",
                   borderRadius: 2,
+                  height: "100%",
                   "&:hover": {
                     borderColor: stat.color,
                     transform: "translateY(-4px)",
@@ -294,9 +312,10 @@ export default function PlacementAnalytics() {
                   <Stack
                     direction="row"
                     justifyContent="space-between"
-                    alignItems="flex-start"
+                    alignItems="center"
+                    spacing={2}
                   >
-                    <Box>
+                    <Box sx={{ flex: 1 }}>
                       <Typography
                         variant="body2"
                         sx={{ color: "text.secondary", mb: 1 }}
@@ -318,49 +337,69 @@ export default function PlacementAnalytics() {
                         width: 48,
                         height: 48,
                         borderRadius: 2,
-                        bgcolor: stat.bgColor,
                         display: "flex",
-                        alignItems: "left",
+                        alignItems: "center",
                         justifyContent: "center",
+                        flexShrink: 0,
                       }}
                     >
-                      <Icon sx={{ color: stat.color, fontSize: 25 }} />
+                      <Icon sx={{ color: stat.color, fontSize: 28 }} />
                     </Box>
                   </Stack>
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           );
         })}
+
         {/* Department Filter */}
-        <Paper
+        <Box
           sx={{
-            p: 2,
-            bgcolor: "background.paper",
-            border: "1px solid #334155",
-            borderRadius: 2,
-            mb: 4,
+            flex: {
+              xs: "1 1 100%",
+              sm: "1 1 calc(50% - 12px)",
+              md: "1 1 calc(50% - 12px)",
+              lg: "1 1 calc(20% - 19.2px)",
+            },
+            minWidth: 0,
           }}
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <FilterList sx={{ color: "text.secondary" }} />
-            <FormControl sx={{ Width: 90, height: 75 }}>
-              <InputLabel>Select Department</InputLabel>
-              <Select
-                value={selectedDepartment}
-                label="Select Department"
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-              >
-                {departments.map((dept) => (
-                  <MenuItem key={dept} value={dept}>
-                    {dept}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Stack>
-        </Paper>
-      </Grid>
+          <Paper
+            sx={{
+              p: 2,
+              bgcolor: "background.paper",
+              border: "1px solid #334155",
+              borderRadius: 2,
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={2}
+              sx={{ width: "100%" }}
+            >
+              <FilterList sx={{ color: "text.secondary" }} />
+              <FormControl fullWidth>
+                <InputLabel>Select Department</InputLabel>
+                <Select
+                  value={selectedDepartment}
+                  label="Select Department"
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                >
+                  {departments.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+          </Paper>
+        </Box>
+      </Box>
 
       {/* Overview Tab */}
       <Box sx={{ borderBottom: 1, borderColor: "#334155", mb: 3 }}>
@@ -427,7 +466,6 @@ export default function PlacementAnalytics() {
                 layout="vertical"
                 margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
               >
-                {/* ✅ Remove dotted lines */}
                 <CartesianGrid
                   stroke="transparent"
                   horizontal={true}
@@ -458,7 +496,6 @@ export default function PlacementAnalytics() {
                   }}
                   iconType="circle"
                 />
-                {/* ✅ Updated colors to match student analytics */}
                 <Bar
                   dataKey="applied"
                   stackId="a"
@@ -533,7 +570,7 @@ export default function PlacementAnalytics() {
                       name: "Higher Education",
                       value:
                         statistics?.career_path_stats?.higher_education || 0,
-                      fill: "#8b5cf6", // ✅ Changed to purple
+                      fill: "#8b5cf6",
                     },
                   ]}
                   cx="50%"
@@ -545,7 +582,7 @@ export default function PlacementAnalytics() {
                   dataKey="value"
                 >
                   <Cell fill="#10b981" />
-                  <Cell fill="#8b5cf6" /> {/* ✅ Changed to purple */}
+                  <Cell fill="#8b5cf6" />
                 </Pie>
                 <Tooltip />
                 <Legend />

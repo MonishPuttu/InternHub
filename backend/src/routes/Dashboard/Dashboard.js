@@ -24,13 +24,22 @@ router.get("/recent-applications", requireAuth, async (req, res) => {
     const formattedApplications = results.map((row) => {
       let positionTitle = "Unknown Position";
       let jobType = "N/A";
+      let packageOffered = null;
+
       try {
         const positionsArray = row.posts?.positions || [];
+
+
+
         if (Array.isArray(positionsArray) && positionsArray.length > 0) {
           positionTitle = positionsArray[0]?.title || "Unknown Position";
           jobType = positionsArray[0]?.job_type || "N/A";
+          packageOffered = positionsArray[0]?.package_offered;
+
+
         }
-      } catch {
+      } catch (error) {
+        console.error("Error parsing positions:", error);
         positionTitle = "Unknown Position";
         jobType = "N/A";
       }
@@ -43,15 +52,14 @@ router.get("/recent-applications", requireAuth, async (req, res) => {
         industry: row.posts?.industry || "Technology",
         status: row.student_applications?.application_status || "applied",
         application_date: row.student_applications?.applied_at,
-        package_offered:
-          Array.isArray(row.posts?.positions) && row.posts.positions.length > 0
-            ? row.posts.positions[0]?.package_offered || null
-            : null,
+        package_offered: packageOffered,
         notes: row.posts
           ? `Applied for ${positionTitle} at ${row.posts.company_name}`
           : "Application details",
       };
     });
+
+
 
     res.json({ ok: true, applications: formattedApplications });
   } catch (e) {

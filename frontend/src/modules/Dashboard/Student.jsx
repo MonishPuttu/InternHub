@@ -128,18 +128,50 @@ export default function StudentDashboard() {
     });
   };
 
-  // ✅ Fixed package formatting - adds "LPA" for lakhs
+
   const formatPackage = (packageOffered) => {
+
+
+    // Check for null, undefined, empty string, or "null" string
     if (
-      !packageOffered ||
-      packageOffered === "null" ||
-      packageOffered === null
+      packageOffered === null ||
+      packageOffered === undefined ||
+      packageOffered === "" ||
+      packageOffered === "null"
     ) {
+
       return "Not disclosed";
     }
-    const amount = parseFloat(packageOffered);
-    if (isNaN(amount)) return "Not disclosed";
-    return `₹${amount.toFixed(2)} LPA`;
+
+    // Convert to string and trim
+    const packageStr = String(packageOffered).trim();
+
+
+    // Handle range format like "8-9" or "8 - 9"
+    if (packageStr.includes("-")) {
+      const parts = packageStr.split("-").map(p => p.trim());
+      const min = parseFloat(parts[0]);
+      const max = parseFloat(parts[1]);
+
+
+      if (!isNaN(min) && !isNaN(max)) {
+        const result = `₹${min.toFixed(2)}-${max.toFixed(2)} LPA`;
+
+        return result;
+      }
+    }
+
+    // Handle single numeric value
+    const amount = parseFloat(packageStr);
+
+    if (isNaN(amount)) {
+
+      return "Not disclosed";
+    }
+
+    const result = `₹${amount.toFixed(2)} LPA`;
+
+    return result;
   };
 
   // ✅ Fixed status formatting
