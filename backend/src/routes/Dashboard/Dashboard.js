@@ -29,14 +29,30 @@ router.get("/recent-applications", requireAuth, async (req, res) => {
       try {
         const positionsArray = row.posts?.positions || [];
 
-
-
         if (Array.isArray(positionsArray) && positionsArray.length > 0) {
-          positionTitle = positionsArray[0]?.title || "Unknown Position";
-          jobType = positionsArray[0]?.job_type || "N/A";
-          packageOffered = positionsArray[0]?.package_offered;
+          const firstPosition = positionsArray[0];
 
+          // Extract title
+          positionTitle = firstPosition?.title || "Unknown Position";
 
+          // Extract job type from description (e.g., "Full Time | Required skills: react")
+          let extractedJobType = "Full Time"; // default
+          if (firstPosition?.description) {
+            const parts = firstPosition.description.split("|");
+            if (parts.length > 0) {
+              const jobTypePart = parts[0].trim();
+              // Check if it's a valid job type
+              if (jobTypePart && jobTypePart.length < 50) {
+                extractedJobType = jobTypePart;
+              }
+            }
+          }
+
+          // Use job_type if exists, otherwise use extracted value
+          jobType = firstPosition?.job_type || extractedJobType;
+
+          // Support both "package" and "package_offered" field names
+          packageOffered = firstPosition?.package || firstPosition?.package_offered;
         }
       } catch (error) {
         console.error("Error parsing positions:", error);
@@ -58,8 +74,6 @@ router.get("/recent-applications", requireAuth, async (req, res) => {
           : "Application details",
       };
     });
-
-
 
     res.json({ ok: true, applications: formattedApplications });
   } catch (e) {
