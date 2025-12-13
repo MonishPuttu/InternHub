@@ -25,6 +25,11 @@ import {
   CheckCircle,
   PlayArrow,
   CalendarToday,
+  Code,
+  Psychology,
+  Quiz,
+  ExpandMore,
+  OpenInNew,
 } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
@@ -72,6 +77,7 @@ export default function StudentTraining() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const [expandedCard, setExpandedCard] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -200,6 +206,73 @@ export default function StudentTraining() {
       default:
         return "default";
     }
+  };
+
+  const additionalTests = [
+    {
+      id: "coding",
+      title: "Coding Challenges",
+      icon: Code,
+      color: "#8b5cf6",
+      links: [
+        {
+          name: "HackerRank",
+          description:
+            "Large set of coding challenges in algorithms, data structures & more. Free to use.",
+          url: "https://www.hackerrank.com/",
+        },
+        {
+          name: "Exercism",
+          description:
+            "Free coding practice with real problems and mentor feedback across 70+ languages.",
+          url: "https://exercism.org/",
+        },
+      ],
+    },
+    {
+      id: "aptitude",
+      title: "Aptitude Test",
+      icon: Psychology,
+      color: "#06b6d4",
+      links: [
+        {
+          name: "IndiaBIX Online Aptitude Test",
+          description:
+            "Free online aptitude tests with detailed questions and explanations.",
+          url: "https://www.indiabix.com/online-test/aptitude-test/",
+        },
+        {
+          name: "Aptitude-Test.com",
+          description:
+            "Practice numerical, logical & verbal aptitude questions for free.",
+          url: "https://www.aptitude-test.com/",
+        },
+      ],
+    },
+    {
+      id: "quiz",
+      title: "Core Quiz",
+      icon: Quiz,
+      color: "#10b981",
+      links: [
+        {
+          name: "Testbook Free Online Quizzes",
+          description:
+            "A large quiz bank across subjects like GK, maths, science & reasoning.",
+          url: "https://testbook.com/free-online-quizzes",
+        },
+        {
+          name: "JustTutors – Test-Your-Knowledge",
+          description:
+            "Free MCQ tests on many topics to check your core understanding.",
+          url: "https://www.justtutors.com/test-your-knowledge",
+        },
+      ],
+    },
+  ];
+
+  const handleCardToggle = (cardId) => {
+    setExpandedCard(expandedCard === cardId ? null : cardId);
   };
 
   const AssessmentCard = ({ assessment }) => (
@@ -382,6 +455,11 @@ export default function StudentTraining() {
           id="tab-2"
           aria-controls="tabpanel-2"
         />
+        <Tab
+          label="Additional Tests"
+          id="tab-3"
+          aria-controls="tabpanel-3"
+        />
       </Tabs>
 
       <TabPanel value={tabValue} index={0}>
@@ -448,6 +526,156 @@ export default function StudentTraining() {
             ))}
           </Box>
         )}
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={3}>
+        <Typography
+          variant="body1"
+          sx={{ color: "text.secondary", mb: 3, textAlign: "center" }}
+        >
+          Practice with external platforms to boost your skills
+        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
+          {additionalTests.map((test) => {
+            const IconComponent = test.icon;
+            const isExpanded = expandedCard === test.id;
+
+            return (
+              <Card
+                key={test.id}
+                sx={{
+                  bgcolor: "background.paper",
+                  border: "1px solid #334155",
+                  borderRadius: 2,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    borderColor: test.color,
+                    boxShadow: `0 0 20px ${test.color}20`,
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box
+                    onClick={() => handleCardToggle(test.id)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 48,
+                          height: 48,
+                          borderRadius: 2,
+                          bgcolor: `${test.color}20`,
+                        }}
+                      >
+                        <IconComponent sx={{ color: test.color, fontSize: 28 }} />
+                      </Box>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          sx={{ color: "text.primary", fontWeight: "bold" }}
+                        >
+                          {test.title}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                          {test.links.length} free platforms available
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <ExpandMore
+                      sx={{
+                        color: "text.secondary",
+                        transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.3s ease",
+                      }}
+                    />
+                  </Box>
+
+                  {isExpanded && (
+                    <Box sx={{ mt: 3, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
+                      {test.links.map((link, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            mb: index < test.links.length - 1 ? 3 : 0,
+                            p: 3,
+                            borderRadius: 2,
+                            bgcolor: "background.paper",
+                            border: "1px solid",
+                            borderColor: "divider",
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              borderColor: test.color,
+                              boxShadow: `0 0 20px ${test.color}20`,
+                            },
+                          }}
+                        >
+                          <Box
+                            display="flex"
+                            alignItems="flex-start"
+                            justifyContent="space-between"
+                            gap={2}
+                          >
+                            <Box sx={{ flex: 1 }}>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  color: "text.primary",
+                                  fontWeight: 600,
+                                  mb: 1,
+                                }}
+                              >
+                                {link.name}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{ color: "text.secondary", mb: 2 }}
+                              >
+                                {link.description}
+                              </Typography>
+                              <Button
+                                variant="outlined"
+                                size="medium"
+                                endIcon={<OpenInNew />}
+                                onClick={() => window.open(link.url, "_blank")}
+                                sx={{
+                                  color: test.color,
+                                  borderColor: test.color,
+                                  textTransform: "none",
+                                  "&:hover": {
+                                    borderColor: test.color,
+                                    bgcolor: `${test.color}10`,
+                                  },
+                                }}
+                              >
+                                Visit Platform
+                              </Button>
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
       </TabPanel>
 
       <Dialog
