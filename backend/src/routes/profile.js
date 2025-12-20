@@ -7,6 +7,8 @@ import {
   education,
   projects,
   social_links,
+  placement_profile,  // ✅ ADDED - CRITICAL FIX
+  recruiter_profile,  // ✅ ADDED - CRITICAL FIX
 } from "../db/schema/index.js";
 import { eq, desc, count, and, or, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/authmiddleware.js";
@@ -34,7 +36,6 @@ router.get("/overview", requireAuth, async (req, res) => {
       .where(eq(social_links.user_id, userId))
       .limit(1);
 
-    // Get recent experience from approved offers
     const recentExperience = await db
       .select({
         application: student_applications,
@@ -131,16 +132,80 @@ router.get("/personal", requireAuth, async (req, res) => {
   }
 });
 
+// ✅✅✅ COMPLETELY REWRITTEN PUT ENDPOINT - COMPREHENSIVE DATE FIELD HANDLING ✅✅✅
 router.put("/personal", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
+    
+    console.log("=== PUT /personal START ===");
+    console.log("User ID:", userId);
+    console.log("User Role:", userRole);
+    console.log("Request Body (RAW):", JSON.stringify(req.body, null, 2));
+    
     const updateData = { ...req.body };
 
-    // NEW: Validate professional_email if provided
+    // ✅ CRITICAL FIX: Delete ALL date fields and system fields
+    const fieldsToDelete = [
+      // Timestamp fields
+      'created_at', 'createdAt', 'created',
+      'updated_at', 'updatedAt', 'updated',
+      // Date fields that cause toISOString errors
+      'date_of_birth', 'dateOfBirth', 'dob',
+      'birth_date', 'birthDate',
+      // System fields
+      'id', '_id',
+      'user_id', 'userId',
+      'role', 'email' // email from token, not editable
+    ];
+    
+    console.log("🗑️ Deleting forbidden fields...");
+    fieldsToDelete.forEach(field => {
+      if (updateData[field] !== undefined) {
+        console.log(`   Deleting: ${field} = ${updateData[field]}`);
+        delete updateData[field];
+      }
+    });
+    
+    // Delete any field ending with '_at' or 'At' or '_date' or 'Date'
+    Object.keys(updateData).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      if (
+        key.endsWith('_at') || 
+        key.endsWith('At') || 
+        key.endsWith('_date') ||
+        key.endsWith('Date') ||
+        lowerKey.includes('timestamp')
+      ) {
+        console.log(`   Deleting date/timestamp field: ${key}`);
+        delete updateData[key];
+      }
+    });
+
+    // Remove empty/null/undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined || updateData[key] === null || updateData[key] === '') {
+        delete updateData[key];
+      }
+    });
+
+    console.log("✅ Cleaned update data:", JSON.stringify(updateData, null, 2));
+    console.log("✅ Number of fields to update:", Object.keys(updateData).length);
+
+    // Validate if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      console.log("⚠️ No valid fields to update");
+      return res.status(400).json({
+        ok: false,
+        error: "No valid fields to update",
+      });
+    }
+
+    // Validate professional_email if provided
     if (updateData.professional_email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(updateData.professional_email)) {
+        console.log("❌ Invalid email format:", updateData.professional_email);
         return res.status(400).json({
           ok: false,
           error: "Invalid professional email format",
@@ -148,56 +213,102 @@ router.put("/personal", requireAuth, async (req, res) => {
       }
     }
 
-    // NEW: Validate higher_studies_info if provided
+    // Validate higher_studies_info if provided
     if (updateData.higher_studies_info) {
       const hsInfo = updateData.higher_studies_info;
-      if (typeof hsInfo !== "object") {
+      if (typeof hsInfo !== "object" || hsInfo === null || Array.isArray(hsInfo)) {
+        console.log("❌ Invalid higher_studies_info:", hsInfo);
         return res.status(400).json({
           ok: false,
-          error: "Higher studies info must be an object",
+          error: "Higher studies info must be a valid object",
         });
       }
     }
 
+    // Convert numeric fields to proper types
+    if (updateData.current_semester) {
+      updateData.current_semester = parseInt(updateData.current_semester);
+    }
+    if (updateData.cgpa) {
+      updateData.cgpa = parseFloat(updateData.cgpa);
+    }
+    if (updateData.tenth_score) {
+      updateData.tenth_score = parseFloat(updateData.tenth_score);
+    }
+    if (updateData.twelfth_score) {
+      updateData.twelfth_score = parseFloat(updateData.twelfth_score);
+    }
+
     let updated;
 
-    if (userRole === "student") {
-      updated = await db
-        .update(student_profile)
-        .set({
-          ...updateData,
-          updated_at: new Date(),
-        })
-        .where(eq(student_profile.user_id, userId))
-        .returning();
-    } else if (userRole === "placement") {
-      updated = await db
-        .update(placement_profile)
-        .set({
-          ...updateData,
-          updated_at: new Date(),
-        })
-        .where(eq(placement_profile.user_id, userId))
-        .returning();
-    } else if (userRole === "recruiter") {
-      updated = await db
-        .update(recruiter_profile)
-        .set({
-          ...updateData,
-          updated_at: new Date(),
-        })
-        .where(eq(recruiter_profile.user_id, userId))
-        .returning();
+    try {
+      if (userRole === "student") {
+        console.log("📝 Updating student_profile...");
+        updated = await db
+          .update(student_profile)
+          .set({
+            ...updateData,
+            updated_at: new Date(),
+          })
+          .where(eq(student_profile.user_id, userId))
+          .returning();
+      } else if (userRole === "placement") {
+        console.log("📝 Updating placement_profile...");
+        updated = await db
+          .update(placement_profile)
+          .set({
+            ...updateData,
+            updated_at: new Date(),
+          })
+          .where(eq(placement_profile.user_id, userId))
+          .returning();
+      } else if (userRole === "recruiter") {
+        console.log("📝 Updating recruiter_profile...");
+        updated = await db
+          .update(recruiter_profile)
+          .set({
+            ...updateData,
+            updated_at: new Date(),
+          })
+          .where(eq(recruiter_profile.user_id, userId))
+          .returning();
+      } else {
+        console.log("❌ Unknown role:", userRole);
+        return res.status(400).json({
+          ok: false,
+          error: `Unknown user role: ${userRole}`,
+        });
+      }
+    } catch (dbError) {
+      console.error("❌❌❌ DATABASE ERROR ❌❌❌");
+      console.error("Error name:", dbError.name);
+      console.error("Error message:", dbError.message);
+      console.error("Error stack:", dbError.stack);
+      
+      return res.status(500).json({
+        ok: false,
+        error: "Database update failed",
+        details: dbError.message,
+      });
     }
 
     if (!updated || updated.length === 0) {
+      console.log("❌ No profile found/updated");
       return res.status(404).json({ ok: false, error: "Profile not found" });
     }
 
+    console.log("✅✅✅ UPDATE SUCCESSFUL ✅✅✅");
     res.json({ ok: true, profile: updated[0] });
   } catch (e) {
-    console.error("Error updating profile:", e);
-    res.status(500).json({ ok: false, error: String(e) });
+    console.error("❌❌❌ OUTER ERROR ❌❌❌");
+    console.error("Error:", e);
+    console.error("Error message:", e.message);
+    console.error("Error stack:", e.stack);
+    
+    res.status(500).json({
+      ok: false,
+      error: String(e.message || e),
+    });
   }
 });
 
@@ -255,7 +366,6 @@ router.delete("/education/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Experience now comes from student_applications with approved offers
 router.get("/experience", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;

@@ -160,35 +160,57 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
           border: "1px solid",
           borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           borderRadius: 2,
+          overflow: "hidden",
         }}
       >
-        <Box sx={{ p: 4 }}>
-          {/* HEADER */}
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: "flex", alignItems: "start", gap: 2, mb: 2 }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant="h4"
-                  sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
-                >
-                  {mainTitle}
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: "text.secondary", fontWeight: 600, mb: 2 }}
-                >
-                  {post.company_name}
-                </Typography>
-              </Box>
-            </Box>
+        {/* HEADER WITH BACKGROUND IMAGE */}
+        <Box
+          sx={{
+            position: "relative",
+            minHeight: 280,
+            backgroundImage: post.media
+              ? `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${post.media})`
+              : `linear-gradient(135deg, ${
+                  theme.palette.mode === "dark" ? "#1e293b" : "#8b5cf6"
+                } 0%, ${
+                  theme.palette.mode === "dark" ? "#334155" : "#a78bfa"
+                } 100%)`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            p: 4,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Box sx={{ position: "relative", zIndex: 1 }}>
+            <Typography
+              variant="h3"
+              sx={{
+                color: "white",
+                fontWeight: 700,
+                mb: 1,
+                textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+              }}
+            >
+              {mainTitle}
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                color: "rgba(255, 255, 255, 0.95)",
+                fontWeight: 600,
+                mb: 2,
+                textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
+              }}
+            >
+              {post.company_name}
+            </Typography>
           </Box>
-          <Divider
-            sx={{
-              bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-              mb: 4,
-            }}
-          />
+        </Box>
 
+        <Box sx={{ p: 4 }}>
           {/* QUICK INFO GRID */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {post.industry && (
@@ -295,39 +317,6 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             )}
           </Grid>
 
-          {/* DESCRIPTION / NOTES */}
-          {post.notes && (
-            <>
-              <Typography
-                variant="h6"
-                sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
-              >
-                Description & Notes
-              </Typography>
-              <Box
-                sx={{
-                  p: 3,
-                  bgcolor: "background.default",
-                  borderRadius: 2,
-                  border: "1px solid",
-                  borderColor:
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                  mb: 4,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: "text.secondary",
-                    lineHeight: 1.8,
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {post.notes}
-                </Typography>
-              </Box>
-            </>
-          )}
-
           <Divider
             sx={{
               bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
@@ -399,7 +388,6 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                           {pos.description}
                         </Typography>
                       )}
-                      {/* Add chips/line/anything else as needed */}
                     </Paper>
                   </Grid>
                 ))}
@@ -407,58 +395,44 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
             </Box>
           )}
 
-          <Divider
-            sx={{
-              bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-              mb: 4,
-            }}
-          />
-
-          {/* POSTER / MEDIA -- ONLY IF MEDIA EXISTS */}
-          {post.media && (
-            <Box sx={{ mb: 4, textAlign: "center" }}>
-              <Box sx={{ position: "relative", mb: 3 }}>
-                <Chip
-                  label="POSTER / MEDIA"
-                  sx={{
-                    position: "relative",
-                    bgcolor:
-                      theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9",
-                    color: "text.secondary",
-                    fontWeight: 600,
-                    zIndex: 1,
-                  }}
-                />
-              </Box>
-              <Button
-                component="a"
-                href={post.media}
-                target="_blank"
-                rel="noopener noreferrer"
-                startIcon={<LinkIcon />}
+          {/* DESCRIPTION / NOTES - MOVED TO END */}
+          {post.notes && (
+            <>
+              <Divider
                 sx={{
-                  mb: 2,
-                  textTransform: "none",
-                  color: "#8b5cf6",
-                }}
-              >
-                Open Original File
-              </Button>
-              <Box
-                component="img"
-                src={post.media}
-                alt="Job Poster"
-                sx={{
-                  maxWidth: "100%",
-                  maxHeight: 600,
-                  borderRadius: 2,
-                  border: `1px solid ${
-                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0"
-                  }`,
-                  boxShadow: theme.shadows[4],
+                  bgcolor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 4,
                 }}
               />
-            </Box>
+              <Typography
+                variant="h6"
+                sx={{ color: "text.primary", fontWeight: 700, mb: 2 }}
+              >
+                Description & Notes
+              </Typography>
+              <Box
+                sx={{
+                  p: 3,
+                  bgcolor: "background.default",
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 4,
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: "text.secondary",
+                    lineHeight: 1.8,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {post.notes}
+                </Typography>
+              </Box>
+            </>
           )}
         </Box>
       </Card>

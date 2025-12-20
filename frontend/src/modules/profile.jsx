@@ -40,6 +40,7 @@ import EducationCard from "@/components/profile/EducationCard";
 import { useTheme } from "@mui/material/styles";
 import EditEducationDialog from "@/components/profile/EditEducationDialog";
 import OfferLettersSection from "@/components/profile/OfferLettersSection";
+import PersonalDetailsEditDialog from "@/components/profile/PersonalDetailsEditDialog";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -60,8 +61,15 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentEducation, setCurrentEducation] = useState(null);
+
   const [formData, setFormData] = useState({});
   const [userRole, setUserRole] = useState(null);
+  
+  // New states for personal details edit dialog
+  const [personalEditDialogOpen, setPersonalEditDialogOpen] = useState(false);
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+  const [personalFormData, setPersonalFormData] = useState({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // NEW: States for higher studies dialog
   const [editDialog, setEditDialog] = useState(null);
@@ -148,6 +156,172 @@ export default function ProfilePage() {
     }
   };
 
+const handleOpenPersonalEditDialog = () => {
+  const { 
+    created_at, updated_at, createdAt, updatedAt,
+    date_of_birth, dateOfBirth, dob, birth_date, birthDate,
+    id, user_id, userId, role,
+    ...cleanData 
+  } = formData;
+  
+  Object.keys(cleanData).forEach(key => {
+    const lowerKey = key.toLowerCase();
+    if (
+      lowerKey.includes('date') || 
+      lowerKey.includes('timestamp') ||
+      lowerKey.endsWith('_at') ||
+      lowerKey.endsWith('at')
+    ) {
+      console.log(`Removing date field: ${key}`);
+      delete cleanData[key];
+    }
+  });
+  
+  console.log("Opening edit dialog with cleaned data:", cleanData);
+  setPersonalFormData(cleanData);
+  setHasUnsavedChanges(false);
+  setPersonalEditDialogOpen(true);
+};
+
+// Handler to close the dialog
+const handleClosePersonalEditDialog = () => {
+  if (hasUnsavedChanges) {
+    if (confirm("You have unsaved changes. Are you sure you want to close?")) {
+      setPersonalEditDialogOpen(false);
+      setHasUnsavedChanges(false);
+      setPersonalFormData({});
+    }
+  } else {
+    setPersonalEditDialogOpen(false);
+    setPersonalFormData({});
+  }
+};
+
+// Handler for form changes
+const handlePersonalFormChange = (field, value) => {
+  setPersonalFormData(prev => ({
+    ...prev,
+    [field]: value
+  }));
+  setHasUnsavedChanges(true);
+};
+
+// Handler for save button (opens confirmation)
+const handleSavePersonalClick = () => {
+  if (!hasUnsavedChanges) {
+    alert("No changes to save");
+    return;
+  }
+  setConfirmationDialogOpen(true);
+};
+
+// Handler to cancel confirmation
+const handleCancelSave = () => {
+  setConfirmationDialogOpen(false);
+};
+// Add this function after handleCancelSave:
+
+const handleConfirmSave = async () => {
+  try {
+    console.log("=== SAVING PERSONAL DATA ===");
+    console.log("Raw personalFormData:", personalFormData);
+    
+    const token = getToken();
+    
+    // Remove ALL possible date and system field variations
+    const { 
+      // Timestamp fields
+      created_at, 
+      updated_at, 
+      createdAt,
+      updatedAt,
+      // Date fields that cause toISOString errors
+      date_of_birth,
+      dateOfBirth,
+      dob,
+      birth_date,
+      birthDate,
+      // System fields
+      id, 
+      user_id, 
+      userId,
+      role,
+      email, // Don't allow email update through this endpoint
+      ...cleanedData 
+    } = personalFormData;
+    
+    // Additional safety: Remove any remaining date-like fields
+    Object.keys(cleanedData).forEach(key => {
+      const value = cleanedData[key];
+      const lowerKey = key.toLowerCase();
+      
+      // Remove if key suggests it's a date/timestamp
+      if (
+        lowerKey.includes('date') || 
+        lowerKey.includes('timestamp') ||
+        lowerKey.endsWith('_at') ||
+        lowerKey.endsWith('at')
+      ) {
+        console.log(`Removing date field: ${key}`);
+        delete cleanedData[key];
+      }
+      
+      // Remove if value looks like an ISO date string
+      if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+        console.log(`Removing ISO date value: ${key} = ${value}`);
+        delete cleanedData[key];
+      }
+      
+      // Remove empty values
+      if (value === '' || value === null || value === undefined) {
+        delete cleanedData[key];
+      }
+    });
+    
+    console.log("✅ Cleaned data being sent:", cleanedData);
+    console.log("✅ Number of fields:", Object.keys(cleanedData).length);
+    
+    // Validate we have something to update
+    if (Object.keys(cleanedData).length === 0) {
+      alert("No valid fields to update");
+      setConfirmationDialogOpen(false);
+      return;
+    }
+    
+    const response = await axios.put(
+      `${BACKEND_URL}/api/profile/personal`, 
+      cleanedData,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    console.log("✅ Update successful:", response.data);
+    
+    // Update formData with the cleaned data
+    setFormData({ ...formData, ...cleanedData });
+    setConfirmationDialogOpen(false);
+    setPersonalEditDialogOpen(false);
+    setHasUnsavedChanges(false);
+    setPersonalFormData({});
+    
+    alert("Personal information updated successfully!");
+    fetchOverview();
+    fetchPersonal(); // Refresh the personal data
+  } catch (error) {
+    console.error("❌ Error updating personal info:", error);
+    console.error("❌ Error response:", error.response?.data);
+    
+    const errorMessage = error.response?.data?.error 
+      || error.response?.data?.details 
+      || error.message 
+      || "Failed to update personal information";
+    
+    alert(`Failed to update: ${errorMessage}`);
+    
+    setConfirmationDialogOpen(false);
+  }
+};
   // NEW: Handlers for higher studies dialog
   const handleOpenDialog = (dialogType) => {
     setEditDialog(dialogType);
@@ -656,7 +830,7 @@ export default function ProfilePage() {
               )}
             </Box>
 
-            {/* NEW: Higher Studies Card - Only for students with higher_education career path */}
+            {/* Higher Studies Card */}
             {userRole === "student" &&
               data.profile?.career_path === "higher_education" && (
                 <Box
@@ -865,16 +1039,42 @@ export default function ProfilePage() {
             p: 4,
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 3 }}
           >
-            Personal Information
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-            Update your personal details and contact information
-          </Typography>
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{ color: "text.primary", fontWeight: 600, mb: 1 }}
+              >
+                Personal Information
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Your personal details and contact information
+              </Typography>
+            </Box>
+            
+            {/* Edit button for students */}
+            {userRole === "student" && (
+              <Button
+                variant="contained"
+                startIcon={<Edit />}
+                onClick={handleOpenPersonalEditDialog}
+                sx={{
+                  bgcolor: "#8b5cf6",
+                  textTransform: "none",
+                  "&:hover": { bgcolor: "#7c3aed" },
+                }}
+              >
+                Edit Personal Details
+              </Button>
+            )}
+          </Stack>
 
+          {/* Read-only display for all users */}
           <Box
             sx={{
               display: "grid",
@@ -882,497 +1082,120 @@ export default function ProfilePage() {
               gap: 3,
             }}
           >
-            {/* All your existing fields stay exactly the same */}
-            {/* Full Name */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Full Name"
-                value={formData.full_name || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, full_name: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Full Name
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.full_name || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Email
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.email || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Phone Number
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.contact_number || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                College Name
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.college_name || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Branch
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.branch || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Current Semester
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.current_semester || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                CGPA
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.cgpa || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                10th Score (%)
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.tenth_score || "N/A"}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                12th Score (%)
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.twelfth_score || "N/A"}
+              </Typography>
+            </Box>
+
+            {(formData.linkedin_profile && formData.linkedin_profile !== "N/A") && (
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Full Name
+                  LinkedIn Profile
                 </Typography>
                 <Typography variant="body1" color="text.primary">
-                  {formData.full_name || "N/A"}
+                  {formData.linkedin_profile}
                 </Typography>
               </Box>
             )}
 
-            {/* Email */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Email"
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Skills
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {formData.skills || "N/A"}
+              </Typography>
+            </Box>
+
+            {(formData.professional_email && formData.professional_email !== "N/A") && (
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Email
+                  Professional Email
                 </Typography>
                 <Typography variant="body1" color="text.primary">
-                  {formData.email || "N/A"}
+                  {formData.professional_email}
                 </Typography>
               </Box>
-            )}
-
-            {/* Phone */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Phone Number"
-                value={formData.contact_number || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, contact_number: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Phone Number
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.contact_number || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* College */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="College Name"
-                value={formData.college_name || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, college_name: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  College Name
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.college_name || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Branch */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Branch"
-                value={formData.branch || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, branch: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Branch
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.branch || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Semester */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Current Semester"
-                type="number"
-                value={formData.current_semester || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, current_semester: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Current Semester
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.current_semester || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* CGPA */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="CGPA"
-                type="number"
-                value={formData.cgpa || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, cgpa: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  CGPA
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.cgpa || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* 10th */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="10th Score (%)"
-                type="number"
-                value={formData.tenth_score || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, tenth_score: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  10th Score (%)
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.tenth_score || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* 12th Score */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="12th Score (%)"
-                type="number"
-                value={formData.twelfth_score || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, twelfth_score: e.target.value })
-                }
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  12th Score (%)
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.twelfth_score || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* LinkedIn Profile */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="LinkedIn Profile"
-                value={formData.linkedin_profile || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, linkedin_profile: e.target.value })
-                }
-                fullWidth
-                placeholder="https://linkedin.com/in/yourprofile"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              formData.linkedin_profile &&
-              formData.linkedin_profile !== "N/A" && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    LinkedIn Profile
-                  </Typography>
-                  <Typography variant="body1" color="text.primary">
-                    {formData.linkedin_profile}
-                  </Typography>
-                </Box>
-              )
-            )}
-
-            {/* Skills */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Skills"
-                value={formData.skills || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, skills: e.target.value })
-                }
-                multiline
-                rows={2}
-                fullWidth
-                placeholder="React, Node.js, Python, Machine Learning"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Skills
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  {formData.skills || "N/A"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Professional Email */}
-            {canEditPersonalInfo ? (
-              <TextField
-                label="Professional Email"
-                type="email"
-                value={formData.professional_email || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    professional_email: e.target.value,
-                  })
-                }
-                fullWidth
-                placeholder="your.name@company.com"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: "text.primary",
-                    bgcolor: "background.default",
-                    "& fieldset": {
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#8b5cf6",
-                    },
-                    "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "#8b5cf6" },
-                  },
-                }}
-              />
-            ) : (
-              formData.professional_email &&
-              formData.professional_email !== "N/A" && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Professional Email
-                  </Typography>
-                  <Typography variant="body1" color="text.primary">
-                    {formData.professional_email}
-                  </Typography>
-                </Box>
-              )
             )}
           </Box>
 
-          {/* NEW: Higher Studies Section - Only for higher_education students */}
+          {/* Higher Studies Section */}
           {userRole === "student" &&
             formData.career_path === "higher_education" && (
               <>
@@ -1389,7 +1212,6 @@ export default function ProfilePage() {
                 </Typography>
 
                 {canEditPersonalInfo ? (
-                  // Edit mode - show text fields
                   <Box
                     sx={{
                       display: "grid",
@@ -1544,7 +1366,6 @@ export default function ProfilePage() {
                     />
                   </Box>
                 ) : (
-                  // View mode - display format exactly like your screenshot
                   <Box
                     sx={{
                       display: "grid",
@@ -1552,7 +1373,6 @@ export default function ProfilePage() {
                       gap: 3,
                     }}
                   >
-                    {/* Degree/Program */}
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         Degree/Program
@@ -1562,7 +1382,6 @@ export default function ProfilePage() {
                       </Typography>
                     </Box>
 
-                    {/* Field of Study */}
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         Field of Study
@@ -1572,7 +1391,6 @@ export default function ProfilePage() {
                       </Typography>
                     </Box>
 
-                    {/* Target Country */}
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         Target Country
@@ -1582,7 +1400,6 @@ export default function ProfilePage() {
                       </Typography>
                     </Box>
 
-                    {/* Target Universities */}
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         Target Universities
@@ -1599,7 +1416,7 @@ export default function ProfilePage() {
         </Box>
       )}
 
-      {/* Education Tab - Keep exactly as is */}
+      {/* Education Tab */}
       {activeTab === "education" && (
         <Box>
           <Stack
@@ -1659,7 +1476,7 @@ export default function ProfilePage() {
         </Box>
       )}
 
-      {/* Experience Tab - Keep exactly as is */}
+      {/* Experience Tab */}
       {activeTab === "experience" && (
         <Box>
           <Typography
@@ -1733,7 +1550,7 @@ export default function ProfilePage() {
         onSave={handleSaveEducation}
       />
 
-      {/* NEW: Higher Studies Dialog */}
+      {/* Higher Studies Dialog */}
       <Dialog
         open={editDialog === "higher_studies"}
         onClose={handleCloseDialog}
@@ -1872,6 +1689,21 @@ export default function ProfilePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Personal Details Edit Dialog Component */}
+      
+<PersonalDetailsEditDialog
+  open={personalEditDialogOpen}
+  onClose={handleClosePersonalEditDialog}  // ✅ This is correct
+  formData={personalFormData}
+  onFormChange={handlePersonalFormChange}
+  onSave={handleSavePersonalClick}
+  onCancel={handleClosePersonalEditDialog}  // ✅ Add this line
+  hasUnsavedChanges={hasUnsavedChanges}
+  onConfirmSave={handleConfirmSave}
+  onCancelSave={handleCancelSave}
+  confirmationDialogOpen={confirmationDialogOpen}
+/>
     </Box>
   );
 }
