@@ -1,42 +1,25 @@
+"use client";
 import {
   Card,
   Box,
   Typography,
   Button,
   IconButton,
-  Snackbar,
-  Alert,
+  Chip,
+  Grid,
 } from "@mui/material";
 import {
-  AttachMoney as AttachMoneyIcon,
-  LocationOn as LocationOnIcon,
-  AccessTime as AccessTimeIcon,
   BookmarkBorder as BookmarkBorderIcon,
   Bookmark as BookmarkIcon,
-  Share as ShareIcon,
-  Business as BusinessIcon,
+  Work as WorkIcon,
+  CalendarToday as CalendarIcon,
+  People as PeopleIcon,
 } from "@mui/icons-material";
-import useApplyToPost from "@/hooks/useApplyToPost";
-import ApplyDialog from "./ApplyDialog";
 import { useTheme } from "@mui/material/styles";
 
-export default function PostCard({
-  post,
-  isSaved,
-  onToggleSave,
-  onApply,
-  onViewDetails,
-  onShare,
-}) {
+// Individual PostCard Component
+function PostCard({ post, isSaved, onToggleSave, onViewDetails, onApply }) {
   const theme = useTheme();
-  const {
-    applyDialogOpen,
-    setApplyDialogOpen,
-    hasApplied,
-    handleApply,
-    snackbar,
-    handleCloseSnackbar,
-  } = useApplyToPost(post.id);
 
   // Parse positions array - handle both old and new format
   const positions = Array.isArray(post.positions)
@@ -53,368 +36,318 @@ export default function PostCard({
       ]
     : [];
 
+  // Get primary position for card display
+  const primaryPosition = positions[0] || {};
+
+  // Calculate days ago
+  const getDaysAgo = (date) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffTime = Math.abs(now - postDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Posted today";
+    if (diffDays === 1) return "Posted 1 day ago";
+    if (diffDays < 7) return `Posted ${diffDays} days ago`;
+    if (diffDays < 30) return `Posted ${Math.floor(diffDays / 7)} weeks ago`;
+    return `Posted ${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  // Mock application count (you can replace with real data from backend)
+  const applicationCount = Math.floor(Math.random() * 100) + 1;
+
   return (
-    <>
-      <Card
-        elevation={0}
+    <Card
+      elevation={0}
+      sx={{
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        borderRadius: 3,
+        overflow: "hidden",
+        transition: "all 0.3s ease",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        "&:hover": {
+          borderColor: "#8b5cf6",
+          transform: "translateY(-4px)",
+          boxShadow: "0 12px 28px rgba(139, 92, 246, 0.2)",
+        },
+      }}
+    >
+      {/* Header Section */}
+      <Box
         sx={{
-          bgcolor: "background.paper",
-          border: "1px solid",
-          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-          borderRadius: 2,
-          overflow: "hidden",
-          transition: "all 0.2s",
-          "&:hover": {
-            borderColor: "#8b5cf6",
-            transform: "translateY(-2px)",
-            boxShadow: "0 8px 24px rgba(139, 92, 246, 0.15)",
-          },
+          p: 3,
+          pb: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
         }}
       >
-        {/* Media Banner */}
-        {post.media && (
-          <Box
-            component="img"
-            src={post.media}
-            alt={post.company_name}
-            sx={{
-              width: "100%",
-              height: 180,
-              objectFit: "cover",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              "&:hover": {
-                opacity: 0.9,
-              },
-            }}
-            onClick={onViewDetails}
-          />
-        )}
-
-        <Box sx={{ p: 3 }}>
-          {/* Company Header */}
+        {/* Icon and Bookmark */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "start",
+          }}
+        >
           <Box
             sx={{
+              width: 60,
+              height: 60,
+              borderRadius: 2,
+              bgcolor: "rgba(139, 92, 246, 0.15)",
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "start",
-              mb: 2,
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Box sx={{ flex: 1 }}>
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
-              >
-                <BusinessIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "text.primary",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    "&:hover": { color: "#8b5cf6" },
-                  }}
-                  onClick={onViewDetails}
-                >
-                  {post.company_name}
-                </Typography>
-              </Box>
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <LocationOnIcon
-                    sx={{ fontSize: 16, color: "text.secondary" }}
-                  />
-                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                    {post.industry}
-                  </Typography>
-                </Box>
-                {/* NO departments, NO empty Box */}
-              </Box>
-            </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <IconButton
-                size="small"
-                onClick={onToggleSave}
-                sx={{
-                  color: isSaved ? "#a78bfa" : "text.secondary",
-                  "&:hover": {
-                    bgcolor: "rgba(139, 92, 246, 0.1)",
-                  },
-                }}
-              >
-                {isSaved ? (
-                  <BookmarkIcon sx={{ fontSize: 20 }} />
-                ) : (
-                  <BookmarkBorderIcon sx={{ fontSize: 20 }} />
-                )}
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={onShare}
-                sx={{
-                  color: "text.secondary",
-                  "&:hover": {
-                    bgcolor: "rgba(139, 92, 246, 0.1)",
-                  },
-                }}
-              >
-                <ShareIcon sx={{ fontSize: 20 }} />
-              </IconButton>
-            </Box>
+            <WorkIcon sx={{ fontSize: 32, color: "#8b5cf6" }} />
           </Box>
-
-          {/* Positions Grid */}
-          <Box
+          <IconButton
+            size="small"
+            onClick={onToggleSave}
             sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md:
-                  positions.length === 1
-                    ? "1fr"
-                    : "repeat(auto-fit, minmax(280px, 1fr))",
+              color: isSaved ? "#8b5cf6" : "text.secondary",
+              "&:hover": {
+                bgcolor: "rgba(139, 92, 246, 0.1)",
               },
-              gap: 2,
-              mb: 2,
             }}
           >
-            {positions.map((position, idx) => (
-              <Box
-                key={idx}
-                sx={{
-                  p: 2.5,
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(139, 92, 246, 0.05)"
-                      : "rgba(139, 92, 246, 0.03)",
-                  border: "1px solid",
-                  borderColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(139, 92, 246, 0.2)"
-                      : "rgba(139, 92, 246, 0.15)",
-                  borderRadius: 2,
-                }}
-              >
-                {/* Position Title */}
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    color: "text.primary",
-                    fontWeight: 700,
-                    mb: 1.5,
-                    fontSize: "1rem",
-                  }}
-                >
-                  {position.title}
-                </Typography>
+            {isSaved ? (
+              <BookmarkIcon sx={{ fontSize: 22 }} />
+            ) : (
+              <BookmarkBorderIcon sx={{ fontSize: 22 }} />
+            )}
+          </IconButton>
+        </Box>
 
-                {/* Position Details */}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {/* Location & Job Type */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 700,
-                        color:
-                          position.job_type === "Internship"
-                            ? "#10b981"
-                            : "#8b5cf6",
-                        bgcolor:
-                          position.job_type === "Internship"
-                            ? "rgba(16,185,129,0.10)"
-                            : "rgba(139, 92, 246, 0.1)",
-                        borderRadius: 1,
-                        px: 1,
-                        py: "2px",
-                        fontSize: "0.78rem",
-                        display: "inline-block",
-                      }}
-                    >
-                      {position.job_type}
-                    </Typography>
-                    {position.duration && (
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <AccessTimeIcon
-                          sx={{ fontSize: 14, color: "text.secondary" }}
-                        />
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "text.secondary", fontSize: "0.75rem" }}
-                        >
-                          {position.duration}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
+        {/* Latest Opportunity Label */}
+        <Box>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.primary",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              mb: 0.3,
+            }}
+          >
+            Latest Opportunity
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              fontSize: "0.75rem",
+            }}
+          >
+            {getDaysAgo(post.application_date)}
+          </Typography>
+        </Box>
 
-                  {/* Package */}
-                  {position.package_offered && (
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                    >
-                      <AttachMoneyIcon
-                        sx={{ fontSize: 16, color: "#10b981" }}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "text.primary", fontWeight: 600 }}
-                      >
-                        ₹{position.package_offered}
-                        {position.job_type === "Internship"
-                          ? "/month"
-                          : " per month"}
-                      </Typography>
-                    </Box>
-                  )}
-                  {/* NO skills, NO empty Box */}
-                </Box>
-              </Box>
-            ))}
-          </Box>
+        {/* Job Title */}
+        <Typography
+          variant="h6"
+          sx={{
+            color: "text.primary",
+            fontWeight: 700,
+            fontSize: "1.25rem",
+            lineHeight: 1.3,
+            mb: 0.5,
+            cursor: "pointer",
+            "&:hover": { color: "#8b5cf6" },
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}
+          onClick={onViewDetails}
+        >
+          {primaryPosition.title || post.position || "Position"}
+        </Typography>
 
-          {/* Description */}
-          {post.notes && (
-            <Typography
-              variant="body2"
+        {/* Company and Location */}
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            fontSize: "0.9rem",
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+          }}
+        >
+          {post.company_name} • {post.industry}
+        </Typography>
+      </Box>
+
+      {/* Tags Section */}
+      <Box sx={{ px: 3, pb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1,
+            flexWrap: "wrap",
+          }}
+        >
+          <Chip
+            label={primaryPosition.job_type || "Full Time"}
+            size="small"
+            sx={{
+              bgcolor:
+                primaryPosition.job_type === "Internship"
+                  ? "rgba(34, 197, 94, 0.15)"
+                  : primaryPosition.job_type === "Full Time"
+                  ? "rgba(59, 130, 246, 0.15)"
+                  : "rgba(139, 92, 246, 0.15)",
+              color:
+                primaryPosition.job_type === "Internship"
+                  ? "#22c55e"
+                  : primaryPosition.job_type === "Full Time"
+                  ? "#3b82f6"
+                  : "#8b5cf6",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              height: "28px",
+            }}
+          />
+          {primaryPosition.duration && (
+            <Chip
+              label={primaryPosition.duration}
+              size="small"
               sx={{
-                color: "text.secondary",
-                mb: 2,
-                lineHeight: 1.6,
-                fontSize: "0.875rem",
+                bgcolor: "rgba(139, 92, 246, 0.1)",
+                color: "#8b5cf6",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                height: "28px",
               }}
-            >
-              {post.notes.length > 150
-                ? `${post.notes.substring(0, 150)}...`
-                : post.notes}
-            </Typography>
+            />
+          )}
+          {primaryPosition.package_offered && (
+            <Chip
+              label={`${primaryPosition.package_offered} ${
+                primaryPosition.job_type === "Internship" ? "/mo" : "LPA"
+              }`}
+              size="small"
+              sx={{
+                bgcolor: "rgba(168, 85, 247, 0.15)",
+                color: "#a855f7",
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                height: "28px",
+              }}
+            />
+          )}
+        </Box>
+      </Box>
+
+      <Box sx={{ flex: 1 }} />
+
+      {/* Footer Info */}
+      <Box
+        sx={{
+          px: 3,
+          pb: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+          borderTop: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          pt: 2,
+          mt: 2,
+        }}
+      >
+        {/* Deadline */}
+        {post.application_deadline &&
+          !isNaN(new Date(post.application_deadline).getTime()) && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CalendarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+              >
+                Application Deadline:{" "}
+                {new Date(post.application_deadline).toLocaleDateString(
+                  "en-US",
+                  { month: "short", day: "numeric", year: "numeric" }
+                )}
+              </Typography>
+            </Box>
           )}
 
-          {/* Footer - Dates and Actions */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              pt: 2,
-              borderTop: "1px solid",
-              borderColor:
-                theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-            }}
+        {/* Students Applied */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <PeopleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+          <Typography
+            variant="body2"
+            sx={{ color: "text.secondary", fontSize: "0.85rem" }}
           >
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <AccessTimeIcon
-                  sx={{ fontSize: 14, color: "text.secondary" }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{ color: "text.secondary", fontSize: "0.75rem" }}
-                >
-                  Posted {new Date(post.application_date).toLocaleDateString()}
-                </Typography>
-              </Box>
-              {post.application_deadline &&
-                !isNaN(new Date(post.application_deadline).getTime()) && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <AccessTimeIcon sx={{ fontSize: 14, color: "#ef4444" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "#ef4444", fontSize: "0.75rem" }}
-                    >
-                      Deadline{" "}
-                      {new Date(post.application_deadline).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                )}
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={onViewDetails}
-                sx={{
-                  borderColor: "#8b5cf6",
-                  color: "#8b5cf6",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  fontSize: "0.813rem",
-                  "&:hover": {
-                    borderColor: "#7c3aed",
-                    bgcolor: "rgba(139, 92, 246, 0.1)",
-                  },
-                }}
-              >
-                View Details
-              </Button>
-              {hasApplied ? (
-                <Button
-                  variant="contained"
-                  size="small"
-                  disabled
-                  sx={{
-                    bgcolor: "#10b981",
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.813rem",
-                  }}
-                >
-                  Applied
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => setApplyDialogOpen(true)}
-                  sx={{
-                    bgcolor: "#10b981",
-                    "&:hover": { bgcolor: "#059669" },
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.813rem",
-                  }}
-                >
-                  Apply Now
-                </Button>
-              )}
-            </Box>
-          </Box>
+            {applicationCount} students applied
+          </Typography>
         </Box>
-      </Card>
+      </Box>
 
-      <ApplyDialog
-        open={applyDialogOpen}
-        post={post}
-        onClose={() => setApplyDialogOpen(false)}
-        onSubmit={handleApply}
-      />
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
+      {/* Apply Button */}
+      <Box sx={{ p: 3, pt: 0 }}>
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={onApply || onViewDetails}
+          sx={{
+            bgcolor: "#8b5cf6",
+            "&:hover": {
+              bgcolor: "#7c3aed",
+              transform: "scale(1.02)",
+            },
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: "0.95rem",
+            py: 1.5,
+            borderRadius: 2,
+            boxShadow: "0 4px 12px rgba(139, 92, 246, 0.3)",
+            transition: "all 0.2s",
+          }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </>
+          {onApply ? "Apply Now" : "View Details"}
+        </Button>
+      </Box>
+    </Card>
   );
 }
+
+// Grid Container Component - Main Export
+export default function PostsGrid({
+  posts,
+  savedPosts = [],
+  onToggleSave,
+  onViewDetails,
+  onApply,
+}) {
+  return (
+    <Box>
+      <Grid container spacing={3}>
+        {posts.map((post) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={post.id}>
+            <PostCard
+              post={post}
+              isSaved={savedPosts.includes(post.id)}
+              onToggleSave={() => onToggleSave && onToggleSave(post.id)}
+              onViewDetails={() => onViewDetails && onViewDetails(post)}
+              onApply={() => onApply && onApply(post)}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+}
+
+// Export both components
+export { PostCard, PostsGrid };

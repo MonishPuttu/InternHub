@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, use } from "react";
 import { Box, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getUser } from "@/lib/session";
-import OverallDetailsConsolidated from "@/components/studentdata/overalldetails";
+import OverallDetailsConsolidated from "@/components/studentdata/OverallDetailsConsolidated";
 
-export default function StudentDetailPage({ params }) {
+export default function OverallDetailsPage({ params }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [user, setUser] = useState(null);
-    const resolvedParams = use(params);
-    const studentId = resolvedParams.studentId;
+    const studentId = searchParams.get("studentId");
 
     useEffect(() => {
         const currentUser = getUser();

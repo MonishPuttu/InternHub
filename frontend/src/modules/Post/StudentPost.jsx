@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { BACKEND_URL, INDUSTRIES } from "@/constants/postConstants";
-import PostCard from "@/components/Post/PostCard";
+import PostsGrid from "@/components/Post/PostCard";
 import { useTheme } from "@mui/material/styles";
 import ApplyDialog from "@/components/Post/ApplyDialog";
 
@@ -38,7 +38,7 @@ export default function StudentPosts() {
   const [showAppliedOnly, setShowAppliedOnly] = useState(false);
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 10;
+  const postsPerPage = 12; // Changed to 12 for better grid layout
 
   useEffect(() => {
     fetchApprovedPosts();
@@ -216,6 +216,7 @@ export default function StudentPosts() {
       return matchesIndustry && matchesSearch;
     });
   };
+  
   const filteredPosts = getFilteredPosts();
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;
@@ -224,6 +225,7 @@ export default function StudentPosts() {
 
   const handlePageChange = (event, page) => {
     setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
@@ -305,42 +307,7 @@ export default function StudentPosts() {
             >
               {posts.filter((post) => !appliedPosts.includes(post.id)).length}
             </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              border: "2px solid",
-              borderColor: showSavedOnly
-                ? "#a78bfa"
-                : theme.palette.mode === "dark"
-                ? "#334155"
-                : "#e2e8f0",
-              bgcolor: "background.paper",
-              boxShadow: showSavedOnly
-                ? "0 0 10px rgba(167, 139, 250, 0.5)"
-                : "none",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#a78bfa",
-              },
-            }}
-            onClick={() => setShowSavedOnly(!showSavedOnly)}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: showSavedOnly ? "#a78bfa" : "text.secondary",
-              }}
-            >
-              Saved Posts
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#a78bfa", fontWeight: 700 }}>
-              {savedPosts.length}
-            </Typography>
-          </Box>
+          </Box>         
 
           <Box
             sx={{
@@ -560,7 +527,7 @@ export default function StudentPosts() {
         </Stack>
       </Box>
 
-      {/* Posts List */}
+      {/* Posts Grid */}
       {filteredPosts.length === 0 ? (
         <Box
           sx={{
@@ -593,21 +560,13 @@ export default function StudentPosts() {
         </Box>
       ) : (
         <>
-          <Stack spacing={3}>
-            {currentPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                isSaved={savedPosts.includes(post.id)}
-                onToggleSave={() => toggleSavePost(post.id)}
-                onApply={() => handleApplyClick(post)}
-                onViewDetails={() =>
-                  router.push(`/Post/postdetails/${post.id}`)
-                }
-                onShare={() => handleShare(post)}
-              />
-            ))}
-          </Stack>
+          <PostsGrid
+            posts={currentPosts}
+            savedPosts={savedPosts}
+            onToggleSave={toggleSavePost}
+            onViewDetails={(post) => router.push(`/Post/postdetails/${post.id}`)}
+            onApply={handleApplyClick}
+          />
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -617,6 +576,7 @@ export default function StudentPosts() {
                 page={currentPage}
                 onChange={handlePageChange}
                 color="primary"
+                size="large"
                 sx={{
                   "& .MuiPaginationItem-root": {
                     color: "text.primary",

@@ -358,25 +358,7 @@ export default function StudentData() {
                         Export CSV
                     </Button>
 
-                    <Button
-                        variant="contained"
-                        startIcon={<FileUploadIcon />}
-                        component="label"
-                        disabled={importing}
-                        sx={{
-                            bgcolor: "#8b5cf6",
-                            "&:hover": { bgcolor: "#7c3aed" },
-                        }}
-                    >
-                        {importing ? "Importing..." : "Import CSV"}
-                        <input
-                            type="file"
-                            accept=".csv"
-                            hidden
-                            ref={fileInputRef}
-                            onChange={handleImportCSV}
-                        />
-                    </Button>
+                    
                 </Box>
             </Box>
 
