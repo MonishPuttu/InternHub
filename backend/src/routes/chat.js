@@ -193,7 +193,8 @@ export default function chatSocket(io) {
         };
 
         console.log(`Sending room message from ${senderId} to room ${roomId}`);
-        io.to(roomId).emit("receive_room_message", msgWithDetails);
+        // Emit to other sockets in the room but not the sender (avoid duplicate delivery)
+        socket.to(roomId).emit("receive_room_message", msgWithDetails);
         socket.emit("message_sent", msgWithDetails);
       } catch (e) {
         console.error("Error sending room message:", e);

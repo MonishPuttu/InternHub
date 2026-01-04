@@ -69,7 +69,8 @@ export default function useChat() {
 
       const savedRoom = localStorage.getItem("joinedRoom");
       if (savedRoom) {
-        socket.emit("join_room", savedRoom);
+        // send both roomId and userId to match backend expectation
+        socket.emit("join_room", { roomId: savedRoom, userId: user.id });
         setJoinedRoom(savedRoom);
       }
     };
@@ -109,7 +110,7 @@ export default function useChat() {
 
     const handleReceiveRoomMessage = (msg) => {
       const currentRoom = localStorage.getItem("joinedRoom");
-      if (msg.roomId === currentRoom) {
+      if (String(msg.roomId) === String(currentRoom)) {
         setMessages((prev) => {
           const filtered = prev.filter((m) => {
             const id = String(m.id || "");
@@ -124,13 +125,39 @@ export default function useChat() {
       console.error("❌ Message error:", error);
     };
 
+    const handleMessageSent = (msg) => {
+      // Replace temp message placeholder with server-sent message, or append if not found
+      setMessages((prev) => {
+        // If server message id already exists, avoid duplicating
+        if (prev.some((m) => String(m.id) === String(msg.id))) {
+          return prev;
+        }
+
+        const idx = prev.findIndex((m) =>
+          String(m.id || "").startsWith("temp-") &&
+          m.message === msg.message &&
+          String(m.roomId) === String(msg.roomId)
+        );
+
+        if (idx !== -1) {
+          const copy = [...prev];
+          copy[idx] = msg;
+          return copy;
+        }
+
+        return [...prev, msg];
+      });
+    };
+
     socket.on("receive_message", handleReceiveMessage);
     socket.on("receive_room_message", handleReceiveRoomMessage);
+    socket.on("message_sent", handleMessageSent);
     socket.on("message_error", handleMessageError);
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
       socket.off("receive_room_message", handleReceiveRoomMessage);
+      socket.off("message_sent", handleMessageSent);
       socket.off("message_error", handleMessageError);
     };
   }, []);
@@ -227,6 +254,23 @@ export default function useChat() {
         return;
       }
 
+      // Determine userId robustly: prefer `user` state, fallback to localStorage
+      let userId = user?.id;
+      if (!userId) {
+        try {
+          const stored = JSON.parse(localStorage.getItem("user"));
+          userId = stored?.id;
+        } catch (e) {
+          userId = null;
+        }
+      }
+
+      if (!userId) {
+        console.error("joinRoom called but no userId available");
+        setErrorMsg("You must be logged in to join a room");
+        return;
+      }
+
       try {
         const res = await axios.post(
           `${BACKEND_URL}/api/rooms/${roomId}/join`,
@@ -235,7 +279,8 @@ export default function useChat() {
         );
 
         if (res.data.ok) {
-          socket.emit("join_room", roomId);
+          // include userId so backend can validate and add socket to the room
+          socket.emit("join_room", { roomId, userId });
           localStorage.setItem("joinedRoom", roomId);
           setJoinedRoom(roomId);
           await fetchMessages(token, roomId);
@@ -246,7 +291,7 @@ export default function useChat() {
         setErrorMsg("Failed to join room");
       }
     },
-    [fetchMessages]
+    [fetchMessages, user]
   );
 
   // Create room
@@ -268,6 +313,7 @@ export default function useChat() {
         if (res.data.ok) {
           console.log("✅ Room created:", res.data.room);
           await fetchRooms();
+          // join the newly created room via the existing joinRoom helper
           await joinRoom(res.data.room.id);
         }
       } catch (err) {
@@ -330,9 +376,10 @@ export default function useChat() {
     window.location.reload();
   }, []);
 
-  const visibleMessages = messages.filter(
-    (m) => !joinedRoom || m.roomId === joinedRoom
-  );
+  const visibleMessages = messages.filter((m) => {
+    if (!joinedRoom) return true;
+    return String(m.roomId) === String(joinedRoom);
+  });
 
   return {
     socket: socketRef.current,

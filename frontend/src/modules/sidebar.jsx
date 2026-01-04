@@ -99,7 +99,7 @@ const navigationItems = [
     roles: ["recruiter", "placement"],
   },
 
-  // { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: [] },
+  { text: "Chat", icon: <FeedbackIcon />, path: "/chat", roles: ["student", "placement"] },
 ];
 
 const getFilteredNavigationItems = (user) => {
