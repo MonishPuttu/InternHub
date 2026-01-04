@@ -128,7 +128,10 @@ export default function StudentDashboard() {
     });
   };
 
+
   const formatPackage = (packageOffered) => {
+
+
     // Check for null, undefined, empty string, or "null" string
     if (
       packageOffered === null ||
@@ -136,6 +139,7 @@ export default function StudentDashboard() {
       packageOffered === "" ||
       packageOffered === "null"
     ) {
+
       return "Not disclosed";
     }
 
@@ -148,8 +152,10 @@ export default function StudentDashboard() {
       const min = parseFloat(parts[0]);
       const max = parseFloat(parts[1]);
 
+
       if (!isNaN(min) && !isNaN(max)) {
         const result = `₹${min.toFixed(2)}-${max.toFixed(2)} LPA`;
+
         return result;
       }
     }
