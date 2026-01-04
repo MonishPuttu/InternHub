@@ -14,7 +14,6 @@ import {
     Paper,
     InputAdornment,
     CircularProgress,
-    Snackbar,
     Alert,
     Select,
     MenuItem,
@@ -26,7 +25,7 @@ import {
     DialogContent,
     DialogActions,
 } from "@mui/material";
-import { Search as SearchIcon, Edit as EditIcon, FileDownload as FileDownloadIcon, FileUpload as FileUploadIcon } from "@mui/icons-material";
+import { Search as SearchIcon, Edit as EditIcon, FileDownload as FileDownloadIcon } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
 import Papa from "papaparse";
@@ -37,12 +36,20 @@ const BACKEND_URL =
 export default function StudentData() {
     const router = useRouter();
     const [students, setStudents] = useState([]);
+    const [allStudents, setAllStudents] = useState([]); // Store all fetched students
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [searchValue, setSearchValue] = useState("");
     const [department, setDepartment] = useState("");
     const [year, setYear] = useState("");
+    const [selectedPost, setSelectedPost] = useState("");
+    
+    // Post/Company filter state
+    const [posts, setPosts] = useState([]);
+    const [applications, setApplications] = useState([]);
+    const [loadingPosts, setLoadingPosts] = useState(false);
+    const [loadingApplications, setLoadingApplications] = useState(false);
 
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -57,8 +64,49 @@ export default function StudentData() {
         careerPath: "",
     });
     const [updating, setUpdating] = useState(false);
-    const [importing, setImporting] = useState(false);
     const fileInputRef = useRef(null);
+
+    // Fetch posts for the company filter
+    const fetchPosts = async () => {
+        try {
+            setLoadingPosts(true);
+            const token = getToken();
+            const response = await axios.get(
+                `${BACKEND_URL}/api/posts/approved-posts`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setPosts(response.data.posts || []);
+        } catch (err) {
+            console.error("Failed to fetch posts:", err);
+        } finally {
+            setLoadingPosts(false);
+        }
+    };
+
+    // Fetch all applications for filtering
+    const fetchApplications = async () => {
+        try {
+            setLoadingApplications(true);
+            const token = getToken();
+            const response = await axios.get(
+                `${BACKEND_URL}/api/applications/all-applications`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            // Extract applications from the response
+            const apps = response.data.applications || [];
+            setApplications(apps);
+        } catch (err) {
+            console.error("Failed to fetch applications:", err);
+        } finally {
+            setLoadingApplications(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPosts();
+        fetchApplications();
+    }, []);
 
     const fetchStudents = async () => {
         try {
@@ -81,9 +129,9 @@ export default function StudentData() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Client-side filtering for case-insensitive name and register number search
             let filteredStudents = response.data.students || [];
 
+            // Client-side filtering for case-insensitive name and register number search
             if (searchValue.trim()) {
                 const searchLower = searchValue.trim().toLowerCase();
                 filteredStudents = filteredStudents.filter(student => {
@@ -92,13 +140,32 @@ export default function StudentData() {
                     const lastName = (student.lastName || '').toLowerCase();
                     const registerNumber = (student.registerNumber || '').toLowerCase();
 
-                    // Check if full name or first name or last name starts with search term
-                    // OR if register number contains the search term (for numeric search)
                     return fullName.startsWith(searchLower) ||
                         firstName.startsWith(searchLower) ||
                         lastName.startsWith(searchLower) ||
                         registerNumber.includes(searchLower);
                 });
+            }
+
+            // Store all students before post filtering
+            setAllStudents(filteredStudents);
+
+            // Apply post/company filter if selected
+            if (selectedPost) {
+                // Find all applications for posts from the selected company
+                const companyApplications = applications.filter(app => {
+                    return app.post?.company_name === selectedPost;
+                });
+
+                // Extract unique student IDs from these applications
+                const studentIdsWithApplications = new Set(
+                    companyApplications.map(app => app.application?.student_id).filter(Boolean)
+                );
+
+                // Filter students to only those who have applied to this company
+                filteredStudents = filteredStudents.filter(student => 
+                    studentIdsWithApplications.has(student.id)
+                );
             }
 
             setStudents(filteredStudents);
@@ -171,7 +238,7 @@ export default function StudentData() {
             "Department": student.department || "",
             "Register Number": student.registerNumber || "",
             "Roll Number": student.rollNumber || "",
-            "current semester": student.currentSemester || "",
+            "Current Semester": student.currentSemester || "",
             "CGPA": student.cgpa || "",
             "Career Path": student.careerPath || "",
         }));
@@ -188,71 +255,25 @@ export default function StudentData() {
         document.body.removeChild(link);
     };
 
-    const handleImportCSV = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        setImporting(true);
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                try {
-                    const token = getToken();
-                    const importData = results.data.map(row => ({
-                        full_name: `${row["First Name"] || ""} ${row["Last Name"] || ""}`.trim(),
-                        email: row["Email"] || "",
-                        branch: row["Department"] || "",
-                        roll_number: row["Register Number"] || "",
-                        student_id: row["Roll Number"] || "",
-                        current_semester: parseInt(row["current semester"]) || null,
-                        cgpa: parseFloat(row["CGPA"]) || null,
-                        career_path: row["Career Path"] || "",
-                    })).filter(row => row.full_name || row.email); // Filter out empty rows
-
-                    if (importData.length === 0) {
-                        setError("No valid data found in CSV");
-                        setImporting(false);
-                        return;
-                    }
-
-                    const response = await axios.post(
-                        `${BACKEND_URL}/api/studentdata/import`,
-                        { students: importData },
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
-
-                    fetchStudents(); // Refresh the list
-                    setError(""); // Clear any previous errors
-                    setSuccess(response.data.message || "Student data imported successfully");
-                } catch (err) {
-                    setError("Failed to import student data");
-                } finally {
-                    setImporting(false);
-                }
-            },
-            error: (error) => {
-                setError("Failed to parse CSV file");
-                setImporting(false);
-            },
-        });
-    };
-
+    // Trigger fetch when filters change
     useEffect(() => {
         if (searchValue.trim() || department || year) {
             fetchStudents();
+        } else if (selectedPost) {
+            // If only post filter is selected, we still need to fetch students
+            fetchStudents();
         } else {
             setStudents([]);
+            setAllStudents([]);
             setLoading(false);
         }
-    }, [searchValue, department, year]);
+    }, [searchValue, department, year, selectedPost]);
+
+    // Get unique companies from posts
+    const uniqueCompanies = [...new Set(posts.map(post => post.company_name))].sort();
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" sx={{ mb: 3, color: "text.primary" }}>
-                Student Data
-            </Typography>
-
             {/* Filter Bar */}
             <Box
                 sx={{
@@ -315,7 +336,6 @@ export default function StudentData() {
                             <MenuItem value="MBA">MBA</MenuItem>
                             <MenuItem value="AIML">AIML</MenuItem>
                             <MenuItem value="MCA">MCA</MenuItem>
-
                         </Select>
                     </FormControl>
 
@@ -341,14 +361,40 @@ export default function StudentData() {
                             <MenuItem value="4">4</MenuItem>
                         </Select>
                     </FormControl>
+
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <InputLabel sx={{ color: "text.secondary" }}>Post/Company</InputLabel>
+                        <Select
+                            value={selectedPost}
+                            label="Post/Company"
+                            onChange={(e) => setSelectedPost(e.target.value)}
+                            disabled={loadingPosts || loadingApplications}
+                            sx={{
+                                color: "text.primary",
+                                bgcolor: "background.default",
+                                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#8b5cf6" },
+                            }}
+                        >
+                            <MenuItem value="">
+                                <em>All Posts</em>
+                            </MenuItem>
+                            {uniqueCompanies.map((company) => (
+                                <MenuItem key={company} value={company}>
+                                    {company}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </Box>
 
-                {/* Right side - Export and Import */}
+                {/* Right side - Export */}
                 <Box sx={{ display: "flex", gap: 2 }}>
                     <Button
                         variant="outlined"
                         startIcon={<FileDownloadIcon />}
                         onClick={handleExportCSV}
+                        disabled={students.length === 0}
                         sx={{
                             color: "text.primary",
                             borderColor: "#334155",
@@ -357,8 +403,6 @@ export default function StudentData() {
                     >
                         Export CSV
                     </Button>
-
-                    
                 </Box>
             </Box>
 
@@ -402,7 +446,7 @@ export default function StudentData() {
                                     <CircularProgress />
                                 </TableCell>
                             </TableRow>
-                        ) : students.length === 0 && (searchValue.trim() || department || year) ? (
+                        ) : students.length === 0 && (searchValue.trim() || department || year || selectedPost) ? (
                             <TableRow>
                                 <TableCell colSpan={9} align="center">
                                     No students found

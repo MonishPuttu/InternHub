@@ -128,10 +128,7 @@ export default function StudentDashboard() {
     });
   };
 
-
   const formatPackage = (packageOffered) => {
-
-
     // Check for null, undefined, empty string, or "null" string
     if (
       packageOffered === null ||
@@ -139,13 +136,11 @@ export default function StudentDashboard() {
       packageOffered === "" ||
       packageOffered === "null"
     ) {
-
       return "Not disclosed";
     }
 
     // Convert to string and trim
     const packageStr = String(packageOffered).trim();
-
 
     // Handle range format like "8-9" or "8 - 9"
     if (packageStr.includes("-")) {
@@ -153,10 +148,8 @@ export default function StudentDashboard() {
       const min = parseFloat(parts[0]);
       const max = parseFloat(parts[1]);
 
-
       if (!isNaN(min) && !isNaN(max)) {
         const result = `₹${min.toFixed(2)}-${max.toFixed(2)} LPA`;
-
         return result;
       }
     }
@@ -165,12 +158,10 @@ export default function StudentDashboard() {
     const amount = parseFloat(packageStr);
 
     if (isNaN(amount)) {
-
       return "Not disclosed";
     }
 
     const result = `₹${amount.toFixed(2)} LPA`;
-
     return result;
   };
 
@@ -313,7 +304,21 @@ export default function StudentDashboard() {
         }}
       >
         <RecentApplicationsCard applications={recentApplications} />
-        <UpcomingEventsCard events={upcomingEvents} />
+        
+        {/* ✅ Clickable Upcoming Events Card - Redirects to Calendar */}
+        <Box
+          onClick={() => router.push("/calendar")}
+          sx={{
+            cursor: "pointer",
+            transition: "all 0.2s",
+            borderRadius: 2,
+            "&:hover": {
+              transform: "translateY(-2px)",
+            },
+          }}
+        >
+          <UpcomingEventsCard events={upcomingEvents} />
+        </Box>
       </Box>
     </Box>
   );

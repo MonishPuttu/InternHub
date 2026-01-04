@@ -130,27 +130,7 @@ export default function PlacementDashboard() {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
-            >
-              Placement Dashboard
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Manage student applications and track placement progress
-            </Typography>
-          </Box>
-        </Box>
-
+        
         {/* Search and Filters */}
         <Box
           sx={{

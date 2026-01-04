@@ -7,472 +7,50 @@ import {
   Snackbar,
   Alert,
   Button,
-  Menu,
-  MenuItem,
-  Card,
   Chip,
-  IconButton,
-  Grid,
+  Tabs,
+  Tab,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import {
   Add as AddIcon,
-  Work as WorkIcon,
-  CalendarToday as CalendarIcon,
-  People as PeopleIcon,
+  CalendarMonth as CalendarIcon,
+  Edit as EditIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
-  MoreVert as MoreVertIcon,
+  Work as WorkIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { useTheme } from "@mui/material/styles";
 import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal";
-import {
-  BACKEND_URL,
-  STATUS_COLORS,
-  STATUS_LABELS,
-} from "@/constants/postConstants";
+import { BACKEND_URL } from "@/constants/postConstants";
 
-// Recruiter Post Card Component
-function RecruiterPostCard({ post, onViewDetails, onDelete }) {
-  const theme = useTheme();
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  // Parse positions array - handle both old and new format
-  const positions = Array.isArray(post.positions)
-    ? post.positions
-    : post.position
-    ? [
-        {
-          title: post.position,
-          job_type: post.job_type || "Full Time",
-          package_offered: post.package_offered,
-          duration: post.duration,
-          skills: post.skills_required || [],
-        },
-      ]
-    : [];
-
-  // Get primary position for card display
-  const primaryPosition = positions[0] || {};
-
-  // Calculate days ago
-  const getDaysAgo = (date) => {
-    const now = new Date();
-    const postDate = new Date(date);
-    const diffTime = Math.abs(now - postDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "Posted today";
-    if (diffDays === 1) return "Posted 1 day ago";
-    if (diffDays < 7) return `Posted ${diffDays} days ago`;
-    if (diffDays < 30) return `Posted ${Math.floor(diffDays / 7)} weeks ago`;
-    return `Posted ${Math.floor(diffDays / 30)} months ago`;
-  };
-
-  // Mock application count (you can replace with real data from backend)
-  const applicationCount = Math.floor(Math.random() * 100) + 1;
-
-  // Get status badge
-  const getStatusBadge = () => {
-    if (post.approval_status === "approved") {
-      return (
-        <Chip
-          label="✓ Approved"
-          size="small"
-          sx={{
-            bgcolor: "rgba(16, 185, 129, 0.15)",
-            color: "#10b981",
-            fontWeight: 700,
-            fontSize: "0.7rem",
-            height: "24px",
-            border: "1px solid rgba(16, 185, 129, 0.3)",
-          }}
-        />
-      );
-    } else if (post.approval_status === "pending") {
-      return (
-        <Chip
-          label="⏳ Pending"
-          size="small"
-          sx={{
-            bgcolor: "rgba(251, 191, 36, 0.15)",
-            color: "#fbbf24",
-            fontWeight: 700,
-            fontSize: "0.7rem",
-            height: "24px",
-            border: "1px solid rgba(251, 191, 36, 0.3)",
-          }}
-        />
-      );
-    } else {
-      return (
-        <Chip
-          label="✕ Disapproved"
-          size="small"
-          sx={{
-            bgcolor: "rgba(239, 68, 68, 0.15)",
-            color: "#ef4444",
-            fontWeight: 700,
-            fontSize: "0.7rem",
-            height: "24px",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-          }}
-        />
-      );
-    }
-  };
-
-  return (
-    <Card
-      elevation={0}
-      sx={{
-        bgcolor: "background.paper",
-        border: "1px solid",
-        borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-        borderRadius: 3,
-        overflow: "hidden",
-        transition: "all 0.3s ease",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        "&:hover": {
-          borderColor: "#8b5cf6",
-          transform: "translateY(-4px)",
-          boxShadow: "0 12px 28px rgba(139, 92, 246, 0.2)",
-        },
-      }}
-    >
-      {/* Header with Icon and Status */}
-      <Box
-        sx={{
-          p: 3,
-          pb: 2,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
-        }}
-      >
-        {/* Icon and Status Badge */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "start",
-          }}
-        >
-          <Box
-            sx={{
-              width: 60,
-              height: 60,
-              borderRadius: 2,
-              bgcolor: "rgba(139, 92, 246, 0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <WorkIcon sx={{ fontSize: 32, color: "#8b5cf6" }} />
-          </Box>
-          {getStatusBadge()}
-        </Box>
-
-        {/* Latest Opportunity Label */}
-        <Box>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              fontWeight: 700,
-              fontSize: "0.85rem",
-              mb: 0.3,
-            }}
-          >
-            Latest Opportunity
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              color: "text.secondary",
-              fontSize: "0.75rem",
-            }}
-          >
-            {getDaysAgo(post.application_date)}
-          </Typography>
-        </Box>
-
-        {/* Job Title */}
-        <Typography
-          variant="h6"
-          sx={{
-            color: "text.primary",
-            fontWeight: 700,
-            fontSize: "1.25rem",
-            lineHeight: 1.3,
-            mb: 0.5,
-            cursor: "pointer",
-            "&:hover": { color: "#8b5cf6" },
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-          }}
-          onClick={onViewDetails}
-        >
-          {primaryPosition.title || post.position || "Position"}
-        </Typography>
-
-        {/* Company and Location */}
-        <Typography
-          variant="body2"
-          sx={{
-            color: "text.secondary",
-            fontSize: "0.9rem",
-            display: "flex",
-            alignItems: "center",
-            gap: 0.5,
-          }}
-        >
-          {post.company_name} • {post.industry}
-        </Typography>
-      </Box>
-
-      {/* Tags Section */}
-      <Box sx={{ px: 3, pb: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            gap: 1,
-            flexWrap: "wrap",
-          }}
-        >
-          <Chip
-            label={primaryPosition.job_type || "Full Time"}
-            size="small"
-            sx={{
-              bgcolor:
-                primaryPosition.job_type === "Internship"
-                  ? "rgba(34, 197, 94, 0.15)"
-                  : primaryPosition.job_type === "Full Time"
-                  ? "rgba(59, 130, 246, 0.15)"
-                  : "rgba(139, 92, 246, 0.15)",
-              color:
-                primaryPosition.job_type === "Internship"
-                  ? "#22c55e"
-                  : primaryPosition.job_type === "Full Time"
-                  ? "#3b82f6"
-                  : "#8b5cf6",
-              fontWeight: 600,
-              fontSize: "0.75rem",
-              height: "28px",
-            }}
-          />
-          {primaryPosition.duration && (
-            <Chip
-              label={primaryPosition.duration}
-              size="small"
-              sx={{
-                bgcolor: "rgba(139, 92, 246, 0.1)",
-                color: "#8b5cf6",
-                fontWeight: 600,
-                fontSize: "0.75rem",
-                height: "28px",
-              }}
-            />
-          )}
-          {primaryPosition.package_offered && (
-            <Chip
-              label={`${primaryPosition.package_offered} ${
-                primaryPosition.job_type === "Internship" ? "/mo" : "LPA"
-              }`}
-              size="small"
-              sx={{
-                bgcolor: "rgba(168, 85, 247, 0.15)",
-                color: "#a855f7",
-                fontWeight: 700,
-                fontSize: "0.75rem",
-                height: "28px",
-              }}
-            />
-          )}
-        </Box>
-      </Box>
-
-      <Box sx={{ flex: 1 }} />
-
-      {/* Footer Info */}
-      <Box
-        sx={{
-          px: 3,
-          pb: 2,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
-          borderTop: "1px solid",
-          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-          pt: 2,
-          mt: 2,
-        }}
-      >
-        {/* Deadline */}
-        {post.application_deadline &&
-          !isNaN(new Date(post.application_deadline).getTime()) && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-              <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", fontSize: "0.85rem" }}
-              >
-                Application Deadline:{" "}
-                {new Date(post.application_deadline).toLocaleDateString(
-                  "en-US",
-                  { month: "short", day: "numeric", year: "numeric" }
-                )}
-              </Typography>
-            </Box>
-          )}
-
-        {/* Students Applied */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <PeopleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-          <Typography
-            variant="body2"
-            sx={{ color: "text.secondary", fontSize: "0.85rem" }}
-          >
-            {applicationCount} students applied
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Action Buttons - For Recruiters */}
-      <Box sx={{ p: 3, pt: 0, display: "flex", gap: 1 }}>
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={onViewDetails}
-          startIcon={<VisibilityIcon />}
-          sx={{
-            bgcolor: "#8b5cf6",
-            "&:hover": {
-              bgcolor: "#7c3aed",
-              transform: "scale(1.02)",
-            },
-            textTransform: "none",
-            fontWeight: 700,
-            fontSize: "0.9rem",
-            py: 1.5,
-            borderRadius: 2,
-            boxShadow: "0 4px 12px rgba(139, 92, 246, 0.3)",
-            transition: "all 0.2s",
-          }}
-        >
-          View Details
-        </Button>
-        {onDelete && (
-          <IconButton
-            onClick={(e) => {
-              setAnchorEl(e.currentTarget);
-            }}
-            sx={{
-              color: "text.secondary",
-              border: "1px solid",
-              borderColor:
-                theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-              borderRadius: 2,
-              "&:hover": {
-                bgcolor: "rgba(239, 68, 68, 0.1)",
-                borderColor: "#ef4444",
-                color: "#ef4444",
-              },
-            }}
-          >
-            <MoreVertIcon sx={{ fontSize: 20 }} />
-          </IconButton>
-        )}
-      </Box>
-
-      {/* Delete Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
-        PaperProps={{
-          sx: {
-            bgcolor: "background.paper",
-            border: "1px solid",
-            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-          },
-        }}
-      >
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            onDelete();
-          }}
-          sx={{
-            color: "#ef4444",
-            "&:hover": {
-              bgcolor: "rgba(239, 68, 68, 0.1)",
-            },
-          }}
-        >
-          <DeleteIcon sx={{ mr: 1, fontSize: 20 }} />
-          Delete Post
-        </MenuItem>
-      </Menu>
-    </Card>
-  );
-}
-
-// Grid Container for Recruiter Posts
-function RecruiterPostsGrid({ posts, onViewDetails, onDelete }) {
-  return (
-    <Box>
-      <Grid container spacing={3}>
-        {posts.map((post) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={post.id}>
-            <RecruiterPostCard
-              post={post}
-              onViewDetails={() => onViewDetails && onViewDetails(post)}
-              onDelete={() => onDelete && onDelete(post)}
-            />
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
-}
-
-// Main RecruiterPost Component
 export default function RecruiterPost() {
   const router = useRouter();
   const theme = useTheme();
+  const [activeTab, setActiveTab] = useState(0);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
 
   useEffect(() => {
     fetchApplications();
   }, []);
 
-  const stats = {
-    total: applications.length,
-    approved: applications.filter((app) => app.approval_status === "approved")
-      .length,
-    pending: applications.filter((app) => app.approval_status === "pending")
-      .length,
-    disapproved: applications.filter(
-      (app) => app.approval_status === "disapproved"
-    ).length,
-  };
-
   const fetchApplications = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(
         `${BACKEND_URL}/api/posts/applications`,
@@ -491,18 +69,73 @@ export default function RecruiterPost() {
     }
   };
 
-  const handleDelete = async (app) => {
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffTime = Math.abs(now - postDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Posted today";
+    if (diffDays === 1) return "Posted 1 day ago";
+    return `Posted ${diffDays} days ago`;
+  };
+
+  const handleViewDetails = (postId) => {
+    router.push(`/Post/postdetails/${postId}`);
+  };
+
+  const handleEdit = (app, e) => {
+    e.stopPropagation();
     setSelectedApp(app);
+    setEditFormData({
+      company_name: app.company_name,
+      position: app.position,
+      industry: app.industry,
+      package_offered: app.package_offered || "",
+      notes: app.notes || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedApp) return;
+    try {
+      const token = localStorage.getItem("token");
+      const updatePayload = { ...editFormData };
+      Object.keys(updatePayload).forEach((key) => {
+        if (updatePayload[key] === "" || updatePayload[key] === null) {
+          delete updatePayload[key];
+        }
+      });
+      await axios.put(
+        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
+        updatePayload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSuccessMsg("Post updated successfully!");
+      setEditDialogOpen(false);
+      setSelectedApp(null);
+      setEditFormData({});
+      fetchApplications();
+    } catch (error) {
+      setErrorMsg(error.response?.data?.error || "Failed to update post");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedApp) return;
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `${BACKEND_URL}/api/posts/applications/${app.id}`,
+        `${BACKEND_URL}/api/posts/applications/${selectedApp.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setSuccessMsg("Application deleted successfully");
+      setSuccessMsg("Post deleted successfully");
+      setDeleteDialogOpen(false);
+      setSelectedApp(null);
       fetchApplications();
     } catch (error) {
-      setErrorMsg("Failed to delete application");
+      setErrorMsg("Failed to delete post");
     }
   };
 
@@ -511,18 +144,22 @@ export default function RecruiterPost() {
     fetchApplications();
   };
 
-  const handleViewDetails = (app) => {
-    router.push(`/Post/postdetails/${app.id}`);
-  };
+  const pendingPosts = applications.filter(
+    (app) => app.approval_status === "pending"
+  );
+  const approvedPosts = applications.filter(
+    (app) => app.approval_status === "approved"
+  );
+  const disapprovedPosts = applications.filter(
+    (app) => app.approval_status === "disapproved"
+  );
 
-  const filteredApplications = applications.filter((app) => {
-    if (filterStatus === "all") return true;
-    if (filterStatus === "approved") return app.approval_status === "approved";
-    if (filterStatus === "pending") return app.approval_status === "pending";
-    if (filterStatus === "disapproved")
-      return app.approval_status === "disapproved";
-    return true;
-  });
+  const currentPosts =
+    activeTab === 0
+      ? pendingPosts
+      : activeTab === 1
+      ? approvedPosts
+      : disapprovedPosts;
 
   if (loading) {
     return (
@@ -542,21 +179,12 @@ export default function RecruiterPost() {
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "start",
             mb: 2,
           }}
         >
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
-            >
-              Post Opportunities
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Manage your internship and job applications
-            </Typography>
-          </Box>
+          
+
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -564,201 +192,711 @@ export default function RecruiterPost() {
             sx={{
               bgcolor: "#8b5cf6",
               "&:hover": { bgcolor: "#7c3aed" },
-              fontWeight: 600,
               textTransform: "none",
+              fontWeight: 600,
               px: 3,
-              py: 1.5,
             }}
           >
             Create Post
           </Button>
         </Box>
 
-        {/* Statistics Section */}
-        <Box sx={{ mt: 2, display: "flex", gap: 3, flexWrap: "wrap" }}>
-          <Box
-            onClick={() => setFilterStatus("all")}
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              bgcolor: "background.paper",
-              border: "2px solid",
-              borderColor:
-                filterStatus === "all"
-                  ? "#8b5cf6"
-                  : theme.palette.mode === "dark"
-                  ? "#334155"
-                  : "#e2e8f0",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#8b5cf6",
-                transform: "translateY(-2px)",
-              },
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Total Opportunities
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{ color: "text.primary", fontWeight: 700 }}
-            >
-              {stats.total}
-            </Typography>
-          </Box>
-
-          <Box
-            onClick={() => setFilterStatus("approved")}
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              bgcolor: "background.paper",
-              border: "2px solid",
-              borderColor:
-                filterStatus === "approved"
-                  ? "#10b981"
-                  : theme.palette.mode === "dark"
-                  ? "#334155"
-                  : "#e2e8f0",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#10b981",
-                transform: "translateY(-2px)",
-              },
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Approved Posts
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
-              {stats.approved}
-            </Typography>
-          </Box>
-
-          <Box
-            onClick={() => setFilterStatus("pending")}
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              bgcolor: "background.paper",
-              border: "2px solid",
-              borderColor:
-                filterStatus === "pending"
-                  ? "#fbbf24"
-                  : theme.palette.mode === "dark"
-                  ? "#334155"
-                  : "#e2e8f0",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#fbbf24",
-                transform: "translateY(-2px)",
-              },
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Pending Review
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 700 }}>
-              {stats.pending}
-            </Typography>
-          </Box>
-
-          <Box
-            onClick={() => setFilterStatus("disapproved")}
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              bgcolor: "background.paper",
-              border: "2px solid",
-              borderColor:
-                filterStatus === "disapproved"
-                  ? "#ef4444"
-                  : theme.palette.mode === "dark"
-                  ? "#334155"
-                  : "#e2e8f0",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#ef4444",
-                transform: "translateY(-2px)",
-              },
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Disapproved Posts
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#ef4444", fontWeight: 700 }}>
-              {stats.disapproved}
-            </Typography>
-          </Box>
-        </Box>
+        
       </Box>
 
-      {/* Applications Grid */}
-      {filteredApplications.length === 0 ? (
+      {/* Tabs */}
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          mb: 3,
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{
+            "& .MuiTab-root": {
+              color: "text.secondary",
+              textTransform: "none",
+              fontSize: "1rem",
+              fontWeight: 500,
+              "&.Mui-selected": { color: "#8b5cf6" },
+            },
+            "& .MuiTabs-indicator": { backgroundColor: "#8b5cf6" },
+          }}
+        >
+          <Tab label={`Pending Review (${pendingPosts.length})`} />
+          <Tab label={`Approved Posts (${approvedPosts.length})`} />
+          <Tab label={`Disapproved (${disapprovedPosts.length})`} />
+        </Tabs>
+      </Box>
+
+      {/* Posts Grid */}
+      {currentPosts.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: "center" }}>
+          <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
+            {activeTab === 0
+              ? "No pending posts"
+              : activeTab === 1
+              ? "No approved posts yet"
+              : "No disapproved posts"}
+          </Typography>
+        </Paper>
+      ) : (
         <Box
           sx={{
-            textAlign: "center",
-            py: 8,
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+              lg: "repeat(4, 1fr)",
+            },
+            gap: 3,
+            width: "100%",
+          }}
+        >
+          {currentPosts.map((app) => (
+            <Box
+              key={app.id}
+              onClick={() => handleViewDetails(app.id)}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                border: "2px solid",
+                borderColor:
+                  activeTab === 0
+                    ? "#fbbf24"
+                    : activeTab === 1
+                    ? "#10b981"
+                    : "#ef4444",
+                borderRadius: 2,
+                transition: "all 0.3s ease",
+                bgcolor: "background.paper",
+                overflow: "hidden",
+                cursor: "pointer",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
+                  borderColor: "#8b5cf6",
+                },
+              }}
+            >
+              {/* Card Content */}
+              <Box sx={{ p: 3, flexGrow: 1 }}>
+                {/* Icon and Status Badge */}
+                <Box
+                  sx={{
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 1.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 2,
+                      bgcolor:
+                        activeTab === 0
+                          ? "#fbbf24"
+                          : activeTab === 1
+                          ? "#10b981"
+                          : "#ef4444",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <CalendarIcon sx={{ fontSize: 32, color: "white" }} />
+                  </Box>
+
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+                  >
+                    {/* Status Badge */}
+                    {activeTab === 0 && (
+                      <Chip
+                        label="⏳ PENDING"
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(251, 191, 36, 0.2)",
+                          color: "#fbbf24",
+                          fontWeight: 700,
+                          fontSize: "0.65rem",
+                          border: "1px solid #fbbf24",
+                          height: 24,
+                        }}
+                      />
+                    )}
+                    {activeTab === 1 && (
+                      <Chip
+                        label="✓ APPROVED"
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(16, 185, 129, 0.2)",
+                          color: "#10b981",
+                          fontWeight: 700,
+                          fontSize: "0.65rem",
+                          border: "1px solid #10b981",
+                          height: 24,
+                        }}
+                      />
+                    )}
+                    {activeTab === 2 && (
+                      <Chip
+                        label="✕ DISAPPROVED"
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(239, 68, 68, 0.2)",
+                          color: "#ef4444",
+                          fontWeight: 700,
+                          fontSize: "0.65rem",
+                          border: "1px solid #ef4444",
+                          height: 24,
+                        }}
+                      />
+                    )}
+
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      {getRelativeTime(app.application_date)}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* Company Name */}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {app.company_name}
+                </Typography>
+
+                {/* Role/Position Section - UPDATED TO SHOW MULTIPLE ROLES */}
+                <Box sx={{ mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <WorkIcon sx={{ fontSize: 16, color: "#8b5cf6" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#8b5cf6",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                       Positions
+                    </Typography>
+                  </Box>
+
+                  {/* Display roles as chips */}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {app.positions &&
+                    Array.isArray(app.positions) &&
+                    app.positions.length > 0 ? (
+                      app.positions.map((pos, index) => (
+                        <Chip
+                          key={index}
+                          label={pos.title || pos.position || pos}
+                          size="small"
+                          sx={{
+                            bgcolor: "rgba(139, 92, 246, 0.15)",
+                            color: "#8b5cf6",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                          }}
+                        />
+                      ))
+                    ) : app.position ? (
+                      <Chip
+                        label={app.position}
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(139, 92, 246, 0.15)",
+                          color: "#8b5cf6",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          border: "1px solid rgba(139, 92, 246, 0.3)",
+                        }}
+                      />
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                      >
+                        No roles specified
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+
+                {/* Package */}
+                {app.package_offered && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: "#10b981",
+                        mr: 1,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#10b981",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ₹{app.package_offered} LPA
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Industry Chip */}
+                <Chip
+                  label={app.industry}
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(59, 130, 246, 0.15)",
+                    color: "#3b82f6",
+                    fontWeight: 500,
+                    borderRadius: 1,
+                    mb: 3,
+                  }}
+                />
+
+                {/* Posted Date */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <CalendarIcon
+                    sx={{ fontSize: 18, color: "primary.main" }}
+                  />
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        display: "block",
+                      }}
+                    >
+                      Posted On
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                      }}
+                    >
+                      {new Date(app.application_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Card Actions - UPDATED */}
+              <Box
+                sx={{
+                  p: 3,
+                  pt: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                {/* Pending Posts - Show waiting message and delete button */}
+                {activeTab === 0 && (
+                  <>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                        textAlign: "center",
+                        fontStyle: "italic",
+                        py: 1,
+                      }}
+                    >
+                      Waiting for placement approval
+                    </Typography>
+                    <Button
+                      fullWidth
+                      size="medium"
+                      variant="outlined"
+                      startIcon={<DeleteIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedApp(app);
+                        setDeleteDialogOpen(true);
+                      }}
+                      sx={{
+                        textTransform: "none",
+                        color: "#ef4444",
+                        borderColor: "#ef4444",
+                        fontWeight: 600,
+                        "&:hover": {
+                          bgcolor: "rgba(239, 68, 68, 0.1)",
+                          borderColor: "#ef4444",
+                        },
+                      }}
+                    >
+                      Delete Post
+                    </Button>
+                  </>
+                )}
+
+                {/* Approved Posts - NO BUTTONS, just a message */}
+                {activeTab === 1 && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      bgcolor: "rgba(16, 185, 129, 0.08)",
+                      borderRadius: 1,
+                      border: "1px solid rgba(16, 185, 129, 0.2)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#10b981",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✓ Post is live and visible to students
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Disapproved Posts - Show rejection reason and delete button */}
+                {activeTab === 2 && (
+                  <>
+                    {app.rejection_reason && (
+                      <Box
+                        sx={{
+                          p: 2,
+                          bgcolor: "rgba(239, 68, 68, 0.1)",
+                          borderRadius: 1,
+                          border: "1px solid #ef4444",
+                          mb: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "#ef4444",
+                            fontWeight: 600,
+                            display: "block",
+                            mb: 0.5,
+                          }}
+                        >
+                          Rejection Reason:
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                        >
+                          {app.rejection_reason}
+                        </Typography>
+                      </Box>
+                    )}
+                    <Button
+                      fullWidth
+                      size="medium"
+                      variant="outlined"
+                      startIcon={<DeleteIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedApp(app);
+                        setDeleteDialogOpen(true);
+                      }}
+                      sx={{
+                        textTransform: "none",
+                        color: "#ef4444",
+                        borderColor: "#ef4444",
+                        fontWeight: 600,
+                        "&:hover": {
+                          bgcolor: "rgba(239, 68, 68, 0.1)",
+                          borderColor: "#ef4444",
+                        },
+                      }}
+                    >
+                      Delete Post
+                    </Button>
+                  </>
+                )}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{
+          sx: {
             bgcolor: "background.paper",
+            color: "text.primary",
             borderRadius: 2,
             border: "1px solid",
             borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          },
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}
+        >
+          Delete Post
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
-          <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
-            {filterStatus === "all"
-              ? "No opportunities posted yet"
-              : `No ${filterStatus} opportunities`}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-            {filterStatus === "all"
-              ? "Start by creating your first opportunity post"
-              : "Try a different filter"}
-          </Typography>
-          {filterStatus === "all" ? (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenModal(true)}
-              sx={{
-                bgcolor: "#8b5cf6",
-                "&:hover": { bgcolor: "#7c3aed" },
-                textTransform: "none",
-              }}
-            >
-              Create Your First Post
-            </Button>
-          ) : (
-            <Button
-              variant="outlined"
-              onClick={() => setFilterStatus("all")}
-              sx={{
-                borderColor: "#8b5cf6",
-                color: "#8b5cf6",
-                "&:hover": {
-                  bgcolor: "rgba(139, 92, 246, 0.1)",
-                  borderColor: "#7c3aed",
-                },
-                textTransform: "none",
-              }}
-            >
-              View All Opportunities
-            </Button>
-          )}
-        </Box>
-      ) : (
-        <RecruiterPostsGrid
-          posts={filteredApplications}
-          onViewDetails={handleViewDetails}
-          onDelete={handleDelete}
-        />
-      )}
+          <Box sx={{ minWidth: 400 }}>
+            <Typography sx={{ color: "text.secondary", mb: 2 }}>
+              Are you sure you want to delete this post from{" "}
+              {selectedApp?.company_name}? This action cannot be undone.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            p: 2,
+            borderTop: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            sx={{ color: "text.secondary" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleDelete}
+            sx={{
+              bgcolor: "#ef4444",
+              "&:hover": { bgcolor: "#dc2626" },
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Create Modal */}
+      {/* Edit Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: "background.paper",
+            color: "text.primary",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          },
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}
+        >
+          Edit Post
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
+          <Box
+            sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}
+          >
+            <TextField
+              fullWidth
+              label="Company Name"
+              value={editFormData.company_name || ""}
+              onChange={(e) =>
+                setEditFormData({
+                  ...editFormData,
+                  company_name: e.target.value,
+                })
+              }
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Position"
+              value={editFormData.position || ""}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, position: e.target.value })
+              }
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Package Offered (in Lakhs)"
+              type="number"
+              value={editFormData.package_offered || ""}
+              onChange={(e) =>
+                setEditFormData({
+                  ...editFormData,
+                  package_offered: e.target.value,
+                })
+              }
+              inputProps={{ step: "0.01", min: "0" }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Additional Notes"
+              multiline
+              rows={4}
+              value={editFormData.notes || ""}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, notes: e.target.value })
+              }
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "background.default",
+                  color: "text.primary",
+                  "& fieldset": {
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  },
+                  "&:hover fieldset": { borderColor: "#8b5cf6" },
+                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "#8b5cf6" },
+                },
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            p: 2,
+            borderTop: "1px solid",
+            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+          }}
+        >
+          <Button
+            onClick={() => setEditDialogOpen(false)}
+            sx={{ color: "text.secondary" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveEdit}
+            sx={{
+              bgcolor: "#8b5cf6",
+              "&:hover": { bgcolor: "#7c3aed" },
+            }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Post Modal */}
       <CreateApplicationModal open={openModal} onClose={handleModalClose} />
 
       {/* Notifications */}
@@ -766,22 +904,16 @@ export default function RecruiterPost() {
         open={!!successMsg}
         autoHideDuration={3000}
         onClose={() => setSuccessMsg("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity="success" onClose={() => setSuccessMsg("")}>
-          {successMsg}
-        </Alert>
+        <Alert severity="success">{successMsg}</Alert>
       </Snackbar>
 
       <Snackbar
         open={!!errorMsg}
         autoHideDuration={5000}
         onClose={() => setErrorMsg("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity="error" onClose={() => setErrorMsg("")}>
-          {errorMsg}
-        </Alert>
+        <Alert severity="error">{errorMsg}</Alert>
       </Snackbar>
     </Box>
   );

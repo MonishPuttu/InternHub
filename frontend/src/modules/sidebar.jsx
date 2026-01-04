@@ -45,19 +45,9 @@ const navigationItems = [
     path: "/training",
     roles: ["student", "placement"],
   },
-  {
-    text: "Report Cards",
-    icon: <AssessmentIcon />,
-    path: "/training/student/report-card",
-    roles: ["student"],
-  },
-  {
-    text: "Profile & Resume",
-    icon: <PersonIcon />,
-    path: "/profile",
-    roles: ["student"],
-  },
-  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar", roles: null },
+  
+  
+  { text: "Calendar", icon: <CalenderIcon />, path: "/calendar", roles: ["recruiter", "placement"], },
   {
     text: "Analytics",
     icon: <BarChartIcon />,
@@ -86,7 +76,7 @@ const navigationItems = [
     text: "Settings",
     icon: <PersonIcon />,
     path: "/settings",
-    roles: ["recruiter", "placement"],
+    roles: ["recruiter"],
   },
 ];
 

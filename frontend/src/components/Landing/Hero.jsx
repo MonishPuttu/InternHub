@@ -1,12 +1,14 @@
 "use client";
-import React from "react";
-import { Box, Button, Container, Grid, Typography, Paper } from "@mui/material";
+import React, { useEffect, useRef } from "react";
+import { Box, Button, Container, Grid, Typography } from "@mui/material";
 import { ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { useTheme } from "@mui/material/styles";
 
 const Hero = () => {
   const theme = useTheme();
+  const canvasRef = useRef(null);
+
   const handleOnClick = () => {
     redirect("/signup");
   };
@@ -14,6 +16,107 @@ const Hero = () => {
   const handleOnClickSignIn = () => {
     redirect("/signin");
   };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let dots = [];
+    let mouse = { x: 0, y: 0 };
+    let animationFrameId;
+
+    // Set canvas size
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initDots();
+    };
+
+    // Initialize dots in a grid pattern
+    const initDots = () => {
+      dots = [];
+      const rows = 40;
+      const cols = 50;
+      const spacingX = canvas.width / (cols + 1);
+      const spacingY = canvas.height / (rows + 1);
+
+      for (let i = 1; i <= rows; i++) {
+        for (let j = 1; j <= cols; j++) {
+          const x = j * spacingX;
+          const y = i * spacingY;
+          
+          dots.push({
+            x: x,
+            y: y,
+            baseX: x,
+            baseY: y,
+          });
+        }
+      }
+    };
+
+    // Handle mouse move
+    const handleMouseMove = (e) => {
+      mouse = {
+        x: e.clientX,
+        y: e.clientY,
+      };
+    };
+
+    // Animation loop
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const magnetStrength = 150; // Distance of magnetic effect
+
+      dots.forEach((dot) => {
+        // Calculate distance from mouse to dot center
+        const dx = mouse.x - dot.baseX;
+        const dy = mouse.y - dot.baseY;
+        const dist = Math.hypot(dx, dy);
+
+        // Apply magnetic effect
+        if (dist < magnetStrength) {
+          // Calculate angle pointing away from cursor
+          const angleToMouse = Math.atan2(dy, dx);
+          const force = (1 - dist / magnetStrength);
+          
+          // Move dot slightly away from cursor
+          const moveDistance = force * 10;
+          dot.x = dot.baseX - Math.cos(angleToMouse) * moveDistance;
+          dot.y = dot.baseY - Math.sin(angleToMouse) * moveDistance;
+        } else {
+          // Return to base position
+          dot.x += (dot.baseX - dot.x) * 0.1;
+          dot.y += (dot.baseY - dot.y) * 0.1;
+        }
+
+        // Draw dot
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 0.8, 0, Math.PI * 2); // Circle with radius 0.8 (tiny)
+        ctx.fillStyle = "rgba(130, 160, 200, 0.4)"; // Blue/cyan tinted dots
+        ctx.fill();
+      });
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    setCanvasSize();
+    window.addEventListener("resize", setCanvasSize);
+    window.addEventListener("mousemove", handleMouseMove);
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", setCanvasSize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, []);
 
   return (
     <Box
@@ -30,32 +133,16 @@ const Hero = () => {
         pb: { xs: 12, md: 16 },
       }}
     >
-      {/* Gradient blobs */}
-      <Box
-        sx={{
+      {/* Magnetic Dots Canvas */}
+      <canvas
+        ref={canvasRef}
+        style={{
           position: "absolute",
-          inset: 0,
-          "&::before, &::after": {
-            content: '""',
-            position: "absolute",
-            borderRadius: "50%",
-            filter: "blur(160px)",
-            opacity: 0.12,
-          },
-          "&::before": {
-            top: 100,
-            left: -120,
-            width: 500,
-            height: 500,
-            background: "rgba(155, 106, 255, 0.6)",
-          },
-          "&::after": {
-            bottom: 0,
-            right: -150,
-            width: 600,
-            height: 600,
-            background: "rgba(100, 100, 255, 0.5)",
-          },
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
         }}
       />
 
@@ -63,21 +150,7 @@ const Hero = () => {
         <Grid container spacing={{ xs: 4, md: 6, lg: 8 }} alignItems="center">
           {/* LEFT CONTENT */}
           <Grid item xs={12} md={6}>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                display: "inline-block",
-                px: 2.5,
-                py: 1,
-                borderRadius: "30px",
-                backgroundColor: "rgba(155, 106, 255, 0.1)",
-                color: "#b394ff",
-                fontWeight: 600,
-                mb: 3,
-              }}
-            >
-              🚀 AI-Powered Campus Placements
-            </Typography>
+            
 
             <Typography
               variant="h1"
@@ -193,93 +266,6 @@ const Hero = () => {
               ))}
             </Grid>
           </Grid>
-          {/* RIGHT IMAGE
-          <Grid item xs={12} md={6}>
-            <Box sx={{ position: "relative", height: "100%", minHeight: 400 }}>
-              <Box
-                sx={{
-                  position: "relative",
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                  transition: "transform 0.5s ease",
-                  "&:hover": { transform: "scale(1.03)" },
-                  height: "100%",
-                }}
-              >
-                <Box
-                  component="img"
-                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop"
-                  alt="Ace Graders platform preview"
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    display: "block",
-                    objectFit: "cover",
-                    opacity: 0.9,
-                  }}
-                />
-              </Box> */}
-
-          {/* Floating AI card */}
-          {/* <Paper
-                elevation={8}
-                sx={{
-                  position: "absolute",
-                  bottom: { xs: -40, md: -30 },
-                  left: { xs: "50%", md: "auto" },
-                  right: { xs: "auto", md: -30 },
-                  transform: {
-                    xs: "translateX(-50%)",
-                    md: "none",
-                  },
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  px: 3,
-                  py: 2.5,
-                  borderRadius: "14px",
-                  backgroundColor: "rgba(30,35,70,0.95)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(155,106,255,0.3)",
-                  color: "#fff",
-                  maxWidth: 280,
-                }}
-              > */}
-          {/* <Box
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #9f6eff, #7b4dff)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "bold",
-                    fontSize: "1.1rem",
-                    flexShrink: 0,
-                  }}
-                >
-                  AI
-                </Box> */}
-          {/* <Box>
-            <Typography
-              variant="subtitle1"
-              fontWeight={700}
-              sx={{ fontSize: "0.95rem" }}
-            >
-              AI-Powered Matching
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.85rem" }}
-            >
-              Smart recommendations
-            </Typography>
-          </Box> */}
-          {/* </Paper> */}
-          {/* </Box>
-          </Grid> */}
         </Grid>
       </Container>
     </Box>
