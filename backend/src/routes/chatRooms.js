@@ -168,6 +168,35 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
           ? await getUserName(sender.id, sender.role)
           : "Unknown";
 
+        // fetch per-user receipts for this message
+        const receipts = await db
+          .select()
+          .from(schema.message_receipts)
+          .where(eq(schema.message_receipts.messageId, m.id));
+
+        // enrich receipts with user info
+        const enrichedReceipts = await Promise.all(
+          receipts.map(async (r) => {
+            const u = await db
+              .select({ id: schema.user.id, email: schema.user.email, role: schema.user.role })
+              .from(schema.user)
+              .where(eq(schema.user.id, r.userId))
+              .limit(1);
+            const userRow = u[0] || {};
+            // attempt to get display name
+            const name = await getUserName(userRow.id, userRow.role).catch(() => "Unknown");
+            return {
+              id: r.id,
+              userId: r.userId,
+              userName: name,
+              userEmail: userRow.email,
+              status: r.status,
+              deliveredAt: r.deliveredAt,
+              readAt: r.readAt,
+            };
+          })
+        );
+
         return {
           id: m.id,
           senderId: m.senderId,
@@ -179,6 +208,7 @@ router.get("/rooms/:roomId/messages", requireAuth, async (req, res) => {
           senderName,
           senderEmail: sender?.email || "unknown",
           senderRole: sender?.role || "unknown",
+          receipts: enrichedReceipts,
         };
       })
     );

@@ -36,6 +36,8 @@ export default function ChatPage() {
     createRoom,
     sendMessage,
     fetchRooms,
+    usersInRoom,
+    sendReadReceipt,
   } = useChat();
 
   const [input, setInput] = useState("");
@@ -179,8 +181,10 @@ export default function ChatPage() {
           setInput={setInput}
           onSendMessage={onSendMessage}
           socketConnected={socketConnected}
+          usersInRoom={usersInRoom}
           getUserName={getUserName}
           onDeleteRoom={handleDeleteRoom}
+          sendReadReceipt={sendReadReceipt}
         />
       </Box>
 

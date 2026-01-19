@@ -18,6 +18,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { Done, DoneAll } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import {
   Send,
@@ -43,6 +44,7 @@ export default function ChatMessages({
   socketConnected,
   getUserName,
   onDeleteRoom,
+  usersInRoom,
 }) {
   const theme = useTheme();
   const messagesEndRef = useRef(null);
@@ -51,10 +53,16 @@ export default function ChatMessages({
   const [emojiAnchor, setEmojiAnchor] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [readersDialogOpen, setReadersDialogOpen] = useState(false);
+  const [selectedReaders, setSelectedReaders] = useState([]);
+  const [messageMenuAnchor, setMessageMenuAnchor] = useState(null);
+  const [menuMessage, setMenuMessage] = useState(null);
+  const observerRef = useRef(null);
   const menuOpen = Boolean(anchorEl);
   const emojiOpen = Boolean(emojiAnchor);
 
   useEffect(() => {
+    // smooth scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -252,6 +260,7 @@ export default function ChatMessages({
             `radial-gradient(circle at 1px 1px, ${theme.palette.divider} 1px, transparent 0)`,
           backgroundSize: "40px 40px",
         }}
+        className="chat-scroll"
       >
         {messages.length === 0 && (
           <Typography
@@ -284,8 +293,27 @@ export default function ChatMessages({
                 </Avatar>
               )}
 
-              <Paper
-                elevation={0}
+                <Paper
+                 elevation={0}
+                 ref={(el) => {
+                   // attach data and observe
+                   try {
+                     if (el) {
+                       el.dataset.msgid = String(msg.id || "");
+                       messageNodes.current.set(String(msg.id || ""), el);
+                       if (observerRef.current) observerRef.current.observe(el);
+                     } else {
+                       const prev = messageNodes.current.get(String(msg.id || ""));
+                       if (prev && observerRef.current) observerRef.current.unobserve(prev);
+                       messageNodes.current.delete(String(msg.id || ""));
+                     }
+                   } catch (e) {}
+                 }}
+                 onContextMenu={(e) => {
+                   e.preventDefault();
+                   setMessageMenuAnchor(e.currentTarget);
+                   setMenuMessage(msg);
+                 }}
                 sx={{
                   maxWidth: "60%",
                   px: 2,
@@ -313,27 +341,76 @@ export default function ChatMessages({
                 <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
                   {msg.message || "[Empty message]"}
                 </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: "block",
-                    mt: 0.5,
-                    opacity: 0.7,
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  {msg.timestamp
-                    ? new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : msg.createdAt
-                    ? new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : ""}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      opacity: 0.7,
+                      fontSize: "0.7rem",
+                      color: 'inherit',
+                    }}
+                  >
+                    {msg.timestamp
+                      ? new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : msg.createdAt
+                      ? new Date(msg.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""}
+                  </Typography>
+                  {isSender && (
+                    <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+                      {(() => {
+                        const receipts = msg.receipts || [];
+                        // compute unique receipts, excluding the message sender and current user if present
+                        const uniqueRecipients = [...new Map(
+                          (receipts || [])
+                            .filter(r => String(r.userId) !== String(msg.senderId) && String(r.userId) !== String(user?.id))
+                            .map(r => [String(r.userId), r])
+                        ).values()];
+                        // recipients count: prefer unique receipts length, fallback to usersInRoom (excluding sender), min 1
+                        const recipientsCount = Math.max(
+                          uniqueRecipients.length || (usersInRoom ? usersInRoom.filter(u => String(u.id) !== String(user?.id)).length : 0) || 1,
+                          1
+                        );
+
+                        // compute unique latest status per recipient (case-insensitive)
+                        const byUser = new Map();
+                        receipts.forEach(r => {
+                          const uid = String(r.userId);
+                          // skip sender or current user receipts if accidentally present
+                          if (uid === String(msg.senderId) || uid === String(user?.id)) return;
+                          const prev = byUser.get(uid) || {};
+                          const s = (r.status || '').toString().toLowerCase();
+                          const prevS = (prev.status || '').toString().toLowerCase();
+                          const rank = (t) => (t === 'read' ? 3 : t === 'delivered' ? 2 : 1);
+                          const pick = (!prev.status || rank(s) >= rank(prevS)) ? { ...r, status: s } : prev;
+                          byUser.set(uid, pick);
+                        });
+
+                        const deliveredCount = Array.from(byUser.values()).filter(r => {
+                          const s = (r.status || '').toString().toLowerCase();
+                          return s === 'delivered' || s === 'read';
+                        }).length;
+                        const readCount = Array.from(byUser.values()).filter(r => (r.status || '').toString().toLowerCase() === 'read').length;
+
+                        if (readCount > 0 && readCount >= recipientsCount) {
+                          return <DoneAll sx={{ fontSize: 16, color: theme.palette.primary.main }} />;
+                        }
+
+                        if (deliveredCount > 0) {
+                          return <DoneAll sx={{ fontSize: 16, color: theme.palette.text.secondary }} />;
+                        }
+
+                        return <Done sx={{ fontSize: 16, color: theme.palette.text.secondary }} />;
+                      })()}
+                    </Box>
+                  )}
+                </Box>
               </Paper>
 
               {isSender && (
@@ -346,6 +423,30 @@ export default function ChatMessages({
         })}
         <div ref={messagesEndRef} />
       </Box>
+
+      <Menu
+        anchorEl={messageMenuAnchor}
+        open={Boolean(messageMenuAnchor)}
+        onClose={() => { setMessageMenuAnchor(null); setMenuMessage(null); }}
+        anchorOrigin={{ vertical: 'top', horizontal: (menuMessage && String(menuMessage.senderId) === String(user?.id)) ? 'right' : 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: (menuMessage && String(menuMessage.senderId) === String(user?.id)) ? 'right' : 'left' }}
+      >
+        <Box sx={{ px: 1 }}>
+          {/* Only allow viewing readers if current user is the sender of the message */}
+          {menuMessage && String(menuMessage.senderId) === String(user?.id) ? (
+            <MenuItem onClick={() => {
+              const readers = (menuMessage?.receipts || []).filter(r => (r.status || '').toString().toLowerCase() === 'read' && String(r.userId) !== String(user?.id));
+              setSelectedReaders(readers.map(r => ({ ...r })));
+              setReadersDialogOpen(true);
+              setMessageMenuAnchor(null);
+            }}>View readers</MenuItem>
+          ) : (
+            <MenuItem disabled>
+              <Typography variant="body2">View readers (senders only)</Typography>
+            </MenuItem>
+          )}
+        </Box>
+      </Menu>
 
       {/* Input Area */}
       <Box
@@ -434,6 +535,47 @@ export default function ChatMessages({
       </Box>
 
       {/* Delete Confirmation Dialog */}
+            {/* Readers Dialog */}
+            <Dialog
+              open={readersDialogOpen}
+              onClose={() => setReadersDialogOpen(false)}
+              PaperProps={{
+                sx: {
+                  bgcolor: "background.paper",
+                  color: "text.primary",
+                  border: `1px solid ${theme.palette.divider}`,
+                  minWidth: 300,
+                },
+              }}
+            >
+              <DialogTitle>Readers</DialogTitle>
+              <DialogContent>
+                {selectedReaders.length === 0 ? (
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    No readers yet.
+                  </Typography>
+                ) : (
+                  selectedReaders.map((r) => {
+                    const roomUser = usersInRoom?.find(u => String(u.id) === String(r.userId));
+                    const displayName = roomUser?.name || r.userName || r.email || r.userId;
+                    return (
+                      <Box key={r.userId} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1 }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
+                          {initials(displayName)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'text.primary' }}>{displayName}</Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{r.readAt ? new Date(r.readAt).toLocaleString() : '—'}</Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setReadersDialogOpen(false)} sx={{ textTransform: 'none' }}>Close</Button>
+              </DialogActions>
+            </Dialog>
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

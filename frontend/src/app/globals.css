@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Themed scrollbar for chat messages (.chat-scroll) */
+:root {
+	--scroll-thumb: #cbd5e1; /* light default */
+	--scroll-track: #f1f5f9;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--scroll-thumb: #374151; /* dark thumb */
+		--scroll-track: #1f2937;
+	}
+}
+
+.chat-scroll {
+	scrollbar-width: thin;
+	scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+.chat-scroll::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+	background: var(--scroll-track);
+	border-radius: 8px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+	background-color: var(--scroll-thumb);
+	border-radius: 8px;
+	border: 2px solid transparent;
+	background-clip: padding-box;
+}
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+	filter: brightness(0.9);
+}
+

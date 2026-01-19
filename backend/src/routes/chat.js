@@ -191,14 +191,123 @@ export default function chatSocket(io) {
           senderEmail: sender?.email,
           senderRole: sender?.role,
         };
-
         console.log(`Sending room message from ${senderId} to room ${roomId}`);
-        // Emit to other sockets in the room but not the sender (avoid duplicate delivery)
+
+        // Create per-user receipts for all recipients (room members except sender)
+        const members = await db
+          .select()
+          .from(schema.room_members)
+          .where(eq(schema.room_members.roomId, roomId));
+
+        const recipients = members
+          .map((m) => m.userId)
+          .filter((uid) => String(uid) !== String(senderId));
+
+        // Insert receipt rows
+        if (recipients.length) {
+          const receiptRows = recipients.map((uid) => ({
+            messageId: saved.id,
+            userId: uid,
+            status: "sent",
+            createdAt: new Date(),
+          }));
+          await db.insert(schema.message_receipts).values(receiptRows);
+        }
+
+        // Attach initial receipts info for client
+        msgWithDetails.receipts = recipients.map((uid) => ({ userId: uid, status: "sent" }));
+
+        // Emit message to other sockets in the room (they'll receive and can ack)
         socket.to(roomId).emit("receive_room_message", msgWithDetails);
+        // Notify sender that message is saved (include receipts)
         socket.emit("message_sent", msgWithDetails);
       } catch (e) {
         console.error("Error sending room message:", e);
         socket.emit("message_error", { error: "Failed to send room message" });
+      }
+    });
+
+    // Acknowledgement from recipient that they've received the message (for delivery receipts)
+    socket.on("message_received", async ({ messageId, roomId, userId }) => {
+      try {
+        if (!messageId || !userId) return;
+        const now = new Date();
+
+        // Update per-user receipt to delivered
+        await db
+          .update(schema.message_receipts)
+          .set({ deliveredAt: now, status: "delivered" })
+          .where(
+            and(
+              eq(schema.message_receipts.messageId, messageId),
+              eq(schema.message_receipts.userId, userId)
+            )
+          );
+
+        // Notify sender about this recipient delivery
+        const [msgRow] = await db
+          .select()
+          .from(schema.messages)
+          .where(eq(schema.messages.id, messageId))
+          .limit(1);
+
+        if (msgRow) {
+          io.to(msgRow.senderId).emit("message_delivered", {
+            messageId,
+            userId,
+            deliveredAt: now,
+            roomId: msgRow.roomId,
+          });
+        }
+      } catch (e) {
+        console.error("Error handling message_received:", e);
+      }
+    });
+
+    // Recipient notifies server that message(s) were read
+    socket.on("message_read", async ({ messageId, roomId, userId }) => {
+      try {
+        if (!messageId || !userId) return;
+        const now = new Date();
+
+        // Update per-user receipt to read
+        await db
+          .update(schema.message_receipts)
+          .set({ readAt: now, status: "read" })
+          .where(
+            and(
+              eq(schema.message_receipts.messageId, messageId),
+              eq(schema.message_receipts.userId, userId)
+            )
+          );
+
+        const [msgRow] = await db
+          .select()
+          .from(schema.messages)
+          .where(eq(schema.messages.id, messageId))
+          .limit(1);
+
+        if (msgRow) {
+          io.to(msgRow.senderId).emit("message_read", {
+            messageId,
+            userId,
+            readAt: now,
+            roomId: msgRow.roomId,
+          });
+        }
+
+        // Update unread_tracking: set lastReadMessageId and reset unreadCount for this user/room
+        await db
+          .update(schema.unread_tracking)
+          .set({ lastReadMessageId: messageId, unreadCount: 0 })
+          .where(
+            and(
+              eq(schema.unread_tracking.userId, userId),
+              eq(schema.unread_tracking.roomId, roomId)
+            )
+          );
+      } catch (e) {
+        console.error("Error handling message_read:", e);
       }
     });
 

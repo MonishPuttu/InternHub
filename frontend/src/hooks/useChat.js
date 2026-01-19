@@ -118,7 +118,58 @@ export default function useChat() {
           });
           return [...filtered, msg];
         });
+        // Acknowledge receipt so server can mark delivered
+        try {
+          const storedUser = JSON.parse(localStorage.getItem("user"));
+          const userId = storedUser?.id;
+          if (socketRef.current && msg.id && userId) {
+            socketRef.current.emit("message_received", {
+              messageId: msg.id,
+              roomId: msg.roomId,
+              userId,
+            });
+          }
+        } catch (e) {
+          // ignore
+        }
       }
+    };
+
+    
+    const handleMessageDelivered = (data) => {
+      const { messageId, userId, deliveredAt } = data || {};
+      if (!messageId || !userId) return;
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m.id) !== String(messageId)) return m;
+          const receipts = (m.receipts || []).slice();
+          const idx = receipts.findIndex((r) => String(r.userId) === String(userId));
+          if (idx !== -1) {
+            receipts[idx] = { ...receipts[idx], status: "delivered", deliveredAt };
+          } else {
+            receipts.push({ userId, status: "delivered", deliveredAt });
+          }
+          return { ...m, receipts };
+        })
+      );
+    };
+
+    const handleMessageRead = (data) => {
+      const { messageId, userId, readAt } = data || {};
+      if (!messageId || !userId) return;
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m.id) !== String(messageId)) return m;
+          const receipts = (m.receipts || []).slice();
+          const idx = receipts.findIndex((r) => String(r.userId) === String(userId));
+          if (idx !== -1) {
+            receipts[idx] = { ...receipts[idx], status: "read", readAt };
+          } else {
+            receipts.push({ userId, status: "read", readAt });
+          }
+          return { ...m, receipts };
+        })
+      );
     };
 
     const handleMessageError = (error) => {
@@ -128,36 +179,43 @@ export default function useChat() {
     const handleMessageSent = (msg) => {
       // Replace temp message placeholder with server-sent message, or append if not found
       setMessages((prev) => {
+        // Ensure receipts array exists
+        const normalized = { ...msg, receipts: msg.receipts || [] };
+
         // If server message id already exists, avoid duplicating
-        if (prev.some((m) => String(m.id) === String(msg.id))) {
+        if (prev.some((m) => String(m.id) === String(normalized.id))) {
           return prev;
         }
 
         const idx = prev.findIndex((m) =>
           String(m.id || "").startsWith("temp-") &&
-          m.message === msg.message &&
-          String(m.roomId) === String(msg.roomId)
+          m.message === normalized.message &&
+          String(m.roomId) === String(normalized.roomId)
         );
 
         if (idx !== -1) {
           const copy = [...prev];
-          copy[idx] = msg;
+          copy[idx] = normalized;
           return copy;
         }
 
-        return [...prev, msg];
+        return [...prev, normalized];
       });
     };
 
     socket.on("receive_message", handleReceiveMessage);
     socket.on("receive_room_message", handleReceiveRoomMessage);
     socket.on("message_sent", handleMessageSent);
+    socket.on("message_delivered", handleMessageDelivered);
+    socket.on("message_read", handleMessageRead);
     socket.on("message_error", handleMessageError);
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
       socket.off("receive_room_message", handleReceiveRoomMessage);
       socket.off("message_sent", handleMessageSent);
+      socket.off("message_delivered", handleMessageDelivered);
+      socket.off("message_read", handleMessageRead);
       socket.off("message_error", handleMessageError);
     };
   }, []);
@@ -179,6 +237,24 @@ export default function useChat() {
 
       if (res.data.ok) {
         setMessages(res.data.messages);
+        // send read receipt for latest message in the room (mark as read)
+        try {
+          const msgs = res.data.messages || [];
+          if (msgs.length && socketRef.current) {
+            const latest = msgs[msgs.length - 1];
+            const storedUser = JSON.parse(localStorage.getItem("user"));
+            const userId = storedUser?.id;
+            if (latest.id && userId) {
+              socketRef.current.emit("message_read", {
+                messageId: latest.id,
+                roomId,
+                userId,
+              });
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
       }
     } catch (err) {
       console.error("Failed to load messages:", err);
@@ -250,8 +326,20 @@ export default function useChat() {
       const token = localStorage.getItem("token");
 
       if (!socket?.connected) {
-        setErrorMsg("Socket not connected");
-        return;
+        // try to connect socket and wait for connection
+        try {
+          socket.connect();
+          await new Promise((resolve, reject) => {
+            const to = setTimeout(() => reject(new Error("Socket connect timeout")), 5000);
+            socket.once("connect", () => {
+              clearTimeout(to);
+              resolve();
+            });
+          });
+        } catch (e) {
+          setErrorMsg("Socket not connected");
+          return;
+        }
       }
 
       // Determine userId robustly: prefer `user` state, fallback to localStorage
@@ -280,11 +368,12 @@ export default function useChat() {
 
         if (res.data.ok) {
           // include userId so backend can validate and add socket to the room
+          // small delay to ensure DB commit propagated on some setups
+          await new Promise((r) => setTimeout(r, 200));
           socket.emit("join_room", { roomId, userId });
           localStorage.setItem("joinedRoom", roomId);
           setJoinedRoom(roomId);
           await fetchMessages(token, roomId);
-          console.log("Joined room:", roomId);
         }
       } catch (err) {
         console.error("Failed to join room:", err);
@@ -311,7 +400,7 @@ export default function useChat() {
         );
 
         if (res.data.ok) {
-          console.log("✅ Room created:", res.data.room);
+          // room created
           await fetchRooms();
           // join the newly created room via the existing joinRoom helper
           await joinRoom(res.data.room.id);
@@ -334,7 +423,7 @@ export default function useChat() {
     setJoinedRoom(null);
     setMessages([]);
     setUsersInRoom([]);
-    console.log("Left room");
+    // left room
   }, [joinedRoom]);
 
   // Send message
@@ -376,6 +465,26 @@ export default function useChat() {
     window.location.reload();
   }, []);
 
+  const sendReadReceipt = useCallback((messageId, roomId) => {
+    try {
+      const socket = socketRef.current;
+      if (!socket || !messageId) return;
+      let userId = user?.id;
+      if (!userId) {
+        try {
+          const stored = JSON.parse(localStorage.getItem("user"));
+          userId = stored?.id;
+        } catch (e) {
+          userId = null;
+        }
+      }
+      if (!userId) return;
+      socket.emit("message_read", { messageId, roomId, userId });
+    } catch (e) {
+      console.error("Failed to send read receipt", e);
+    }
+  }, [user]);
+
   const visibleMessages = messages.filter((m) => {
     if (!joinedRoom) return true;
     return String(m.roomId) === String(joinedRoom);
@@ -401,5 +510,6 @@ export default function useChat() {
     fetchMessages,
     fetchRooms,
     logout,
+    sendReadReceipt,
   };
 }
