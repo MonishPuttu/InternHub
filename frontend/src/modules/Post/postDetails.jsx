@@ -495,7 +495,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                 </Box>
               )}
 
-              {/* POSTER / MEDIA -- ONLY IF MEDIA EXISTS */}
+          {/* POSTER / MEDIA -- ONLY IF MEDIA EXISTS */}
           {post.media && (
             <Box sx={{ mb: 4, textAlign: "center" }}>
               <Box sx={{ position: "relative", mb: 3 }}>
@@ -550,7 +550,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
                   {post.notes}
                 </Typography>
               </Box>
-            </>
+            </Box>
           )}
         </Box>
       </Card>
