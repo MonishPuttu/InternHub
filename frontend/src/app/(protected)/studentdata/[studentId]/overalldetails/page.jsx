@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/session";
 import OverallDetailsConsolidated from "@/components/studentdata/overalldetails";
 
-export default function StudentDetailPage({ params }) {
+export default function OverallDetailsPage({ params }) {
     const router = useRouter();
-    const [user, setUser] = useState(null);
     const resolvedParams = use(params);
+    const [user, setUser] = useState(null);
     const studentId = resolvedParams.studentId;
 
     useEffect(() => {

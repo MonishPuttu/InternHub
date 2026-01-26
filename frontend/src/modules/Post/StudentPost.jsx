@@ -14,10 +14,19 @@ import {
   MenuItem,
   Button,
   Pagination,
+  Chip,
+  Paper,
 } from "@mui/material";
+import {
+  Bookmark as BookmarkIcon,
+  BookmarkBorder as BookmarkBorderIcon,
+  Share as ShareIcon,
+  CalendarMonth as CalendarIcon,
+  Work as WorkIcon,
+  CheckCircle as CheckCircleIcon,
+} from "@mui/icons-material";
 import axios from "axios";
 import { BACKEND_URL, INDUSTRIES } from "@/constants/postConstants";
-import PostCard from "@/components/Post/PostCard";
 import { useTheme } from "@mui/material/styles";
 import ApplyDialog from "@/components/Post/ApplyDialog";
 
@@ -38,7 +47,7 @@ export default function StudentPosts() {
   const [showAppliedOnly, setShowAppliedOnly] = useState(false);
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 10;
+  const postsPerPage = 12;
 
   useEffect(() => {
     fetchApprovedPosts();
@@ -121,7 +130,8 @@ export default function StudentPosts() {
     }
   };
 
-  const toggleSavePost = (postId) => {
+  const toggleSavePost = (postId, e) => {
+    e.stopPropagation();
     let updated = [...savedPosts];
     if (updated.includes(postId)) {
       updated = updated.filter((id) => id !== postId);
@@ -134,12 +144,14 @@ export default function StudentPosts() {
     localStorage.setItem("savedPosts", JSON.stringify(updated));
   };
 
-  const handleApplyClick = (post) => {
+  const handleApplyClick = (post, e) => {
+    e.stopPropagation();
     setSelectedPost(post);
     setApplyDialogOpen(true);
   };
 
-  const handleShare = async (post) => {
+  const handleShare = async (post, e) => {
+    e.stopPropagation();
     const url = `${window.location.origin}/Post/postdetails/${post.id}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -172,6 +184,17 @@ export default function StudentPosts() {
         error.response?.data?.error || "Failed to submit application"
       );
     }
+  };
+
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffTime = Math.abs(now - postDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Posted today";
+    if (diffDays === 1) return "Posted 1 day ago";
+    return `Posted ${diffDays} days ago`;
   };
 
   const isExpired = (post) => {
@@ -216,6 +239,7 @@ export default function StudentPosts() {
       return matchesIndustry && matchesSearch;
     });
   };
+
   const filteredPosts = getFilteredPosts();
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;
@@ -224,6 +248,7 @@ export default function StudentPosts() {
 
   const handlePageChange = (event, page) => {
     setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
@@ -258,177 +283,112 @@ export default function StudentPosts() {
             : "Explore and apply to approved internship and job opportunities"}
         </Typography>
 
-        {/* Stats */}
-        <Stack direction="row" spacing={3} sx={{ mb: 3, flexWrap: "wrap" }}>
-          <Box
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              border: "2px solid",
-              borderColor:
-                !showAppliedOnly && !showSavedOnly && !showHistoryOnly
-                  ? "#8b5cf6"
-                  : theme.palette.mode === "dark"
-                  ? "#334155"
-                  : "#e2e8f0",
-              bgcolor: "background.paper",
-              boxShadow:
-                !showAppliedOnly && !showSavedOnly && !showHistoryOnly
-                  ? "0 0 10px rgba(139, 92, 246, 0.5)"
-                  : "none",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#8b5cf6",
-              },
-            }}
-            onClick={() => {
-              setShowAppliedOnly(false);
-              setShowSavedOnly(false);
-              setShowHistoryOnly(false);
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color:
-                  !showAppliedOnly && !showSavedOnly && !showHistoryOnly
-                    ? "#8b5cf6"
-                    : "text.secondary",
-              }}
-            >
-              Total Opportunities
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{ color: "text.primary", fontWeight: 700 }}
-            >
-              {posts.filter((post) => !appliedPosts.includes(post.id)).length}
-            </Typography>
-          </Box>
+        {/* Stats - TAB STYLE */}
+<Box
+  sx={{
+    borderBottom: 1,
+    borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+    mb: 3,
+  }}
+>
+  <Box
+    sx={{
+      display: "flex",
+      gap: 4,
+    }}
+  >
+    <Box
+      sx={{
+        cursor: "pointer",
+        pb: 1.5,
+        borderBottom: "3px solid",
+        borderColor:
+          !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+            ? "#a855f7"
+            : "transparent",
+        transition: "all 0.3s ease",
+      }}
+      onClick={() => {
+        setShowAppliedOnly(false);
+        setShowSavedOnly(false);
+        setShowHistoryOnly(false);
+      }}
+    >
+      <Typography
+        sx={{
+          color:
+            !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+              ? "#a855f7"
+              : "text.secondary",
+          fontSize: "0.95rem",
+          fontWeight: 500,
+        }}
+      >
+        Total Opportunities ({posts.filter((post) => !appliedPosts.includes(post.id)).length})
+      </Typography>
+    </Box>
 
-          <Box
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              border: "2px solid",
-              borderColor: showSavedOnly
-                ? "#a78bfa"
-                : theme.palette.mode === "dark"
-                ? "#334155"
-                : "#e2e8f0",
-              bgcolor: "background.paper",
-              boxShadow: showSavedOnly
-                ? "0 0 10px rgba(167, 139, 250, 0.5)"
-                : "none",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#a78bfa",
-              },
-            }}
-            onClick={() => setShowSavedOnly(!showSavedOnly)}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: showSavedOnly ? "#a78bfa" : "text.secondary",
-              }}
-            >
-              Saved Posts
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#a78bfa", fontWeight: 700 }}>
-              {savedPosts.length}
-            </Typography>
-          </Box>
+    <Box
+      sx={{
+        cursor: "pointer",
+        pb: 1.5,
+        borderBottom: "3px solid",
+        borderColor: showAppliedOnly ? "#a855f7" : "transparent",
+        transition: "all 0.3s ease",
+      }}
+      onClick={() => {
+        setShowAppliedOnly(true);
+        setShowHistoryOnly(false);
+      }}
+    >
+      <Typography
+        sx={{
+          color: showAppliedOnly ? "#a855f7" : "text.secondary",
+          fontSize: "0.95rem",
+          fontWeight: 500,
+        }}
+      >
+        Applied Posts (
+        {
+          appliedPosts.filter((id) => {
+            const post = posts.find((p) => p.id === id);
+            return post && !isExpired(post);
+          }).length
+        })
+      </Typography>
+    </Box>
 
-          <Box
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              border: "2px solid",
-              borderColor: showAppliedOnly
-                ? "#10b981"
-                : theme.palette.mode === "dark"
-                ? "#334155"
-                : "#e2e8f0",
-              bgcolor: "background.paper",
-              boxShadow: showAppliedOnly
-                ? "0 0 10px rgba(16, 185, 129, 0.5)"
-                : "none",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#10b981",
-              },
-            }}
-            onClick={() => {
-              setShowAppliedOnly(true);
-              setShowHistoryOnly(false);
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: showAppliedOnly ? "#10b981" : "text.secondary",
-              }}
-            >
-              Applied Posts
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
-              {
-                appliedPosts.filter((id) => {
-                  const post = posts.find((p) => p.id === id);
-                  return post && !isExpired(post);
-                }).length
-              }
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              cursor: "pointer",
-              p: 2,
-              borderRadius: 1,
-              border: "2px solid",
-              borderColor: showHistoryOnly
-                ? "#f59e0b"
-                : theme.palette.mode === "dark"
-                ? "#334155"
-                : "#e2e8f0",
-              bgcolor: "background.paper",
-              boxShadow: showHistoryOnly
-                ? "0 0 10px rgba(245, 158, 11, 0.5)"
-                : "none",
-              transition: "all 0.2s",
-              "&:hover": {
-                borderColor: "#f59e0b",
-              },
-            }}
-            onClick={() => {
-              setShowHistoryOnly(true);
-              setShowAppliedOnly(false);
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: showHistoryOnly ? "#f59e0b" : "text.secondary",
-              }}
-            >
-              Application History
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#f59e0b", fontWeight: 700 }}>
-              {
-                appliedPosts.filter((id) => {
-                  const post = posts.find((p) => p.id === id);
-                  return post && isExpired(post);
-                }).length
-              }
-            </Typography>
-          </Box>
-        </Stack>
-
+    <Box
+      sx={{
+        cursor: "pointer",
+        pb: 1.5,
+        borderBottom: "3px solid",
+        borderColor: showHistoryOnly ? "#a855f7" : "transparent",
+        transition: "all 0.3s ease",
+      }}
+      onClick={() => {
+        setShowHistoryOnly(true);
+        setShowAppliedOnly(false);
+      }}
+    >
+      <Typography
+        sx={{
+          color: showHistoryOnly ? "#a855f7" : "text.secondary",
+          fontSize: "0.95rem",
+          fontWeight: 500,
+        }}
+      >
+        Application History (
+        {
+          appliedPosts.filter((id) => {
+            const post = posts.find((p) => p.id === id);
+            return post && isExpired(post);
+          }).length
+        })
+      </Typography>
+    </Box>
+  </Box>
+</Box>
         {/* Search and Filters */}
         <Stack
           direction={{ xs: "column", md: "row" }}
@@ -450,10 +410,6 @@ export default function StudentPosts() {
                 },
                 "&:hover fieldset": { borderColor: "#8b5cf6" },
                 "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-              },
-              "& .MuiOutlinedInput-input::placeholder": {
-                color: "text.secondary",
-                opacity: 0.7,
               },
             }}
           />
@@ -483,32 +439,6 @@ export default function StudentPosts() {
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#8b5cf6",
                 },
-                "& .MuiSvgIcon-root": { color: "text.secondary" },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    bgcolor: "background.paper",
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    "& .MuiMenuItem-root": {
-                      color: "text.primary",
-                      "&:hover": {
-                        bgcolor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(139, 92, 246, 0.1)"
-                            : "rgba(139, 92, 246, 0.05)",
-                      },
-                      "&.Mui-selected": {
-                        bgcolor: "rgba(139, 92, 246, 0.15)",
-                        "&:hover": {
-                          bgcolor: "rgba(139, 92, 246, 0.2)",
-                        },
-                      },
-                    },
-                  },
-                },
               }}
             >
               <MenuItem value="all">All Industries</MenuItem>
@@ -522,6 +452,7 @@ export default function StudentPosts() {
           <Button
             variant={showSavedOnly ? "contained" : "outlined"}
             onClick={() => setShowSavedOnly(!showSavedOnly)}
+            startIcon={showSavedOnly ? <BookmarkIcon /> : <BookmarkBorderIcon />}
             sx={{
               bgcolor: showSavedOnly ? "#8b5cf6" : "transparent",
               color: showSavedOnly ? "white" : "#8b5cf6",
@@ -544,13 +475,13 @@ export default function StudentPosts() {
                 setShowHistoryOnly(false);
               }}
               sx={{
-                color: "#10b981",
-                borderColor: "#10b981",
+                color: "text.primary",
+                borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                 textTransform: "none",
                 fontWeight: 600,
                 "&:hover": {
-                  bgcolor: "rgba(16, 185, 129, 0.1)",
-                  borderColor: "#059669",
+                  bgcolor: "rgba(139, 92, 246, 0.1)",
+                  borderColor: "#8b5cf6",
                 },
               }}
             >
@@ -560,12 +491,13 @@ export default function StudentPosts() {
         </Stack>
       </Box>
 
-      {/* Posts List */}
+      {/* Posts Grid */}
       {filteredPosts.length === 0 ? (
-        <Box
+        <Paper
           sx={{
             textAlign: "center",
             py: 8,
+            px: 4,
             bgcolor: "background.paper",
             borderRadius: 2,
             border: "1px solid",
@@ -590,24 +522,342 @@ export default function StudentPosts() {
               ? "Expired or closed applications will appear here"
               : "Try adjusting your filters or search query"}
           </Typography>
-        </Box>
+        </Paper>
       ) : (
         <>
-          <Stack spacing={3}>
-            {currentPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                isSaved={savedPosts.includes(post.id)}
-                onToggleSave={() => toggleSavePost(post.id)}
-                onApply={() => handleApplyClick(post)}
-                onViewDetails={() =>
-                  router.push(`/Post/postdetails/${post.id}`)
-                }
-                onShare={() => handleShare(post)}
-              />
-            ))}
-          </Stack>
+          {/* Custom Posts Grid */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)",
+                lg: "repeat(4, 1fr)",
+              },
+              gap: 3,
+              width: "100%",
+            }}
+          >
+            {currentPosts.map((post) => {
+              const isPostSaved = savedPosts.includes(post.id);
+              const isPostApplied = appliedPosts.includes(post.id);
+
+              return (
+                <Box
+                  key={post.id}
+                  onClick={() => router.push(`/Post/postdetails/${post.id}`)}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    border: "2px solid",
+                    borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    borderRadius: 2,
+                    transition: "all 0.3s ease",
+                    bgcolor: "background.paper",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
+                      borderColor: "#8b5cf6",
+                    },
+                  }}
+                >
+                  {/* Card Content */}
+                  <Box sx={{ p: 3, flexGrow: 1 }}>
+                    {/* Icon and Applied Badge */}
+                    <Box
+                      sx={{
+                        mb: 2,
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 2,
+                          bgcolor: isPostApplied ? "#10b981" : "#8b5cf6",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isPostApplied ? (
+                          <CheckCircleIcon sx={{ fontSize: 32, color: "white" }} />
+                        ) : (
+                          <CalendarIcon sx={{ fontSize: 32, color: "white" }} />
+                        )}
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.5,
+                        }}
+                      >
+                        {isPostApplied && (
+                          <Chip
+                            label="✓ APPLIED"
+                            size="small"
+                            sx={{
+                              bgcolor: "rgba(16, 185, 129, 0.2)",
+                              color: "#10b981",
+                              fontWeight: 700,
+                              fontSize: "0.65rem",
+                              border: "1px solid #10b981",
+                              height: 24,
+                            }}
+                          />
+                        )}
+
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontSize: "0.7rem",
+                          }}
+                        >
+                          {getRelativeTime(post.application_date)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Company Name */}
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 2,
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {post.company_name}
+                    </Typography>
+
+                    {/* Roles Section */}
+                    <Box sx={{ mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 1,
+                        }}
+                      >
+                        <WorkIcon sx={{ fontSize: 16, color: "#8b5cf6" }} />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "#8b5cf6",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Roles & Positions
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {post.positions &&
+                        Array.isArray(post.positions) &&
+                        post.positions.length > 0 ? (
+                          post.positions.map((pos, index) => (
+                            <Chip
+                              key={index}
+                              label={pos.title || pos.position || pos}
+                              size="small"
+                              sx={{
+                                bgcolor: "rgba(139, 92, 246, 0.15)",
+                                color: "#8b5cf6",
+                                fontWeight: 600,
+                                fontSize: "0.75rem",
+                                border: "1px solid rgba(139, 92, 246, 0.3)",
+                              }}
+                            />
+                          ))
+                        ) : post.position ? (
+                          <Chip
+                            label={post.position}
+                            size="small"
+                            sx={{
+                              bgcolor: "rgba(139, 92, 246, 0.15)",
+                              color: "#8b5cf6",
+                              fontWeight: 600,
+                              fontSize: "0.75rem",
+                              border: "1px solid rgba(139, 92, 246, 0.3)",
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                          >
+                            No roles specified
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Package */}
+                    {post.package_offered && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          mb: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            bgcolor: "#10b981",
+                            mr: 1,
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#10b981",
+                            fontWeight: 600,
+                          }}
+                        >
+                          ₹{post.package_offered} LPA
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Industry Chip */}
+                    <Chip
+                      label={post.industry}
+                      size="small"
+                      sx={{
+                        bgcolor: "rgba(59, 130, 246, 0.15)",
+                        color: "#3b82f6",
+                        fontWeight: 500,
+                        borderRadius: 1,
+                        mb: 3,
+                      }}
+                    />
+
+                    {/* Posted Date */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <CalendarIcon
+                        sx={{ fontSize: 18, color: "primary.main" }}
+                      />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            display: "block",
+                          }}
+                        >
+                          Posted On
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 600,
+                          }}
+                        >
+                          {new Date(post.application_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          )}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Card Actions */}
+                  <Box
+                    sx={{
+                      p: 3,
+                      pt: 0,
+                      display: "flex",
+                      gap: 1,
+                    }}
+                  >
+                    {!isPostApplied && (
+                      <Button
+                        fullWidth
+                        size="medium"
+                        variant="contained"
+                        onClick={(e) => handleApplyClick(post, e)}
+                        sx={{
+                          textTransform: "none",
+                          bgcolor: "#8b5cf6",
+                          fontWeight: 600,
+                          "&:hover": {
+                            bgcolor: "#7c3aed",
+                          },
+                        }}
+                      >
+                        Apply Now
+                      </Button>
+                    )}
+
+                    <Button
+                      size="medium"
+                      variant="outlined"
+                      onClick={(e) => toggleSavePost(post.id, e)}
+                      sx={{
+                        minWidth: isPostApplied ? "50%" : "auto",
+                        color: isPostSaved ? "#8b5cf6" : "text.secondary",
+                        borderColor: isPostSaved
+                          ? "#8b5cf6"
+                          : theme.palette.mode === "dark"
+                          ? "#334155"
+                          : "#e2e8f0",
+                        "&:hover": {
+                          borderColor: "#8b5cf6",
+                          bgcolor: "rgba(139, 92, 246, 0.1)",
+                        },
+                      }}
+                    >
+                      {isPostSaved ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                    </Button>
+
+                    <Button
+                      size="medium"
+                      variant="outlined"
+                      onClick={(e) => handleShare(post, e)}
+                      sx={{
+                        minWidth: isPostApplied ? "50%" : "auto",
+                        color: "text.secondary",
+                        borderColor:
+                          theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                        "&:hover": {
+                          borderColor: "#8b5cf6",
+                          bgcolor: "rgba(139, 92, 246, 0.1)",
+                        },
+                      }}
+                    >
+                      <ShareIcon />
+                    </Button>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -616,12 +866,15 @@ export default function StudentPosts() {
                 count={totalPages}
                 page={currentPage}
                 onChange={handlePageChange}
-                color="primary"
+                size="large"
                 sx={{
                   "& .MuiPaginationItem-root": {
                     color: "text.primary",
                     borderColor:
                       theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                    "&:hover": {
+                      backgroundColor: "rgba(139, 92, 246, 0.1)",
+                    },
                   },
                   "& .Mui-selected": {
                     backgroundColor: "#8b5cf6 !important",
@@ -629,9 +882,6 @@ export default function StudentPosts() {
                     "&:hover": {
                       backgroundColor: "#7c3aed !important",
                     },
-                  },
-                  "& .MuiPaginationItem-root:hover": {
-                    backgroundColor: "rgba(139, 92, 246, 0.1)",
                   },
                 }}
               />

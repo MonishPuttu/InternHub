@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography, Paper, Button, Alert } from "@mui/material";
+import { Box, Typography, Paper, Button, Alert, Chip } from "@mui/material";
 import {
-  Visibility as VisibilityIcon,
   List as ListIcon,
-  Business as BusinessIcon,
+  CalendarMonth as CalendarIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { getToken } from "@/lib/session";
@@ -48,11 +47,23 @@ export default function RecruiterDashboard() {
     }
   };
 
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffTime = Math.abs(now - postDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Posted today";
+    if (diffDays === 1) return "Posted 1 day ago";
+    return `Posted ${diffDays} days ago`;
+  };
+
   const handleViewDetails = (postId) => {
     router.push(`/Post/postdetails/${postId}`);
   };
 
-  const handleViewApplications = (postId) => {
+  const handleViewApplications = (postId, e) => {
+    e.stopPropagation();
     router.push(`/dashboard/recruiter/applications/${postId}`);
   };
 
@@ -66,15 +77,31 @@ export default function RecruiterDashboard() {
 
   return (
     <Box sx={{ p: 4 }}>
+      {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-          My Job Posts
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          View and manage applications for your job postings
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+              My Job Posts
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              View and manage applications for your job postings
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            {posts.length} post{posts.length !== 1 ? "s" : ""} found
+          </Typography>
+        </Box>
       </Box>
 
+      {/* Posts Grid */}
       {posts.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
           <Typography color="text.secondary" variant="h6">
@@ -90,7 +117,9 @@ export default function RecruiterDashboard() {
             display: "grid",
             gridTemplateColumns: {
               xs: "1fr",
-              md: "repeat(2, 1fr)",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+              lg: "repeat(4, 1fr)",
             },
             gap: 3,
             width: "100%",
@@ -99,144 +128,201 @@ export default function RecruiterDashboard() {
           {posts.map((post) => (
             <Box
               key={post.id}
+              onClick={() => handleViewDetails(post.id)}
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 1,
+                border: "2px solid",
+                borderColor: "transparent",
+                borderRadius: 2,
                 transition: "all 0.3s ease",
                 bgcolor: "background.paper",
+                overflow: "hidden",
+                cursor: "pointer",
                 "&:hover": {
-                  transform: "translateY(-8px)",
-                  boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
-                  borderColor: "primary.main",
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
+                  borderColor: "#8b5cf6",
                 },
               }}
             >
               {/* Card Content */}
               <Box sx={{ p: 3, flexGrow: 1 }}>
-                <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+                {/* Icon and Status Badge */}
+                <Box
+                  sx={{
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 1.5,
+                  }}
+                >
                   <Box
                     sx={{
-                      p: 1.5,
+                      width: 56,
+                      height: 56,
                       borderRadius: 2,
-                      bgcolor: "primary.main",
-                      color: "white",
-                      mr: 2,
+                      bgcolor: "#10b981",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
                     }}
                   >
-                    <BusinessIcon sx={{ fontSize: 28 }} />
+                    <CalendarIcon sx={{ fontSize: 32, color: "white" }} />
                   </Box>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
-                      {post.company_name}
-                    </Typography>
+
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+                  >
+                    <Chip
+                      label="✓ APPROVED"
+                      size="small"
+                      sx={{
+                        bgcolor: "rgba(16, 185, 129, 0.2)",
+                        color: "#10b981",
+                        fontWeight: 700,
+                        fontSize: "0.65rem",
+                        border: "1px solid #10b981",
+                        height: 24,
+                      }}
+                    />
+
                     <Typography
-                      variant="body1"
-                      sx={{ fontWeight: 600, color: "text.secondary" }}
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "0.7rem",
+                      }}
                     >
-                      {post.position}
+                      {getRelativeTime(post.application_date)}
                     </Typography>
                   </Box>
                 </Box>
 
+                {/* Company Name */}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {post.company_name}
+                </Typography>
+
+                {/* Position */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    mb: 2,
+                  }}
+                >
+                  {post.position}
+                </Typography>
+
+                {/* Package */}
+                {post.package_offered && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: "#10b981",
+                        mr: 1,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#10b981",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ₹{post.package_offered} LPA
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Industry Chip */}
+                <Chip
+                  label={post.industry}
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(59, 130, 246, 0.15)",
+                    color: "#3b82f6",
+                    fontWeight: 500,
+                    borderRadius: 1,
+                    mb: 3,
+                  }}
+                />
+
+                {/* Posted Date */}
                 <Box
                   sx={{
-                    mt: 2,
                     display: "flex",
-                    flexDirection: "column",
+                    alignItems: "center",
                     gap: 1,
                   }}
                 >
-                  <Box
-                    sx={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Industry:
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {post.industry}
-                    </Typography>
-                  </Box>
-
-                  <Box
-                    sx={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Posted:
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {new Date(post.application_date).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-
-                  {post.package_offered && (
-                    <Box
+                  <CalendarIcon
+                    sx={{ fontSize: 18, color: "primary.main" }}
+                  />
+                  <Box>
+                    <Typography
+                      variant="caption"
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mt: 1,
-                        p: 1.5,
-                        borderRadius: 1,
-                        bgcolor: "rgba(16, 185, 129, 0.1)",
+                        color: "text.secondary",
+                        display: "block",
                       }}
                     >
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "success.dark", fontWeight: 600 }}
-                      >
-                        Package:
-                      </Typography>
-                      <Typography
-                        variant="body1"
-                        sx={{ color: "success.dark", fontWeight: 700 }}
-                      >
-                        ₹{post.package_offered} LPA
-                      </Typography>
-                    </Box>
-                  )}
+                      Posted On
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                      }}
+                    >
+                      {new Date(post.application_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
 
               {/* Card Actions */}
-              <Box
-                sx={{
-                  p: 2,
-                  pt: 0,
-                  display: "flex",
-                  gap: 1.5,
-                }}
-              >
+              <Box sx={{ p: 3, pt: 0 }}>
                 <Button
-                  variant="outlined"
-                  startIcon={<VisibilityIcon />}
-                  onClick={() => handleViewDetails(post.id)}
-                  sx={{
-                    flex: "1 1 0",
-                    minWidth: 0,
-                    textTransform: "none",
-                    borderColor: "primary.main",
-                    color: "primary.main",
-                    "&:hover": {
-                      borderColor: "primary.dark",
-                      bgcolor: "rgba(139, 92, 246, 0.08)",
-                    },
-                  }}
-                >
-                  View Details
-                </Button>
-                <Button
+                  fullWidth
+                  size="large"
                   variant="contained"
                   startIcon={<ListIcon />}
-                  onClick={() => handleViewApplications(post.id)}
+                  onClick={(e) => handleViewApplications(post.id, e)}
                   sx={{
-                    flex: "1 1 0",
-                    minWidth: 0,
                     textTransform: "none",
-                    bgcolor: "primary.main",
+                    bgcolor: "#a855f7",
+                    color: "white",
+                    fontWeight: 600,
+                    py: 1.5,
                     "&:hover": {
-                      bgcolor: "primary.dark",
+                      bgcolor: "#9333ea",
                     },
                   }}
                 >

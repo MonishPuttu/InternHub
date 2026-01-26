@@ -146,7 +146,6 @@ export default function StudentDashboard() {
     // Convert to string and trim
     const packageStr = String(packageOffered).trim();
 
-
     // Handle range format like "8-9" or "8 - 9"
     if (packageStr.includes("-")) {
       const parts = packageStr.split("-").map(p => p.trim());
@@ -165,12 +164,10 @@ export default function StudentDashboard() {
     const amount = parseFloat(packageStr);
 
     if (isNaN(amount)) {
-
       return "Not disclosed";
     }
 
     const result = `₹${amount.toFixed(2)} LPA`;
-
     return result;
   };
 
@@ -313,7 +310,29 @@ export default function StudentDashboard() {
         }}
       >
         <RecentApplicationsCard applications={recentApplications} />
-        <UpcomingEventsCard events={upcomingEvents} />
+        
+        {/* ✅ Clickable Upcoming Events Card - Redirects to Calendar */}
+        <Box
+          onClick={() => router.push("/calendar")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              router.push("/calendar");
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          sx={{
+            cursor: "pointer",
+            transition: "all 0.2s",
+            borderRadius: 2,
+            "&:hover": {
+              transform: "translateY(-2px)",
+            },
+          }}
+        >
+          <UpcomingEventsCard events={upcomingEvents} />
+        </Box>
       </Box>
     </Box>
   );

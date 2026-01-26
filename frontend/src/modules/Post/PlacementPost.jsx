@@ -4,37 +4,32 @@ import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
-  Stack,
   Tabs,
   Tab,
   Snackbar,
   Alert,
-  Card,
   Button,
   Chip,
-  IconButton,
-  Menu,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
+  Paper,
 } from "@mui/material";
 import {
-  Add as AddIcon, // NEW IMPORT
-  MoreVert as MoreVertIcon,
+  Add as AddIcon,
   CheckCircle as CheckCircleIcon,
-  Edit as EditIcon,
   Close as CloseIcon,
-  AttachMoney as AttachMoneyIcon,
-  LocationOn as LocationOnIcon,
-  AccessTime as AccessTimeIcon,
+  CalendarMonth as CalendarIcon,
+  Edit as EditIcon,
+  Visibility as VisibilityIcon,
+  Work as WorkIcon,
   Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
-import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal"; // NEW IMPORT
+import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal";
 import {
   BACKEND_URL,
   INDUSTRIES,
@@ -47,7 +42,6 @@ export default function PlacementPosts() {
   const [activeTab, setActiveTab] = useState(0);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [anchorEl, setAnchorEl] = useState(null);
   const [selectedApp, setSelectedApp] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -56,7 +50,7 @@ export default function PlacementPosts() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
-  const [openCreateModal, setOpenCreateModal] = useState(false); // NEW STATE
+  const [openCreateModal, setOpenCreateModal] = useState(false);
 
   useEffect(() => {
     fetchAllApplications();
@@ -81,10 +75,24 @@ export default function PlacementPosts() {
     }
   };
 
-  // NEW HANDLER
   const handleModalClose = () => {
     setOpenCreateModal(false);
-    fetchAllApplications(); // Refresh the list
+    fetchAllApplications();
+  };
+
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffTime = Math.abs(now - postDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Posted today";
+    if (diffDays === 1) return "Posted 1 day ago";
+    return `Posted ${diffDays} days ago`;
+  };
+
+  const handleViewDetails = (postId) => {
+    router.push(`/Post/postdetails/${postId}`);
   };
 
   const handleApprove = async () => {
@@ -137,7 +145,8 @@ export default function PlacementPosts() {
     }
   };
 
-  const handleEdit = (app) => {
+  const handleEdit = (app, e) => {
+    e.stopPropagation();
     setSelectedApp(app);
     setEditFormData({
       company_name: app.company_name,
@@ -147,7 +156,6 @@ export default function PlacementPosts() {
       notes: app.notes || "",
     });
     setEditDialogOpen(true);
-    handleMenuClose();
   };
 
   const handleSaveEdit = async () => {
@@ -173,15 +181,6 @@ export default function PlacementPosts() {
     } catch (error) {
       setErrorMsg(error.response?.data?.error || "Failed to update post");
     }
-  };
-
-  const handleMenuOpen = (event, app) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedApp(app);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
   };
 
   const pendingPosts = applications.filter(
@@ -213,7 +212,7 @@ export default function PlacementPosts() {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header - MODIFIED TO ADD BUTTON */}
+      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Box
           sx={{
@@ -223,19 +222,8 @@ export default function PlacementPosts() {
             mb: 2,
           }}
         >
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{ color: "text.primary", fontWeight: 700, mb: 0.5 }}
-            >
-              Post Management
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Review and manage posted opportunities
-            </Typography>
-          </Box>
+          
 
-          {/* NEW: Create Post Button */}
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -252,35 +240,7 @@ export default function PlacementPosts() {
           </Button>
         </Box>
 
-        <Box sx={{ mt: 2, display: "flex", gap: 3 }}>
-          <Box>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Pending Review
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#fbbf24", fontWeight: 700 }}>
-              {pendingPosts.length}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Approved Posts
-            </Typography>
-            <Typography variant="h6" sx={{ color: "#10b981", fontWeight: 700 }}>
-              {approvedPosts.length}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Total Posts
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{ color: "text.primary", fontWeight: 700 }}
-            >
-              {applications.length}
-            </Typography>
-          </Box>
-        </Box>
+        
       </Box>
 
       {/* Tabs */}
@@ -311,18 +271,9 @@ export default function PlacementPosts() {
         </Tabs>
       </Box>
 
-      {/* Posts List */}
+      {/* Posts Grid */}
       {currentPosts.length === 0 ? (
-        <Box
-          sx={{
-            textAlign: "center",
-            py: 8,
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-          }}
-        >
+        <Paper sx={{ p: 4, textAlign: "center" }}>
           <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
             {activeTab === 0
               ? "No pending posts"
@@ -330,369 +281,407 @@ export default function PlacementPosts() {
               ? "No approved posts yet"
               : "No disapproved posts"}
           </Typography>
-        </Box>
+        </Paper>
       ) : (
-        <Stack spacing={3}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+              lg: "repeat(4, 1fr)",
+            },
+            gap: 3,
+            width: "100%",
+          }}
+        >
           {currentPosts.map((app) => (
-            <Card
+            <Box
               key={app.id}
-              elevation={0}
+              onClick={() => handleViewDetails(app.id)}
               sx={{
-                bgcolor: "background.paper",
-                border: activeTab === 0 ? "2px solid #fbbf24" : "1px solid",
-                borderColor:
-                  activeTab === 0
-                    ? "#fbbf24"
-                    : theme.palette.mode === "dark"
-                    ? "#334155"
-                    : "#e2e8f0",
+                display: "flex",
+                flexDirection: "column",
+                border: "1px solid",     
+                borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",           
                 borderRadius: 2,
-                p: 3,
-                transition: "all 0.2s",
+                transition: "all 0.3s ease",
+                bgcolor: "background.default",
+                overflow: "hidden",
+                cursor: "pointer",
                 "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
                   borderColor: "#8b5cf6",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 8px 24px rgba(139, 92, 246, 0.15)",
                 },
               }}
             >
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {app.media && (
-                  <Box
-                    component="img"
-                    src={app.media}
-                    alt={app.company_name}
-                    sx={{
-                      width: "100%",
-                      height: 280,
-                      borderRadius: 2,
-                      objectFit: "cover",
-                      border: "2px solid",
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    }}
-                  />
-                )}
-
+              {/* Card Content */}
+              <Box sx={{ p: 3, flexGrow: 1 }}>
+                {/* Icon and Status Badge */}
                 <Box
                   sx={{
+                    mb: 2,
                     display: "flex",
-                    gap: 3,
-                    alignItems: "start",
-                    flexWrap: "wrap",
+                    alignItems: "flex-start",
+                    gap: 1.5,
                   }}
                 >
                   <Box
                     sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 2,
+                      bgcolor:"#8b5cf6",                  
                       display: "flex",
-                      flexDirection: "column",
-                      gap: 1,
                       alignItems: "center",
-                      minWidth: 100,
+                      justifyContent: "center",
+                      flexShrink: 0,
                     }}
                   >
+                    <CalendarIcon sx={{ fontSize: 32, color: "white" }} />
+                  </Box>
+
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+                  >
+                    {/* Status Badge */}
                     {activeTab === 0 && (
                       <Chip
-                        label="Pending Review"
+                        label="⏳ PENDING"
                         size="small"
                         sx={{
-                          bgcolor: `rgba(251, 191, 36, 0.2)`,
+                          bgcolor: "rgba(251, 191, 36, 0.2)",
                           color: "#fbbf24",
                           fontWeight: 700,
-                          fontSize: "0.75rem",
-                          border: `1px solid #fbbf24`,
+                          fontSize: "0.65rem",
+                          border: "1px solid #fbbf24",
+                          height: 24,
                         }}
                       />
                     )}
                     {activeTab === 1 && (
                       <Chip
-                        label="✓ Approved"
+                        label="✓ APPROVED"
                         size="small"
                         sx={{
                           bgcolor: "rgba(16, 185, 129, 0.2)",
                           color: "#10b981",
                           fontWeight: 700,
-                          fontSize: "0.75rem",
+                          fontSize: "0.65rem",
                           border: "1px solid #10b981",
+                          height: 24,
                         }}
                       />
                     )}
                     {activeTab === 2 && (
                       <Chip
-                        label="✕ Disapproved"
+                        label="✕ DISAPPROVED"
                         size="small"
                         sx={{
                           bgcolor: "rgba(239, 68, 68, 0.2)",
                           color: "#ef4444",
                           fontWeight: 700,
-                          fontSize: "0.75rem",
+                          fontSize: "0.65rem",
                           border: "1px solid #ef4444",
+                          height: 24,
                         }}
                       />
                     )}
-                  </Box>
 
-                  <Box sx={{ flex: 1, minWidth: 300 }}>
-                    <Box
+                    <Typography
+                      variant="caption"
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "start",
-                        mb: 2,
+                        color: "text.secondary",
+                        fontSize: "0.7rem",
                       }}
                     >
-                      <Box>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            color: "text.primary",
-                            fontWeight: 700,
-                            mb: 0.5,
-                          }}
-                        >
-                          {app.position}
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            color: "text.secondary",
-                            fontWeight: 600,
-                            mb: 1,
-                          }}
-                        >
-                          {app.company_name}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {app.notes && (
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "text.secondary", mb: 2, lineHeight: 1.6 }}
-                      >
-                        {app.notes.length > 150
-                          ? `${app.notes.substring(0, 150)}...`
-                          : app.notes}
-                      </Typography>
-                    )}
-
-                    <Box
-                      sx={{ display: "flex", gap: 3, mb: 2, flexWrap: "wrap" }}
-                    >
-                      {app.package_offered && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <AttachMoneyIcon
-                            sx={{ fontSize: 18, color: "text.secondary" }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{ color: "text.secondary" }}
-                          >
-                            ₹{app.package_offered}L
-                          </Typography>
-                        </Box>
-                      )}
-
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <LocationOnIcon
-                          sx={{ fontSize: 18, color: "text.secondary" }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.secondary" }}
-                        >
-                          {app.industry}
-                        </Typography>
-                      </Box>
-
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <AccessTimeIcon
-                          sx={{ fontSize: 18, color: "text.secondary" }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.secondary" }}
-                        >
-                          Posted{" "}
-                          {new Date(app.application_date).toLocaleDateString()}
-                        </Typography>
-                      </Box>
-                      {app.application_deadline &&
-                        !isNaN(
-                          new Date(app.application_deadline).getTime()
-                        ) && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <AccessTimeIcon
-                              sx={{ fontSize: 18, color: "#ef4444" }}
-                            />
-                            <Typography
-                              variant="body2"
-                              sx={{ color: "text.secondary" }}
-                            >
-                              Deadline{" "}
-                              {new Date(
-                                app.application_deadline
-                              ).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        )}
-                    </Box>
+                      {getRelativeTime(app.application_date)}
+                    </Typography>
                   </Box>
+                </Box>
 
+                {/* Company Name */}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {app.company_name}
+                </Typography>
+
+                {/* Role/Position Section - UPDATED TO SHOW MULTIPLE ROLES */}
+                <Box sx={{ mb: 2 }}>
                   <Box
                     sx={{
                       display: "flex",
-                      flexDirection: "column",
+                      alignItems: "center",
                       gap: 1,
-                      minWidth: 120,
+                      mb: 1,
                     }}
                   >
-                    {activeTab === 0 && (
-                      <>
-                        <Button
-                          variant="contained"
+                    <WorkIcon sx={{ fontSize: 16, color: "#8b5cf6" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                       Positions
+                    </Typography>
+                  </Box>
+
+                  {/* Display roles as chips */}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {app.positions &&
+                    Array.isArray(app.positions) &&
+                    app.positions.length > 0 ? (
+                      app.positions.map((pos, index) => (
+                        <Chip
+                          key={index}
+                          label={pos.title || pos.position || pos}
                           size="small"
-                          startIcon={<CheckCircleIcon />}
-                          onClick={() => {
-                            setSelectedApp(app);
-                            setActionType("approve");
-                            setActionDialogOpen(true);
-                          }}
                           sx={{
-                            bgcolor: "#10b981",
-                            "&:hover": { bgcolor: "#059669" },
-                            textTransform: "none",
+                            bgcolor: "transparent",
+                            color: "white",
                             fontWeight: 600,
+                            fontSize: "0.75rem",
+                            border: "1px solid rgba(139, 92, 246, 0.3)",
                           }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            setSelectedApp(app);
-                            setActionType("disapprove");
-                            setActionDialogOpen(true);
-                          }}
-                          sx={{
-                            color: "#ef4444",
-                            borderColor: "#ef4444",
-                            "&:hover": {
-                              bgcolor: "rgba(239, 68, 68, 0.1)",
-                              borderColor: "#ef4444",
-                            },
-                            textTransform: "none",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Disapprove
-                        </Button>
-                      </>
-                    )}
-                    {activeTab !== 2 && (
-                      <>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() =>
-                            router.push(`/Post/postdetails/${app.id}`)
-                          }
-                          sx={{
-                            color: "#8b5cf6",
-                            borderColor: "#8b5cf6",
-                            "&:hover": {
-                              bgcolor: "rgba(139, 92, 246, 0.1)",
-                              borderColor: "#8b5cf6",
-                            },
-                            textTransform: "none",
-                            fontWeight: 600,
-                          }}
-                        >
-                          View Details
-                        </Button>
-                        {activeTab === 1 && (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<TimelineIcon />}
-                            onClick={() => {
-                              if (!app || !app.id) {
-                                console.warn("PlacementPost: missing app.id", app);
-                                // fallback: open post details instead
-                                router.push(`/Post/postdetails/${app?.id || ""}`);
-                                return;
-                              }
-                              console.log("Opening timeline for post id:", app.id);
-                              router.push(`/timeline/post/${encodeURIComponent(app.id)}`);
-                            }}
-                            sx={{
-                              color: "#8b5cf6",
-                              borderColor: "#8b5cf6",
-                              "&:hover": {
-                                bgcolor: "rgba(139, 92, 246, 0.06)",
-                                borderColor: "#8b5cf6",
-                              },
-                              textTransform: "none",
-                              fontWeight: 600,
-                            }}
-                          >
-                            View Timeline
-                          </Button>
-                        )}
-                      </>
+                        />
+                      ))
+                    ) : app.position ? (
+                      <Chip
+                        label={app.position}
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(139, 92, 246, 0.15)",
+                          color: "#8b5cf6",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          border: "1px solid rgba(139, 92, 246, 0.3)",
+                        }}
+                      />
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                      >
+                        No roles specified
+                      </Typography>
                     )}
                   </Box>
                 </Box>
-              </Box>
-            </Card>
-          ))}
-        </Stack>
-      )}
 
-      {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            bgcolor: "background.paper",
-            border: "1px solid",
-            borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-            "& .MuiMenuItem-root": {
-              color: "text.primary",
-              "&:hover": {
-                bgcolor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(139, 92, 246, 0.1)"
-                    : "rgba(139, 92, 246, 0.05)",
-              },
-            },
-          },
-        }}
-      >
-        <MenuItem onClick={() => handleEdit(selectedApp)}>
-          <EditIcon sx={{ mr: 1, fontSize: 20, color: "#8b5cf6" }} />
-          Edit Post
-        </MenuItem>
-      </Menu>
+                {/* Package */}
+                {app.package_offered && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: "#10b981",
+                        mr: 1,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#10b981",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ₹{app.package_offered} LPA
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Industry Chip */}
+                <Chip
+                  label={app.industry}
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(59, 130, 246, 0.15)",
+                    color: "#3b82f6",
+                    fontWeight: 500,
+                    borderRadius: 1,
+                    mb: 3,
+                  }}
+                />
+
+                {/* Posted Date */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <CalendarIcon
+                    sx={{ fontSize: 18, color: "primary.main" }}
+                  />
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        display: "block",
+                      }}
+                    >
+                      Posted On
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                      }}
+                    >
+                      {new Date(app.application_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Card Actions - UPDATED */}
+              <Box
+                sx={{
+                  p: 3,
+                  pt: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                {/* Pending Posts - Approve/Disapprove buttons */}
+                {activeTab === 0 && (
+                  <>
+                    <Button
+                      fullWidth
+                      size="medium"
+                      variant="contained"
+                      startIcon={<CheckCircleIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedApp(app);
+                        setActionType("approve");
+                        setActionDialogOpen(true);
+                      }}
+                      sx={{
+                        textTransform: "none",
+                        bgcolor: "#8b5cf6",
+                        color: "white",
+                        fontWeight: 600,
+                        "&:hover": {
+                          bgcolor: "#7c3aed",
+                        },
+                      }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      fullWidth
+                      size="medium"
+                      variant="outlined"
+                      startIcon={<CloseIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedApp(app);
+                        setActionType("disapprove");
+                        setActionDialogOpen(true);
+                      }}
+                      sx={{
+                        textTransform: "none",
+                        color: "#ef4444",
+                        borderColor: "#ef4444",
+                        fontWeight: 600,
+                        "&:hover": {
+                          bgcolor: "rgba(239, 68, 68, 0.1)",
+                          borderColor: "#ef4444",
+                        },
+                      }}
+                    >
+                      Disapprove
+                    </Button>
+                  </>
+                )}
+
+                {/* Approved Posts - NO BUTTONS, just a message */}
+                {activeTab === 1 && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      bgcolor: "rgba(16, 185, 129, 0.08)",
+                      borderRadius: 1,
+                      border: "1px solid rgba(16, 185, 129, 0.2)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#10b981",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✓ Post is approved and live
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Disapproved Posts - Show rejection reason */}
+                {activeTab === 2 && app.rejection_reason && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      bgcolor: "rgba(239, 68, 68, 0.1)",
+                      borderRadius: 1,
+                      border: "1px solid #ef4444",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#ef4444",
+                        fontWeight: 600,
+                        display: "block",
+                        mb: 0.5,
+                      }}
+                    >
+                      Rejection Reason:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                    >
+                      {app.rejection_reason}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      )}
 
       {/* Action Dialog */}
       <Dialog
@@ -720,11 +709,11 @@ export default function PlacementPosts() {
             borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
-          <Stack spacing={2}>
-            <Typography sx={{ color: "text.secondary" }}>
+          <Box sx={{ minWidth: 400 }}>
+            <Typography sx={{ color: "text.secondary", mb: 2 }}>
               {actionType === "approve"
-                ? `Are you sure you want to approve "${selectedApp?.position}" post from ${selectedApp?.company_name}?`
-                : `Are you sure you want to disapprove "${selectedApp?.position}" post from ${selectedApp?.company_name}?`}
+                ? `Are you sure you want to approve this post from ${selectedApp?.company_name}?`
+                : `Are you sure you want to disapprove this post from ${selectedApp?.company_name}?`}
             </Typography>
             {actionType === "disapprove" && (
               <TextField
@@ -753,7 +742,7 @@ export default function PlacementPosts() {
                 }}
               />
             )}
-          </Stack>
+          </Box>
         </DialogContent>
         <DialogActions
           sx={{
@@ -813,7 +802,9 @@ export default function PlacementPosts() {
             borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
           }}
         >
-          <Stack spacing={2.5}>
+          <Box
+            sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}
+          >
             <TextField
               fullWidth
               label="Company Name"
@@ -923,7 +914,7 @@ export default function PlacementPosts() {
                 },
               }}
             />
-          </Stack>
+          </Box>
         </DialogContent>
         <DialogActions
           sx={{
@@ -951,7 +942,7 @@ export default function PlacementPosts() {
         </DialogActions>
       </Dialog>
 
-      {/* NEW: Create Post Modal */}
+      {/* Create Post Modal */}
       <CreateApplicationModal
         open={openCreateModal}
         onClose={handleModalClose}

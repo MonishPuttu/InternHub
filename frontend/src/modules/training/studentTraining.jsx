@@ -30,6 +30,7 @@ import {
   Quiz,
   ExpandMore,
   OpenInNew,
+  Assessment as AssessmentIcon,
 } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
 
@@ -275,6 +276,16 @@ export default function StudentTraining() {
     setExpandedCard(expandedCard === cardId ? null : cardId);
   };
 
+  // ✅ Handle tab change with navigation for Report Card
+  const handleTabChange = (event, newValue) => {
+    if (newValue === 4) {
+      // Report Card tab index
+      router.push("/training/student/report-card");
+    } else {
+      setTabValue(newValue);
+    }
+  };
+
   const AssessmentCard = ({ assessment }) => (
     <Card
       sx={{
@@ -402,18 +413,6 @@ export default function StudentTraining() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box mb={4}>
-        <Typography
-          variant="h4"
-          sx={{ color: "text.primary", fontWeight: "bold" }}
-        >
-          Training & Assessments
-        </Typography>
-        <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
-          Complete assessments to improve your placement readiness
-        </Typography>
-      </Box>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -422,7 +421,7 @@ export default function StudentTraining() {
 
       <Tabs
         value={tabValue}
-        onChange={(e, newValue) => setTabValue(newValue)}
+        onChange={handleTabChange}
         sx={{
           bgcolor: "transparent",
           borderBottom: "1px solid #334155",
@@ -459,6 +458,13 @@ export default function StudentTraining() {
           label="Additional Tests"
           id="tab-3"
           aria-controls="tabpanel-3"
+        />
+        <Tab
+          label="Report Card"
+          id="tab-4"
+          aria-controls="tabpanel-4"
+          icon={<AssessmentIcon />}
+          iconPosition="start"
         />
       </Tabs>
 
