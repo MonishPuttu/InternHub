@@ -107,6 +107,7 @@ router.post("/applications", requireAuth, async (req, res) => {
       media,
       application_deadline,
       target_departments,
+      stages,
     } = req.body;
 
     // UPDATED: Validate company_name, positions array, and industry
@@ -154,6 +155,28 @@ router.post("/applications", requireAuth, async (req, res) => {
     // UPDATED: For placement officers, auto-approve their own posts
     const approvalStatus = userRole === "placement" ? "approved" : "pending";
 
+    // Normalize stages if provided
+    let normalizedStages = [];
+    if (stages) {
+      if (!Array.isArray(stages) || stages.length === 0) {
+        return res.status(400).json({ ok: false, error: "Stages must be a non-empty array" });
+      }
+
+      normalizedStages = stages.map((s, idx) => {
+        const name = typeof s === "string" ? s : s.name;
+        if (!name || !String(name).trim()) {
+          throw new Error("Each stage must have a non-empty name");
+        }
+        return {
+          name: String(name).trim(),
+          order_index: idx + 1,
+          status: idx === 0 ? "in_progress" : "pending",
+            completed_at: null,
+            date: s.date || null,
+        };
+      });
+    }
+
     const newPost = await db
       .insert(posts)
       .values({
@@ -172,6 +195,7 @@ router.post("/applications", requireAuth, async (req, res) => {
           : null,
         target_departments: validatedDepartments,
         approval_status: approvalStatus,
+        stages: normalizedStages,
       })
       .returning();
 
@@ -311,6 +335,31 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
       }
     }
 
+    // Validate stages if updating
+    if (updateData.stages) {
+      if (!Array.isArray(updateData.stages) || updateData.stages.length === 0) {
+        return res.status(400).json({ ok: false, error: "Stages must be a non-empty array" });
+      }
+
+      try {
+        updateData.stages = updateData.stages.map((s, idx) => {
+          const name = typeof s === "string" ? s : s.name;
+          if (!name || !String(name).trim()) {
+            throw new Error("Each stage must have a non-empty name");
+          }
+          return {
+            name: String(name).trim(),
+            order_index: idx + 1,
+            status: s.status || (idx === 0 ? "in_progress" : "pending"),
+            completed_at: s.completed_at || null,
+            date: s.date || null,
+          };
+        });
+      } catch (err) {
+        return res.status(400).json({ ok: false, error: String(err.message || err) });
+      }
+    }
+
     const nullableFields = ["notes", "media"];
     nullableFields.forEach((f) => {
       if (updateData[f] === "") updateData[f] = null;
@@ -355,6 +404,70 @@ router.put("/applications/:id", requireAuth, async (req, res) => {
     res.json({ ok: true, application: updated[0] });
   } catch (e) {
     console.error("Error updating post:", e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// PATCH /api/posts/applications/:id/stages/:index - Update specific stage status
+router.patch("/applications/:id/stages/:index", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { id, index } = req.params;
+    const { status, notes, date } = req.body;
+
+    const validStatuses = ["pending", "in_progress", "completed"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ ok: false, error: "Invalid status" });
+    }
+
+    // Fetch post and permissions
+    const postRes = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
+    if (postRes.length === 0) return res.status(404).json({ ok: false, error: "Post not found" });
+
+    const post = postRes[0];
+    const isOwner = post.user_id === userId;
+    const isPlacement = userRole === "placement";
+
+    if (!isOwner && !isPlacement && userRole !== "admin") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const idx = parseInt(index, 10);
+    const stagesArr = Array.isArray(post.stages) ? post.stages : [];
+    if (isNaN(idx) || idx < 0 || idx >= stagesArr.length) {
+      return res.status(400).json({ ok: false, error: "Invalid stage index" });
+    }
+
+    const newStages = stagesArr.map((s) => ({ ...s }));
+    newStages[idx].status = status;
+    if (status === "completed") {
+      newStages[idx].completed_at = new Date();
+      // auto-advance next stage if exists and is pending
+      if (idx + 1 < newStages.length && newStages[idx + 1].status === "pending") {
+        newStages[idx + 1].status = "in_progress";
+      }
+    } else {
+      // if moved away from completed, clear completed_at
+      newStages[idx].completed_at = null;
+    }
+
+    // Optionally include notes per stage
+    if (notes) newStages[idx].notes = notes;
+    // Optionally update date for this stage
+    if (typeof date !== "undefined") {
+      newStages[idx].date = date || null;
+    }
+
+    const updated = await db
+      .update(posts)
+      .set({ stages: newStages, updated_at: new Date() })
+      .where(eq(posts.id, id))
+      .returning();
+
+    res.json({ ok: true, stages: updated[0].stages });
+  } catch (e) {
+    console.error("Error updating stage:", e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });

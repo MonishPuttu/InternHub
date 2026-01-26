@@ -23,6 +23,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import EventIcon from "@mui/icons-material/Event";
 import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -135,6 +136,12 @@ export const CreateApplicationModal = ({ open, onClose }) => {
       skills: "",
     },
   ]);
+  // Stages for the application process
+  const [stages, setStages] = useState([
+    { name: "Screening", date: "", showDate: false },
+    { name: "Live Coding", date: "", showDate: false },
+    { name: "HR Interview", date: "", showDate: false },
+  ]);
   const [mediaFile, setMediaFile] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -204,6 +211,35 @@ export const CreateApplicationModal = ({ open, onClose }) => {
     setMediaPreview(null);
   };
 
+  // Stage helpers
+  const addStage = () => {
+    setStages((prev) => [...prev, { name: "" }]);
+  };
+  const removeStage = (idx) => {
+    setStages((prev) => prev.filter((_, i) => i !== idx));
+  };
+  const updateStageName = (idx, val) => {
+    setStages((prev) => {
+      const n = [...prev];
+      n[idx].name = val;
+      return n;
+    });
+  };
+  const updateStageDate = (idx, val) => {
+    setStages((prev) => {
+      const n = [...prev];
+      n[idx].date = val;
+      return n;
+    });
+  };
+  const toggleStageDateVisible = (idx, visible = true) => {
+    setStages((prev) => {
+      const n = [...prev];
+      n[idx].showDate = visible;
+      return n;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -238,6 +274,7 @@ export const CreateApplicationModal = ({ open, onClose }) => {
         target_departments: formData.target_departments,
         // media: mediaPreview, // COMMENTED OUT
         positions: positionArray,
+        stages: stages.map((s, idx) => ({ name: s.name || `Stage ${idx + 1}`, order_index: idx + 1, date: s.date || null })),
       };
 
       const response = await fetch(
@@ -672,6 +709,126 @@ export const CreateApplicationModal = ({ open, onClose }) => {
                   {positions.length >= MAX_POSITIONS
                     ? `Max ${MAX_POSITIONS} Positions`
                     : "Add Another Position"}
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Stages Section */}
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 600, color: "text.primary", mt: 2, mb: 1 }}
+            >
+              Application Stages (Order matters)
+            </Typography>
+
+            <Box
+              sx={{
+                background:
+                  theme.palette.mode === "dark"
+                    ? "rgba(139,92,246,0.07)"
+                    : "#f7f4ff",
+                borderRadius: "12px",
+                border: `1px dashed ${VIOLET_PRIMARY}A0`,
+                p: 3,
+                pb: 2,
+                width: "100%",
+              }}
+            >
+              {stages.map((s, idx) => (
+                <Paper
+                  key={idx}
+                  variant="outlined"
+                  sx={{
+                    mt: 2,
+                    p: 3,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.04)"
+                        : "#fff",
+                    borderRadius: "12px",
+                    boxShadow: theme.shadows[1],
+                    border: `1px solid ${VIOLET_PRIMARY}33`,
+                    width: "100%",
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 72px" },
+                    gap: 2,
+                    alignItems: "center",
+                  }}
+                >
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <TextField
+                      label={`Stage ${idx + 1} Name`}
+                      value={s.name}
+                      onChange={(e) => updateStageName(idx, e.target.value)}
+                      fullWidth
+                      disabled={loading}
+                    />
+
+                    {s.showDate && (
+                      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                        <TextField
+                          label="Optional Date"
+                          type="datetime-local"
+                          value={s.date || ""}
+                          onChange={(e) => updateStageDate(idx, e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          disabled={loading}
+                          fullWidth
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => toggleStageDateVisible(idx, false)}
+                          sx={{ color: "text.secondary" }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Action column: calendar toggle + delete, inline row, centered vertically */}
+                  <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => toggleStageDateVisible(idx, true)}
+                      sx={{ border: `1px solid ${VIOLET_PRIMARY}33`, color: VIOLET_PRIMARY }}
+                      aria-label={`Add date for stage ${idx + 1}`}
+                    >
+                      <EventIcon />
+                    </IconButton>
+
+                    {stages.length > 1 && (
+                      <IconButton
+                        size="small"
+                        onClick={() => removeStage(idx)}
+                        disabled={loading}
+                        sx={{ color: theme.palette.error.main }}
+                        aria-label={`Remove stage ${idx + 1}`}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+                </Paper>
+              ))}
+
+              <Box sx={{ mt: 2, textAlign: "right" }}>
+                <Button
+                  startIcon={<AddCircleOutlineIcon />}
+                  variant="outlined"
+                  size="medium"
+                  sx={{
+                    color: VIOLET_PRIMARY,
+                    borderColor: VIOLET_PRIMARY,
+                    px: 3,
+                    fontWeight: 600,
+                    borderRadius: "8px",
+                    "&:hover": { backgroundColor: `${VIOLET_PRIMARY}10` },
+                  }}
+                  onClick={addStage}
+                  disabled={loading || stages.length >= 8}
+                >
+                  {stages.length >= 8 ? `Max 8 Stages` : "Add Stage"}
                 </Button>
               </Box>
             </Box>

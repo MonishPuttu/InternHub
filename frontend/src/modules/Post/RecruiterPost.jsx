@@ -89,7 +89,7 @@ export default function RecruiterPost() {
     setSelectedApp(app);
     setEditFormData({
       company_name: app.company_name,
-      position: app.position,
+      positions: Array.isArray(app.positions) ? app.positions : (app.position ? [app.position] : []),
       industry: app.industry,
       package_offered: app.package_offered || "",
       notes: app.notes || "",
@@ -265,12 +265,7 @@ export default function RecruiterPost() {
                 display: "flex",
                 flexDirection: "column",
                 border: "2px solid",
-                borderColor:
-                  activeTab === 0
-                    ? "#fbbf24"
-                    : activeTab === 1
-                    ? "#10b981"
-                    : "#ef4444",
+                borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",                  
                 borderRadius: 2,
                 transition: "all 0.3s ease",
                 bgcolor: "background.paper",
@@ -299,12 +294,7 @@ export default function RecruiterPost() {
                       width: 56,
                       height: 56,
                       borderRadius: 2,
-                      bgcolor:
-                        activeTab === 0
-                          ? "#fbbf24"
-                          : activeTab === 1
-                          ? "#10b981"
-                          : "#ef4444",
+                      bgcolor: "#8b5cf6",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -399,7 +389,7 @@ export default function RecruiterPost() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "#8b5cf6",
+                        color: "text.secondary",
                         fontWeight: 600,
                         fontSize: "0.75rem",
                       }}
@@ -419,8 +409,8 @@ export default function RecruiterPost() {
                           label={pos.title || pos.position || pos}
                           size="small"
                           sx={{
-                            bgcolor: "rgba(139, 92, 246, 0.15)",
-                            color: "#8b5cf6",
+                            bgcolor: "transparent",
+                            color: "white",
                             fontWeight: 600,
                             fontSize: "0.75rem",
                             border: "1px solid rgba(139, 92, 246, 0.3)",

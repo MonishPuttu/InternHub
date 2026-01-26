@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Link,
   Stack,
+  Divider,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -31,6 +32,9 @@ const BACKEND_URL =
 
 export default function SignUp() {
   const router = useRouter();
+  const errorRef = useRef(null);
+  const formTopRef = useRef(null);
+  
   const [role, setRole] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -45,6 +49,16 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Auto-scroll to error when it appears
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "center" 
+      });
+    }
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,10 +77,16 @@ export default function SignUp() {
     });
 
     if (!authValidation.success) {
-      // Fixed: Properly access Zod errors
       const firstError = authValidation.error.issues[0];
       console.error("Validation errors:", authValidation.error.issues);
       setError(firstError.message);
+      // Scroll to top where error is displayed
+      if (formTopRef.current) {
+        formTopRef.current.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "start" 
+        });
+      }
       return;
     }
 
@@ -75,13 +95,19 @@ export default function SignUp() {
       const profileValidation = studentProfileSchema.safeParse(profileData);
 
       if (!profileValidation.success) {
-        // Fixed: Properly access Zod errors
         const firstError = profileValidation.error.issues[0];
         console.error(
           "Profile validation errors:",
           profileValidation.error.issues
         );
         setError(`${firstError.path.join(".")}: ${firstError.message}`);
+        // Scroll to top where error is displayed
+        if (formTopRef.current) {
+          formTopRef.current.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start" 
+          });
+        }
         return;
       }
     }
@@ -104,6 +130,13 @@ export default function SignUp() {
 
       if (!data.ok) {
         setError(data.error || "Sign up failed");
+        // Scroll to error
+        if (formTopRef.current) {
+          formTopRef.current.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start" 
+          });
+        }
         setLoading(false);
         return;
       }
@@ -115,6 +148,13 @@ export default function SignUp() {
       router.push("/dashboard");
     } catch (err) {
       setError("Network error. Please try again.");
+      // Scroll to error
+      if (formTopRef.current) {
+        formTopRef.current.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "start" 
+        });
+      }
       setLoading(false);
     }
   };
@@ -227,7 +267,7 @@ export default function SignUp() {
         />
       </Stack>
 
-      {/* 10th Score, Entry Type, 12th/Diploma Score - FIXED ROW */}
+      {/* 10th Score, Entry Type, 12th/Diploma Score */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <Box sx={{ flex: { xs: 1, sm: 1 } }}>
           <StyledSelect
@@ -456,191 +496,276 @@ export default function SignUp() {
     <Box
       sx={{
         display: "flex",
+        flexDirection: { xs: "column", md: "row" },
         minHeight: "100vh",
         bgcolor: "background.default",
       }}
     >
-      {/* Left Side - Basic Auth Fields */}
+      {/* Main Content Container - Scrollable on Mobile */}
       <Box
         sx={{
-          width: { xs: "100%", md: role ? "40%" : "100%" },
-          bgcolor: "background.default",
-          p: { xs: 3, md: 5 },
+          width: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          transition: "width 0.3s ease",
+          flexDirection: { xs: "column", md: "row" },
+          minHeight: { xs: "100vh", md: "auto" },
         }}
       >
-        <Box sx={{ maxWidth: 480, mx: "auto", width: "100%" }}>
-          <Typography
-            variant="h4"
-            sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
+        {/* Left Side - Basic Auth Fields */}
+        <Box
+          sx={{
+            width: { xs: "100%", md: role ? "40%" : "100%" },
+            bgcolor: "background.default",
+            p: { xs: 2, sm: 3, md: 5 },
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: { xs: "flex-start", md: "center" },
+            transition: "width 0.3s ease",
+            pt: { xs: 3, md: 5 },
+          }}
+        >
+          <Box 
+            sx={{ 
+              maxWidth: 480, 
+              mx: "auto", 
+              width: "100%",
+              py: { xs: 2, md: 0 },
+            }}
           >
-            Sign Up
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
-            Create your account to get started
-          </Typography>
+            {/* Reference point for scrolling to top */}
+            <div ref={formTopRef} style={{ position: "absolute", top: 0 }} />
+            
+            <Typography
+              variant="h4"
+              sx={{
+                color: "text.primary",
+                fontWeight: 700,
+                mb: 1,
+                fontSize: { xs: "1.75rem", sm: "2rem", md: "2.125rem" },
+              }}
+            >
+              Sign Up
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mb: { xs: 3, md: 4 },
+                fontSize: { xs: "0.875rem", sm: "0.875rem" },
+              }}
+            >
+              Create your account to get started
+            </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <Stack spacing={2.5}>
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "text.secondary", mb: 1, fontSize: "0.875rem" }}
-                >
-                  I am a...
-                </Typography>
-                <StyledSelect
-                  label="Select Role"
-                  value={role}
-                  onChange={(e) => {
-                    setRole(e.target.value);
-                    setProfileData({
-                      career_path: "placement",
-                      entry_type: "regular",
-                    });
-                  }}
-                  options={roleOptions}
-                  required
-                />
-              </Box>
-
-              <StyledTextField
-                label="Email Address"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                required
-              />
-
-              <StyledTextField
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((s) => !s)}
-                        edge="end"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <StyledTextField
-                label="Confirm Password"
-                type={showConfirm ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowConfirm((s) => !s)}
-                        edge="end"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        {showConfirm ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={loading}
-                sx={{
-                  bgcolor: "#8b5cf6",
-                  color: "#fff",
-                  fontWeight: 600,
-                  borderRadius: 1.5,
-                  py: 1.5,
-                  mt: 1,
-                  textTransform: "none",
-                  fontSize: "1rem",
-                  "&:hover": { bgcolor: "#7c3aed" },
-                  "&:disabled": { bgcolor: "#475569" },
+            {error && (
+              <Alert 
+                ref={errorRef}
+                severity="error" 
+                sx={{ 
+                  mb: 2,
+                  fontSize: { xs: "0.813rem", sm: "0.875rem" },
+                  animation: "shake 0.5s",
+                  "@keyframes shake": {
+                    "0%, 100%": { transform: "translateX(0)" },
+                    "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-5px)" },
+                    "20%, 40%, 60%, 80%": { transform: "translateX(5px)" },
+                  },
                 }}
               >
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "CREATE ACCOUNT"
-                )}
-              </Button>
-            </Stack>
+                {error}
+              </Alert>
+            )}
 
-            <Box sx={{ textAlign: "center", mt: 3 }}>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Already have an account?{" "}
-                <Link
-                  component={NextLink}
-                  href="/signin"
-                  underline="hover"
-                  sx={{ color: "#8b5cf6", fontWeight: 600 }}
+            <Box component="form" onSubmit={handleSubmit}>
+              <Stack spacing={2.5}>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      mb: 1,
+                      fontSize: { xs: "0.813rem", sm: "0.875rem" },
+                    }}
+                  >
+                    I am a...
+                  </Typography>
+                  <StyledSelect
+                    label="Select Role"
+                    value={role}
+                    onChange={(e) => {
+                      setRole(e.target.value);
+                      setProfileData({
+                        career_path: "placement",
+                        entry_type: "regular",
+                      });
+                      setError(""); // Clear error when role changes
+                    }}
+                    options={roleOptions}
+                    required
+                  />
+                </Box>
+
+                <StyledTextField
+                  label="Email Address"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+
+                <StyledTextField
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((s) => !s)}
+                          edge="end"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <StyledTextField
+                  label="Confirm Password"
+                  type={showConfirm ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    setFormData({ ...formData, confirmPassword: e.target.value })
+                  }
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowConfirm((s) => !s)}
+                          edge="end"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          {showConfirm ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {/* Mobile: Show profile fields inline after role selection */}
+                {role && (
+                  <Box
+                    sx={{
+                      display: { xs: "block", md: "none" },
+                      mt: 2,
+                    }}
+                  >
+                    <Divider sx={{ mb: 3 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "text.secondary",
+                          fontWeight: 600,
+                          px: 2,
+                        }}
+                      >
+                        {getRoleTitle()}
+                      </Typography>
+                    </Divider>
+                    {renderRoleSpecificFields()}
+                  </Box>
+                )}
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={loading}
+                  sx={{
+                    bgcolor: "#8b5cf6",
+                    color: "#fff",
+                    fontWeight: 600,
+                    borderRadius: 1.5,
+                    py: { xs: 1.25, sm: 1.5 },
+                    mt: { xs: 2, md: 1 },
+                    textTransform: "none",
+                    fontSize: { xs: "0.938rem", sm: "1rem" },
+                    "&:hover": { bgcolor: "#7c3aed" },
+                    "&:disabled": { bgcolor: "#475569" },
+                  }}
                 >
-                  Sign In
-                </Link>
-              </Typography>
+                  {loading ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "CREATE ACCOUNT"
+                  )}
+                </Button>
+              </Stack>
+
+              <Box sx={{ textAlign: "center", mt: { xs: 2.5, md: 3 } }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    fontSize: { xs: "0.813rem", sm: "0.875rem" },
+                  }}
+                >
+                  Already have an account?{" "}
+                  <Link
+                    component={NextLink}
+                    href="/signin"
+                    underline="hover"
+                    sx={{ color: "#8b5cf6", fontWeight: 600 }}
+                  >
+                    Sign In
+                  </Link>
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
-      </Box>
 
-      {/* Right Side - Role-Specific Questions */}
-      {role && (
-        <Box
-          sx={{
-            width: { xs: "0%", md: "60%" },
-            bgcolor: "background.paper",
-            display: { xs: "none", md: "flex" },
-            flexDirection: "column",
-            p: { xs: 3, md: 6 },
-            overflowY: "auto",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <Box sx={{ maxWidth: 800, mx: "auto", width: "100%" }}>
-            <Typography
-              variant="h5"
-              sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
-            >
-              {getRoleTitle()}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
-              Please provide additional information to complete your profile
-            </Typography>
+        {/* Right Side - Role-Specific Questions (Desktop Only) */}
+        {role && (
+          <Box
+            sx={{
+              width: { xs: "0%", md: "60%" },
+              bgcolor: "background.paper",
+              display: { xs: "none", md: "flex" },
+              flexDirection: "column",
+              p: { xs: 3, md: 6 },
+              overflowY: "auto",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <Box sx={{ maxWidth: 800, mx: "auto", width: "100%" }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
+              >
+                {getRoleTitle()}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 4 }}
+              >
+                Please provide additional information to complete your profile
+              </Typography>
 
-            {renderRoleSpecificFields()}
+              {renderRoleSpecificFields()}
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
+      </Box>
     </Box>
   );
 }

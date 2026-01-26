@@ -267,10 +267,7 @@ export default function StudentData() {
             setAllStudents([]);
             setLoading(false);
         }
-    }, [searchValue, department, year, selectedPost]);
-
-    // Get unique companies from posts
-    const uniqueCompanies = [...new Set(posts.map(post => post.company_name))].sort();
+    }, [searchValue, department, year]);
 
     return (
         <Box sx={{ p: 3 }}>

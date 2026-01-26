@@ -21,12 +21,35 @@ const Hero = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Respect user's motion preferences
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (prefersReducedMotion) return;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Configuration constants
+    const DOT_GRID_ROWS = 40;
+    const DOT_GRID_COLS = 50;
+    const MAGNET_STRENGTH = 150;
+    const REPEL_DISTANCE = 10;
+    const DOT_RADIUS = 0.8;
+    const DOT_COLOR = "rgba(130, 160, 200, 0.4)";
+    const RETURN_SPEED = 0.1;
 
     let dots = [];
     let mouse = { x: 0, y: 0 };
     let animationFrameId;
+    let isVisible = true;
+    let mouseThrottled = false;
+
+    // Pause animation when off-screen
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+    });
+    observer.observe(canvas);
 
     // Set canvas size
     const setCanvasSize = () => {
@@ -38,19 +61,17 @@ const Hero = () => {
     // Initialize dots in a grid pattern
     const initDots = () => {
       dots = [];
-      const rows = 40;
-      const cols = 50;
-      const spacingX = canvas.width / (cols + 1);
-      const spacingY = canvas.height / (rows + 1);
+      const spacingX = canvas.width / (DOT_GRID_COLS + 1);
+      const spacingY = canvas.height / (DOT_GRID_ROWS + 1);
 
-      for (let i = 1; i <= rows; i++) {
-        for (let j = 1; j <= cols; j++) {
+      for (let i = 1; i <= DOT_GRID_ROWS; i++) {
+        for (let j = 1; j <= DOT_GRID_COLS; j++) {
           const x = j * spacingX;
           const y = i * spacingY;
-          
+
           dots.push({
-            x: x,
-            y: y,
+            x,
+            y,
             baseX: x,
             baseY: y,
           });
@@ -58,46 +79,50 @@ const Hero = () => {
       }
     };
 
-    // Handle mouse move
+    // Handle mouse move with throttling
     const handleMouseMove = (e) => {
+      if (mouseThrottled) return;
+      mouseThrottled = true;
+
       mouse = {
         x: e.clientX,
         y: e.clientY,
       };
+
+      requestAnimationFrame(() => {
+        mouseThrottled = false;
+      });
     };
 
     // Animation loop
     const animate = () => {
+      if (!isVisible) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const magnetStrength = 150; // Distance of magnetic effect
-
       dots.forEach((dot) => {
-        // Calculate distance from mouse to dot center
         const dx = mouse.x - dot.baseX;
         const dy = mouse.y - dot.baseY;
         const dist = Math.hypot(dx, dy);
 
-        // Apply magnetic effect
-        if (dist < magnetStrength) {
-          // Calculate angle pointing away from cursor
+        if (dist < MAGNET_STRENGTH) {
           const angleToMouse = Math.atan2(dy, dx);
-          const force = (1 - dist / magnetStrength);
-          
-          // Move dot slightly away from cursor
-          const moveDistance = force * 10;
+          const force = 1 - dist / MAGNET_STRENGTH;
+          const moveDistance = force * REPEL_DISTANCE;
+
           dot.x = dot.baseX - Math.cos(angleToMouse) * moveDistance;
           dot.y = dot.baseY - Math.sin(angleToMouse) * moveDistance;
         } else {
-          // Return to base position
-          dot.x += (dot.baseX - dot.x) * 0.1;
-          dot.y += (dot.baseY - dot.y) * 0.1;
+          dot.x += (dot.baseX - dot.x) * RETURN_SPEED;
+          dot.y += (dot.baseY - dot.y) * RETURN_SPEED;
         }
 
-        // Draw dot
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 0.8, 0, Math.PI * 2); // Circle with radius 0.8 (tiny)
-        ctx.fillStyle = "rgba(130, 160, 200, 0.4)"; // Blue/cyan tinted dots
+        ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = DOT_COLOR;
         ctx.fill();
       });
 
@@ -110,6 +135,7 @@ const Hero = () => {
     animate();
 
     return () => {
+      observer.disconnect();
       window.removeEventListener("resize", setCanvasSize);
       window.removeEventListener("mousemove", handleMouseMove);
       if (animationFrameId) {

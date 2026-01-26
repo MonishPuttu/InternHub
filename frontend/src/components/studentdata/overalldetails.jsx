@@ -48,15 +48,41 @@ export default function OverallDetailsConsolidated({ studentId }) {
     const [assessmentRowsPerPage, setAssessmentRowsPerPage] = useState(10);
 
     useEffect(() => {
+        const fetchStudentData = async () => {
+            try {
+                setLoading(true);
+                const token = getToken();
+                if (!token) {
+                    setError("Authentication token not found");
+                    setLoading(false);
+                    return;
+                }
+                const response = await axios.get(
+                    `${BACKEND_URL}/api/studentdata/students/${studentId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setStudentData(response.data.student);
+            } catch (err) {
+                setError("Failed to fetch student data");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         if (studentId) {
             fetchStudentData();
         }
     }, [studentId]);
-
     const fetchStudentData = async () => {
         try {
             setLoading(true);
             const token = getToken();
+            if (!token) {
+                setError("Authentication token not found");
+                setLoading(false);
+                return;
+            }
             const response = await axios.get(
                 `${BACKEND_URL}/api/studentdata/students/${studentId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -69,7 +95,6 @@ export default function OverallDetailsConsolidated({ studentId }) {
             setLoading(false);
         }
     };
-
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>

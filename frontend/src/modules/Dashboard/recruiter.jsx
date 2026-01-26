@@ -133,7 +133,7 @@ export default function RecruiterDashboard() {
                 display: "flex",
                 flexDirection: "column",
                 border: "2px solid",
-                borderColor: "#10b981",
+                borderColor: "transparent",
                 borderRadius: 2,
                 transition: "all 0.3s ease",
                 bgcolor: "background.paper",
