@@ -240,17 +240,17 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
 
             {post.target_departments && post.target_departments.length > 0 && (
               <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                    height: "100%",
-                  }}
-                >
+                  <Box
+                    sx={{
+                      p: 2,
+                      bgcolor: "transparent",
+                      borderRadius: 2,
+                      border: "1px solid",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                      height: "100%",
+                    }}
+                  >
                   <Box
                     sx={{
                       display: "flex",
@@ -307,7 +307,7 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
               <Box
                 sx={{
                   p: 3,
-                  bgcolor: "background.default",
+                  bgcolor: "transparent",
                   borderRadius: 2,
                   border: "1px solid",
                   borderColor:
@@ -344,77 +344,136 @@ export default function PostDetails({ postId, showApplyButtons = true }) {
               >
                 Positions & Roles
               </Typography>
-              <Grid container spacing={3}>
+              <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                 {positions.map((pos, index) => (
-                  <Grid item xs={12} md={4} key={index}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 3,
-                        borderColor:
-                          theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-                        borderRadius: 2,
-                        minHeight: 140,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                      }}
+                  <Paper
+                    key={index}
+                    variant="outlined"
+                    sx={{
+                      p: 3,
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                      borderRadius: 2,
+                      minHeight: 140,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                      flex: '1 1 30%',
+                      backgroundColor: 'transparent',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
                     >
-                      <Typography
-                        variant="subtitle1"
-                        sx={{ color: "text.primary", fontWeight: 700, mb: 1 }}
-                      >
-                        {pos.title}
+                      {pos.title}
+                    </Typography>
+                    {pos.package && (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <AttachMoneyIcon sx={{ fontSize: 18, color: "#10b981" }} />
+                        <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+                          {pos.package}
+                        </Typography>
+                      </Box>
+                    )}
+                    {typeof pos.openings !== "undefined" && (
+                      <Typography sx={{ color: "text.secondary", fontWeight: 700 }}>
+                        Openings: {pos.openings}
                       </Typography>
-                      {pos.package && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <AttachMoneyIcon
-                            sx={{ fontSize: 18, color: "#10b981" }}
-                          />
-                          <Typography
-                            sx={{ fontWeight: 700, color: "text.primary" }}
-                          >
-                            {pos.package}
-                          </Typography>
-                        </Box>
-                      )}
-                      {typeof pos.openings !== "undefined" && (
-                        <Typography
-                          sx={{ color: "text.secondary", fontWeight: 700 }}
-                        >
-                          Openings: {pos.openings}
-                        </Typography>
-                      )}
-                      {pos.description && (
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.secondary" }}
-                        >
-                          {pos.description}
-                        </Typography>
-                      )}
-                      {/* Add chips/line/anything else as needed */}
-                    </Paper>
-                  </Grid>
+                    )}
+                    {pos.description && (
+                      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                        {pos.description}
+                      </Typography>
+                    )}
+                  </Paper>
                 ))}
-              </Grid>
+              </Box>
             </Box>
           )}
+              <Divider
+                sx={{
+                  bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                  mb: 4,
+                }}
+              />
 
-          <Divider
-            sx={{
-              bgcolor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-              mb: 4,
-            }}
-          />
+              {/* APPLICATION STAGES / TIMELINE */}
+              {Array.isArray(post.stages) && post.stages.length > 0 && (
+                <Box sx={{ mb: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ color: "text.primary", fontWeight: 700, mb: 0 }}
+                  >
+                    Application Stages
+                  </Typography>
+                  {post.stages.map((stage, idx) => {
+                    const status = stage.status || "pending";
+                    const statusColor =
+                      status === "completed"
+                        ? "#10b981"
+                        : status === "in_progress"
+                        ? "#8b5cf6"
+                        : theme.palette.text.secondary;
 
-          {/* POSTER / MEDIA -- ONLY IF MEDIA EXISTS */}
+                    return (
+                      <Paper
+                        key={idx}
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                          borderRadius: 2,
+                          width: '100%',
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
+                          backgroundColor: 'transparent',
+                        }}
+                      >
+                        <Box>
+                          <Typography sx={{ fontWeight: 700 }}>{stage.name}</Typography>
+                          {stage.date && (
+                            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
+                              {new Date(stage.date).toLocaleString("en-IN", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box
+                            sx={{
+                              px: 1.2,
+                              py: 0.4,
+                              borderRadius: 1,
+                              bgcolor:
+                                status === "completed"
+                                  ? "rgba(16,185,129,0.12)"
+                                  : status === "in_progress"
+                                  ? "rgba(139,92,246,0.12)"
+                                  : "transparent",
+                              color: statusColor,
+                              fontWeight: 700,
+                              fontSize: "0.9rem",
+                            }}
+                          >
+                            {status.replace("_", " ").toUpperCase()}
+                          </Box>
+                        </Box>
+                      </Paper>
+                    );
+                  })}
+                </Box>
+              )}
+
+              {/* POSTER / MEDIA -- ONLY IF MEDIA EXISTS */}
           {post.media && (
             <Box sx={{ mb: 4, textAlign: "center" }}>
               <Box sx={{ position: "relative", mb: 3 }}>
@@ -561,7 +620,7 @@ function InfoBox({ icon, label, value, theme }) {
     <Box
       sx={{
         p: 2,
-        bgcolor: "background.default",
+        bgcolor: "transparent",
         borderRadius: 2,
         border: "1px solid",
         borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",

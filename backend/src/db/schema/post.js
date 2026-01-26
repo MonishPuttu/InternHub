@@ -29,6 +29,8 @@ export const posts = pgTable("posts", {
   company_name: text("company_name").notNull(),
 
   positions: jsonb("positions").notNull(),
+  // Stages for the application process (array of { name, order_index, status, completed_at })
+  stages: jsonb("stages").default('[]'),
 
   industry: text("industry").notNull(),
   application_date: timestamp("application_date").notNull(),
