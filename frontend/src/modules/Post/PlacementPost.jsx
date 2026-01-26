@@ -30,6 +30,7 @@ import {
   AttachMoney as AttachMoneyIcon,
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
@@ -626,6 +627,35 @@ export default function PlacementPosts() {
                         >
                           View Details
                         </Button>
+                        {activeTab === 1 && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<TimelineIcon />}
+                            onClick={() => {
+                              if (!app || !app.id) {
+                                console.warn("PlacementPost: missing app.id", app);
+                                // fallback: open post details instead
+                                router.push(`/Post/postdetails/${app?.id || ""}`);
+                                return;
+                              }
+                              console.log("Opening timeline for post id:", app.id);
+                              router.push(`/timeline/post/${encodeURIComponent(app.id)}`);
+                            }}
+                            sx={{
+                              color: "#8b5cf6",
+                              borderColor: "#8b5cf6",
+                              "&:hover": {
+                                bgcolor: "rgba(139, 92, 246, 0.06)",
+                                borderColor: "#8b5cf6",
+                              },
+                              textTransform: "none",
+                              fontWeight: 600,
+                            }}
+                          >
+                            View Timeline
+                          </Button>
+                        )}
                       </>
                     )}
                   </Box>
