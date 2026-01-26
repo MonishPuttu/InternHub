@@ -141,7 +141,8 @@ router.put("/personal", requireAuth, async (req, res) => {
     console.log("=== PUT /personal START ===");
     console.log("User ID:", userId);
     console.log("User Role:", userRole);
-    console.log("Request Body (RAW):", JSON.stringify(req.body, null, 2));
+    // Avoid logging raw request body containing PII
+    console.log("Request Body Keys:", Object.keys(req.body || {}));
     
     const updateData = { ...req.body };
 
@@ -225,18 +226,49 @@ router.put("/personal", requireAuth, async (req, res) => {
       }
     }
 
-    // Convert numeric fields to proper types
-    if (updateData.current_semester) {
-      updateData.current_semester = parseInt(updateData.current_semester);
+    // Validate numeric string fields (keep as strings to match text() schema)
+    if (updateData.current_semester !== undefined) {
+      const val = String(updateData.current_semester).trim();
+      if (val === "") {
+      delete updateData.current_semester;
+      } else if (isNaN(Number(val))) {
+      return res.status(400).json({ ok: false, error: "Invalid current semester value" });
+      } else {
+      updateData.current_semester = val;
+      }
     }
-    if (updateData.cgpa) {
-      updateData.cgpa = parseFloat(updateData.cgpa);
+
+    if (updateData.cgpa !== undefined) {
+      const val = String(updateData.cgpa).trim();
+      if (val === "") {
+      delete updateData.cgpa;
+      } else if (isNaN(Number(val))) {
+      return res.status(400).json({ ok: false, error: "Invalid CGPA value" });
+      } else {
+      updateData.cgpa = val;
+      }
     }
-    if (updateData.tenth_score) {
-      updateData.tenth_score = parseFloat(updateData.tenth_score);
+
+    if (updateData.tenth_score !== undefined) {
+      const val = String(updateData.tenth_score).trim();
+      if (val === "") {
+      delete updateData.tenth_score;
+      } else if (isNaN(Number(val))) {
+      return res.status(400).json({ ok: false, error: "Invalid 10th score value" });
+      } else {
+      updateData.tenth_score = val;
+      }
     }
-    if (updateData.twelfth_score) {
-      updateData.twelfth_score = parseFloat(updateData.twelfth_score);
+
+    if (updateData.twelfth_score !== undefined) {
+      const val = String(updateData.twelfth_score).trim();
+      if (val === "") {
+      delete updateData.twelfth_score;
+      } else if (isNaN(Number(val))) {
+      return res.status(400).json({ ok: false, error: "Invalid 12th score value" });
+      } else {
+      updateData.twelfth_score = val;
+      }
     }
 
     let updated;

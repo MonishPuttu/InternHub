@@ -551,11 +551,7 @@ export default function StudentPosts() {
                     display: "flex",
                     flexDirection: "column",
                     border: "2px solid",
-                    borderColor: isPostApplied
-                      ? "#10b981"
-                      : theme.palette.mode === "dark"
-                      ? "#334155"
-                      : "#e2e8f0",
+                    borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
                     borderRadius: 2,
                     transition: "all 0.3s ease",
                     bgcolor: "background.paper",

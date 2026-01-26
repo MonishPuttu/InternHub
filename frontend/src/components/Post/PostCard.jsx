@@ -53,8 +53,8 @@ function PostCard({ post, isSaved, onToggleSave, onViewDetails, onApply }) {
     return `Posted ${Math.floor(diffDays / 30)} months ago`;
   };
 
-  // Mock application count (you can replace with real data from backend)
-  const applicationCount = Math.floor(Math.random() * 100) + 1;
+  // TODO: Replace with real application count from backend
+  const applicationCount = post.application_count ?? ((post.id % 50) + 10);
 
   return (
     <Card
@@ -349,5 +349,5 @@ export default function PostsGrid({
   );
 }
 
-// Export both components
+
 export { PostCard, PostsGrid };

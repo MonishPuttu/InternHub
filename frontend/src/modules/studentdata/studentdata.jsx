@@ -267,7 +267,7 @@ export default function StudentData() {
             setAllStudents([]);
             setLoading(false);
         }
-    }, [searchValue, department, year, selectedPost]);
+    }, [searchValue, department, year, selectedPost, applications]);
 
     // Get unique companies from posts
     const uniqueCompanies = [...new Set(posts.map(post => post.company_name))].sort();

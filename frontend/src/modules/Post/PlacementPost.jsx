@@ -302,16 +302,11 @@ export default function PlacementPosts() {
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                border: "2px solid",
-                borderColor:
-                  activeTab === 0
-                    ? "#fbbf24"
-                    : activeTab === 1
-                    ? "#10b981"
-                    : "#ef4444",
+                border: "1px solid",     
+                borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",           
                 borderRadius: 2,
                 transition: "all 0.3s ease",
-                bgcolor: "background.paper",
+                bgcolor: "background.default",
                 overflow: "hidden",
                 cursor: "pointer",
                 "&:hover": {
@@ -337,12 +332,7 @@ export default function PlacementPosts() {
                       width: 56,
                       height: 56,
                       borderRadius: 2,
-                      bgcolor:
-                        activeTab === 0
-                          ? "#fbbf24"
-                          : activeTab === 1
-                          ? "#10b981"
-                          : "#ef4444",
+                      bgcolor:"#8b5cf6",                  
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -437,7 +427,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "#8b5cf6",
+                        color: "text.secondary",
                         fontWeight: 600,
                         fontSize: "0.75rem",
                       }}
@@ -457,8 +447,8 @@ export default function PlacementPosts() {
                           label={pos.title || pos.position || pos}
                           size="small"
                           sx={{
-                            bgcolor: "rgba(139, 92, 246, 0.15)",
-                            color: "#8b5cf6",
+                            bgcolor: "transparent",
+                            color: "white",
                             fontWeight: 600,
                             fontSize: "0.75rem",
                             border: "1px solid rgba(139, 92, 246, 0.3)",
@@ -597,11 +587,11 @@ export default function PlacementPosts() {
                       }}
                       sx={{
                         textTransform: "none",
-                        bgcolor: "#10b981",
+                        bgcolor: "#8b5cf6",
                         color: "white",
                         fontWeight: 600,
                         "&:hover": {
-                          bgcolor: "#059669",
+                          bgcolor: "#7c3aed",
                         },
                       }}
                     >

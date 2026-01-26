@@ -314,6 +314,14 @@ export default function StudentDashboard() {
         {/* ✅ Clickable Upcoming Events Card - Redirects to Calendar */}
         <Box
           onClick={() => router.push("/calendar")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              router.push("/calendar");
+            }
+          }}
+          role="button"
+          tabIndex={0}
           sx={{
             cursor: "pointer",
             transition: "all 0.2s",
