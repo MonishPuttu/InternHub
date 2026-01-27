@@ -2,249 +2,216 @@
 
 import React, { useMemo } from "react";
 import PropTypes from "prop-types";
-import { Box, Typography, Paper, useTheme } from "@mui/material";
+import { Box, Typography, Paper, useTheme, alpha } from "@mui/material";
 
-/**
- * HorizontalTimeline
- * - Renders a left-to-right timeline suitable for recruitment/application flows.
- * - Props: items: [{ id, date, title, description, status }]
- * - Status semantics (flexible):
- *   - 'completed' -> soft green filled node
- *   - 'current' | 'active' | 'important' | 'in_progress' -> accent (amber/red)
- *   - anything else -> upcoming (muted outline)
- *
- * Animation & Interaction rules:
- * - The 'current' node receives a subtle pulse (CSS keyframes). Only one node should be marked current.
- * - Hovering a node card or dot triggers a soft glow and a gentle lift using CSS transitions.
- * - No JS timers; purely CSS-driven animations.
- */
 export default function HorizontalTimeline({ items = [] }) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
-  // find the first item considered "current" for accessibility or fallback animations
+  /* --------------------------------------------------
+     Resolve current index
+  -------------------------------------------------- */
   const currentIndex = useMemo(() => {
-    return items.findIndex((it) =>
-      ["current", "active", "important", "in_progress"].includes((it.status || "").toLowerCase())
+    const explicit = items.findIndex((it) =>
+      ["current", "active", "important", "in_progress"].includes(
+        (it.status || "").toLowerCase()
+      )
     );
+    if (explicit !== -1) return explicit;
+
+    // fallback: first future event
+    const now = Date.now();
+    const future = items.findIndex(
+      (it) => it.date && new Date(it.date).getTime() > now
+    );
+    return future === -1 ? items.length - 1 : future;
   }, [items]);
 
-  // keyframes for pulse used on the current node (subtle halo)
-  const pulseKeyframes = `@keyframes hh-pulse { 0% { box-shadow: 0 0 0 0 rgba(255,99,71,0.22); }
-    50% { box-shadow: 0 0 0 12px rgba(255,99,71,0.06); }
-    100% { box-shadow: 0 0 0 0 rgba(255,99,71,0); } }
+  /* --------------------------------------------------
+     Progress calculation (START → CURRENT)
+  -------------------------------------------------- */
+  const totalSegments = Math.max(1, items.length - 1);
+  const progressRatio = Math.min(
+    1,
+    Math.max(0, currentIndex / totalSegments)
+  );
+
+  /* --------------------------------------------------
+     Animations
+  -------------------------------------------------- */
+  const keyframes = `
+    @keyframes growLine {
+      from { width: 0%; }
+      to { width: var(--target-width); }
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 ${alpha(theme.palette.error.main, 0.35)}; }
+      70% { box-shadow: 0 0 0 14px ${alpha(theme.palette.error.main, 0)}; }
+      100% { box-shadow: 0 0 0 0 ${alpha(theme.palette.error.main, 0)}; }
+    }
+
+    @keyframes nodePop {
+      from { transform: scale(0.9); opacity: 0.6; }
+      to { transform: scale(1); opacity: 1; }
+    }
   `;
 
-  // compute completed segments to render a glow only behind completed portion
-  const totalSegments = Math.max(1, items.length - 1);
-  const lastCompletedIndex = items.map((it) => (it.status || "").toLowerCase()).reduce((acc, st, idx) => {
-    if (st === "completed") return idx > acc ? idx : acc;
-    return acc;
-  }, -1);
-  const completedRatio = Math.max(0, Math.min(1, (lastCompletedIndex) / totalSegments));
+  /* --------------------------------------------------
+     Colors (theme-aware)
+  -------------------------------------------------- */
+  const bg = isDark
+    ? "linear-gradient(180deg,#020617,#020617)"
+    : "linear-gradient(180deg,#f8fafc,#eef2ff)";
+
+  const cardBg = isDark
+    ? alpha(theme.palette.common.white, 0.04)
+    : theme.palette.common.white;
+
+  const lineBase = alpha(theme.palette.text.primary, 0.15);
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        px: { xs: 3, md: 8 },
-        py: { xs: 6, md: 10 },
-        // deep navy / charcoal gradient with subtle noise using radial overlay
-        background: "linear-gradient(180deg,#071226 0%,#0b1220 100%)",
-      }}
-    >
-      <style>{`
-        ${pulseKeyframes}
+    <Box sx={{ width: "100%", py: 6, px: { xs: 2, md: 6 }, background: bg }}>
+      <style>{keyframes}</style>
 
-        @keyframes growLine { from { width: 0% } to { width: var(--grow-width, 0%) } }
-
-        @keyframes nodeFill {
-          0% { transform: scale(0.92); opacity: 0.9 }
-          100% { transform: scale(1); opacity: 1 }
-        }
-      `}</style>
-
-      <Box sx={{ maxWidth: "1200px", mx: "auto", color: "#e6eef6" }}>
-        {/* horizontal container: dates above, nodes/line center, cards below */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {/* Dates row */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            {items.map((it, idx) => (
-              <Box key={it.id || idx} sx={{ flex: 1, textAlign: "center", px: 1 }}>
-                <Typography variant="caption" sx={{ color: "#9aa6b2" }}>
-                  {it.date ? new Date(it.date).toLocaleDateString() : ""}
-                </Typography>
-              </Box>
-            ))}
+      {/* DATES */}
+      <Box display="flex" justifyContent="space-between" mb={2}>
+        {items.map((it, i) => (
+          <Box key={i} flex={1} textAlign="center">
+            <Typography variant="caption" color="text.secondary">
+              {it.date ? new Date(it.date).toLocaleDateString() : ""}
+            </Typography>
           </Box>
+        ))}
+      </Box>
 
-          {/* Line + nodes */}
-          <Box sx={{ position: "relative", height: 64, display: "flex", alignItems: "center" }}>
-            {/* thin connecting line */}
-            <Box sx={{ position: "absolute", left: 24, right: 24, height: 2, bgcolor: "rgba(255,255,255,0.04)", top: "50%", transform: "translateY(-50%)", borderRadius: 1 }} />
+      {/* LINE + NODES */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 4,
+        }}
+      >
+        {items.map((it, idx) => {
+          const isCompleted = idx < currentIndex;
+          const isCurrent = idx === currentIndex;
+          const isUpcoming = idx > currentIndex;
 
-            {/* glow for completed portion (animated from 0 -> target width) */}
-            {completedRatio >= 0 && (
+          const lineColor = isCompleted
+            ? theme.palette.success.main
+            : alpha(theme.palette.text.primary, 0.25);
+
+          const dotSize = isCurrent ? 22 : 14;
+
+          return (
+            <Box
+              key={it.id || idx}
+              sx={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              {/* LEFT LINE */}
+              {idx !== 0 && (
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 2,
+                    bgcolor: lineColor,
+                    transition: "background-color 300ms ease",
+                  }}
+                />
+              )}
+
+              {/* DOT GAP */}
               <Box
                 sx={{
-                  position: "absolute",
-                  left: 24,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  height: 6,
-                  borderRadius: 3,
-                  // gradient and soft glow for completed segments
-                  bgcolor: `linear-gradient(90deg, ${theme.palette.success.main} 0%, ${theme.palette.success.light} 100%)`,
-                  width: "0%",
-                  boxShadow: `0 6px 18px ${theme.palette.mode === 'dark' ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.08)'}`,
-                  // CSS custom property controls final width (set inline via style)
-                  '--grow-width': `${Math.max(0.02, completedRatio * 100)}%`,
-                  // animation: animate width from 0 to --grow-width
-                  animationName: 'growLine',
-                  animationTimingFunction: 'cubic-bezier(.2,.9,.2,1)',
-                  animationFillMode: 'forwards',
-                  animationDuration: `${Math.max(400, (lastCompletedIndex + 1) * 180 + 200)}ms`,
+                  width: 36,              // GAP WIDTH (Figma-perfect)
+                  display: "flex",
+                  justifyContent: "center",
                 }}
-              />
-            )}
+              >
+                <Box
+                  sx={{
+                    width: dotSize,
+                    height: dotSize,
+                    borderRadius: "50%",
+                    bgcolor: isCompleted
+                      ? theme.palette.success.main
+                      : isCurrent
+                      ? theme.palette.error.main
+                      : "transparent",
+                    border: isUpcoming
+                      ? `2px solid ${alpha(theme.palette.text.primary, 0.4)}`
+                      : "none",
+                    boxShadow: isCurrent
+                      ? `0 0 0 6px ${alpha(theme.palette.error.main, 0.25)}`
+                      : "none",
+                    transition: "all 240ms ease",
+                    animation: isCurrent
+                      ? "pulse 1.8s infinite"
+                      : "none",
+                  }}
+                />
+              </Box>
 
-            {items.map((it, idx) => {
-              const isCompleted = (it.status || "").toLowerCase() === "completed";
-              const isDeadline = (it.status || "").toLowerCase() === "deadline";
-              const isCurrent = idx === currentIndex;
+              {/* RIGHT LINE */}
+              {idx !== items.length - 1 && (
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 2,
+                    bgcolor: lineColor,
+                    transition: "background-color 300ms ease",
+                  }}
+                />
+              )}
+            </Box>
+          );
+        })}
+      </Box>
 
-              // dot visuals (refined sizes and glow)
-              const dotSize = isCurrent ? 22 : 16;
-              const dotBase = {
-                width: dotSize,
-                height: dotSize,
-                borderRadius: "50%",
-                display: "inline-block",
-                transition: "transform 240ms cubic-bezier(.2,.9,.2,1), box-shadow 240ms ease, background-color 200ms ease, border 200ms ease",
-              };
 
-              let dotStyle = {
-                ...dotBase,
-                backgroundColor: "transparent",
-                border: `2px solid rgba(148,163,184,0.6)`,
-                boxShadow: 'none',
-              };
+      {/* CARDS */}
+      <Box display="flex" justifyContent="space-between" gap={2}>
+        {items.map((it, i) => {
+          const isCurrent = i === currentIndex;
+          const isCompleted = i < currentIndex;
 
-              if (isCompleted) {
-                dotStyle = {
-                  ...dotBase,
-                  width: 18,
-                  height: 18,
-                  backgroundColor: theme.palette.success.main,
-                  border: 'none',
-                  boxShadow: `0 8px 24px rgba(16,185,129,0.12)`,
-                };
-                // animate completed nodes sequentially
-                dotStyle.animationName = 'nodeFill';
-                dotStyle.animationDuration = '320ms';
-                dotStyle.animationTimingFunction = 'cubic-bezier(.2,.9,.2,1)';
-                dotStyle.animationFillMode = 'forwards';
-                dotStyle.animationDelay = `${idx * 180}ms`;
-              } else if (isDeadline) {
-                dotStyle = {
-                  ...dotBase,
-                  backgroundColor: theme.palette.error.main,
-                  border: 'none',
-                };
-                dotStyle.animationName = 'nodeFill';
-                dotStyle.animationDuration = '320ms';
-                dotStyle.animationDelay = `${idx * 180}ms`;
-              } else if (isCurrent) {
-                dotStyle = {
-                  ...dotBase,
-                  width: 24,
-                  height: 24,
-                  backgroundColor: theme.palette.error.main,
-                  border: `3px solid ${theme.palette.error.dark}`,
-                  boxShadow: `0 10px 30px rgba(255,99,71,0.14)`,
-                  // current node: first fill animation, then start pulse (pulse delayed until fill completes)
-                  animation: `nodeFill 320ms cubic-bezier(.2,.9,.2,1) ${idx * 180}ms forwards, hh-pulse 1800ms infinite ease-out ${idx * 180 + 340}ms`,
-                };
-              }
-
-              return (
-                <Box key={it.id || idx} sx={{ flex: 1, textAlign: "center", px: { xs: 0.5, md: 1 } }}>
-                  <Box sx={{ display: "flex", justifyContent: "center" }}>
-                    <Box
-                      component="span"
-                      sx={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 56,
-                        height: 56,
-                        borderRadius: 2,
-                        '&:hover': {
-                          transform: "translateY(-6px)",
-                        },
-                      }}
-                    >
-                      <Box sx={{ ...dotStyle, '&:hover': { transform: 'scale(1.06)' } }} aria-current={isCurrent ? 'step' : undefined} />
-                    </Box>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-
-          {/* Cards row */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: { xs: 1, md: 2 } }}>
-            {items.map((it, idx) => {
-              const isCompleted = (it.status || "").toLowerCase() === "completed";
-              const isCurrent = ["current", "active", "important", "in_progress"].includes((it.status || "").toLowerCase());
-
-              return (
-                <Box key={it.id || idx} sx={{ flex: 1, textAlign: "center", px: { xs: 0.5, md: 1 } }}>
-                  <Paper
-                    elevation={isCurrent ? 8 : 3}
-                    sx={{
-                      bgcolor: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
-                      backgroundBlendMode: 'overlay',
-                      color: "#e6eef6",
-                      p: { xs: 1.25, md: 2 },
-                      borderRadius: 1.5,
-                      minHeight: 76,
-                      minWidth: 160,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      transition: "transform 200ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms ease",
-                      '&:hover': {
-                        transform: "translateY(-8px)",
-                        boxShadow: isCurrent ? `0 28px 60px rgba(255,99,71,0.12)` : '0 18px 40px rgba(2,6,23,0.6)'
-                      }
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 600, letterSpacing: 0.2 }}>{it.title}</Typography>
-                    {it.description && (
-                      <Typography variant="body2" sx={{ color: "#9aa6b2", mt: 0.5, textAlign: 'center' }}>
-                        {it.description}
-                      </Typography>
-                    )}
-                  </Paper>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
+          return (
+            <Box key={i} flex={1} textAlign="center">
+              <Paper
+                elevation={isCurrent ? 10 : 3}
+                sx={{
+                  p: 2,
+                  minHeight: 80,
+                  bgcolor: cardBg,
+                  borderRadius: 2,
+                  transition: "all 200ms ease",
+                  opacity: isCompleted || isCurrent ? 1 : 0.7,
+                  "&:hover": {
+                    transform: "translateY(-6px)",
+                  },
+                }}
+              >
+                <Typography fontWeight={600}>{it.title}</Typography>
+                {it.description && (
+                  <Typography variant="body2" color="text.secondary" mt={0.5}>
+                    {it.description}
+                  </Typography>
+                )}
+              </Paper>
+            </Box>
+          );
+        })}
       </Box>
     </Box>
   );
 }
 
 HorizontalTimeline.propTypes = {
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      date: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
-      title: PropTypes.string.isRequired,
-      description: PropTypes.string,
-      status: PropTypes.string,
-    })
-  ).isRequired,
+  items: PropTypes.array.isRequired,
 };

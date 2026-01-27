@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Collapse,
 } from "@mui/material";
 import {
   Add as AddIcon, // NEW IMPORT
@@ -31,9 +32,11 @@ import {
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
   Timeline as TimelineIcon,
+  ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
+import HorizontalTimeline from "@/components/Timeline/HorizontalTimeline";
 import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal"; // NEW IMPORT
 import {
   BACKEND_URL,
@@ -57,6 +60,9 @@ export default function PlacementPosts() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [openCreateModal, setOpenCreateModal] = useState(false); // NEW STATE
+  const [expandedTimelineId, setExpandedTimelineId] = useState(null);
+  const [timelineData, setTimelineData] = useState({});
+  const [timelineLoading, setTimelineLoading] = useState({});
 
   useEffect(() => {
     fetchAllApplications();
@@ -178,6 +184,70 @@ export default function PlacementPosts() {
   const handleMenuOpen = (event, app) => {
     setAnchorEl(event.currentTarget);
     setSelectedApp(app);
+  };
+
+  const toggleTimeline = async (postId) => {
+    if (!postId) return;
+    // collapse if same
+    if (expandedTimelineId === postId) {
+      setExpandedTimelineId(null);
+      return;
+    }
+
+    // open new
+    setExpandedTimelineId(postId);
+
+    // lazy load if not present
+    if (!timelineData[postId]) {
+      setTimelineLoading((p) => ({ ...(p || {}), [postId]: true }));
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${BACKEND_URL}/api/posts/applications/${postId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data && res.data.ok) {
+          setTimelineData((p) => ({ ...(p || {}), [postId]: res.data.application }));
+        }
+      } catch (err) {
+        console.error("Failed to load timeline for post", postId, err);
+      } finally {
+        setTimelineLoading((p) => ({ ...(p || {}), [postId]: false }));
+      }
+    }
+  };
+
+  const buildTimelineItems = (post) => {
+    if (!post) return [];
+    const events = [];
+    if (post.application_date) {
+      events.push({ id: `post-${post.id}`, title: "Post Created", description: post.notes || null, event_date: post.application_date, event_type: "created" });
+    }
+    if (Array.isArray(post.stages) && post.stages.length > 0) {
+      post.stages.forEach((s, idx) => {
+        events.push({ id: `stage-${idx}`, title: s.name || `Stage ${idx + 1}`, description: s.notes || null, event_date: s.date || s.completed_at || null, event_type: s.status || "stage" });
+      });
+    }
+    if (post.interview_date) {
+      events.push({ id: `interview-${post.id}`, title: "Interview Scheduled", description: null, event_date: post.interview_date, event_type: "interview_scheduled" });
+    }
+    if (post.application_deadline) {
+      events.push({ id: `deadline-${post.id}`, title: "Application Deadline", description: null, event_date: post.application_deadline, event_type: "deadline" });
+    }
+
+    const sorted = events.slice().sort((a, b) => {
+      const da = a.event_date ? new Date(a.event_date).getTime() : Number.POSITIVE_INFINITY;
+      const db = b.event_date ? new Date(b.event_date).getTime() : Number.POSITIVE_INFINITY;
+      return da - db;
+    });
+
+    const now = Date.now();
+    return sorted.map((ev) => {
+      let status = "pending";
+      if (ev.event_type === "deadline") status = "deadline";
+      else if (ev.event_date && new Date(ev.event_date).getTime() <= now) status = "completed";
+      else status = "pending";
+      return { id: ev.id, title: ev.title, description: ev.description, date: ev.event_date, status };
+    });
   };
 
   const handleMenuClose = () => {
@@ -627,40 +697,70 @@ export default function PlacementPosts() {
                         >
                           View Details
                         </Button>
-                        {activeTab === 1 && (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<TimelineIcon />}
-                            onClick={() => {
-                              if (!app || !app.id) {
-                                console.warn("PlacementPost: missing app.id", app);
-                                // fallback: open post details instead
-                                router.push(`/Post/postdetails/${app?.id || ""}`);
-                                return;
-                              }
-                              console.log("Opening timeline for post id:", app.id);
-                              router.push(`/timeline/post/${encodeURIComponent(app.id)}`);
-                            }}
-                            sx={{
-                              color: "#8b5cf6",
-                              borderColor: "#8b5cf6",
-                              "&:hover": {
-                                bgcolor: "rgba(139, 92, 246, 0.06)",
-                                borderColor: "#8b5cf6",
-                              },
-                              textTransform: "none",
-                              fontWeight: 600,
-                            }}
-                          >
-                            View Timeline
-                          </Button>
-                        )}
+                        { /* Timeline button removed; inline expandable strip rendered below card for approved posts */ }
                       </>
                     )}
                   </Box>
                 </Box>
               </Box>
+
+              {/* Inline expandable timeline strip for approved posts */}
+              {activeTab === 1 && (
+                <Box sx={{ mt: 2 }}>
+                  <Box
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleTimeline(app.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") toggleTimeline(app.id);
+                    }}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2,
+                      cursor: "pointer",
+                      bgcolor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.02)"
+                          : "rgba(0,0,0,0.03)",
+                      border: "1px solid",
+                      borderColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.02)"
+                          : "rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    <Typography sx={{ color: "text.primary", fontWeight: 600 }}>
+                      Timeline
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      sx={{
+                        transform: expandedTimelineId === app.id ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 200ms",
+                        color: "text.primary",
+                      }}
+                      aria-hidden
+                    >
+                      <ExpandMoreIcon />
+                    </IconButton>
+                  </Box>
+
+                  <Collapse in={expandedTimelineId === app.id} timeout="auto" unmountOnExit>
+                    <Box sx={{ mt: 2, p: 2.5, borderRadius: 2 }}>
+                      {timelineLoading[app.id] ? (
+                        <Typography sx={{ color: "text.secondary" }}>Loading timeline...</Typography>
+                      ) : (
+                        <HorizontalTimeline items={buildTimelineItems(timelineData[app.id] || app)} />
+                      )}
+                    </Box>
+                  </Collapse>
+                </Box>
+              )}
+
             </Card>
           ))}
         </Stack>
