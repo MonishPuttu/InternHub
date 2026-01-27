@@ -26,10 +26,13 @@ import {
   Visibility as VisibilityIcon,
   Work as WorkIcon,
   Timeline as TimelineIcon,
+  ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
 import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal";
+import Collapse from "@mui/material/Collapse";
+import VerticalInlineTimeline from "@/components/Timeline/VerticalInlineTimeline";
 import {
   BACKEND_URL,
   INDUSTRIES,
@@ -51,6 +54,7 @@ export default function PlacementPosts() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [expandedTimelines, setExpandedTimelines] = useState({});
 
   useEffect(() => {
     fetchAllApplications();
@@ -509,6 +513,8 @@ export default function PlacementPosts() {
                   </Box>
                 )}
 
+                
+
                 {/* Industry Chip */}
                 <Chip
                   label={app.industry}
@@ -645,6 +651,53 @@ export default function PlacementPosts() {
                     >
                       ✓ Post is approved and live
                     </Typography>
+                  </Box>
+                )}
+
+                {activeTab === 1 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Box
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedTimelines((prev) => ({
+                          ...(prev || {}),
+                          [app.id]: !prev?.[app.id],
+                        }));
+                      }}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        px: 2,
+                        py: 1,
+                        borderRadius: 1,
+                        bgcolor: "rgba(16,185,129,0.08)",
+                        border: "1px solid rgba(16,185,129,0.25)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Typography sx={{ fontWeight: 600, color: "#10b981" }}>
+                        Timeline
+                      </Typography>
+                      <ExpandMoreIcon
+                        sx={{
+                              transform:
+                                expandedTimelines?.[app.id]
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                          transition: "transform 200ms",
+                        }}
+                      />
+                    </Box>
+
+                    <Collapse in={!!expandedTimelines?.[app.id]} unmountOnExit>
+                      <Box sx={{ mt: 2 }}>
+                        <VerticalInlineTimeline
+                          key={`timeline-${app.id}`}
+                          postId={app.id}
+                        />
+                      </Box>
+                    </Collapse>
                   </Box>
                 )}
 
