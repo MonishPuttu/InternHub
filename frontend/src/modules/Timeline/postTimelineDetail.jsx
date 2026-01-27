@@ -2,22 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import {
-  Container,
-  Card,
-  Typography,
-  Box,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  Chip,
-  Avatar,
-  Button,
-  CircularProgress,
-} from "@mui/material";
-import { Business, Schedule, CheckCircle, ArrowBack } from "@mui/icons-material";
+import { Container, Card, Typography, Box, Chip, Avatar, Button, CircularProgress } from "@mui/material";
+import { Business, ArrowBack } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+import HorizontalTimeline from "@/components/Timeline/HorizontalTimeline";
 import { formatDate } from "@/lib/dateUtils";
 
 export default function PostTimelineDetail({ params }) {
@@ -66,10 +54,9 @@ export default function PostTimelineDetail({ params }) {
     );
   }
 
-  // Build timeline events from post data
+  // Build timeline events from post data (normalized to AnimatedTimeline props)
   const events = [];
 
-  // Application / Post created
   if (post.application_date) {
     events.push({
       id: `post-${post.id}`,
@@ -80,7 +67,6 @@ export default function PostTimelineDetail({ params }) {
     });
   }
 
-  // Stages (if any)
   if (Array.isArray(post.stages) && post.stages.length > 0) {
     post.stages.forEach((s, idx) => {
       events.push({
@@ -93,7 +79,6 @@ export default function PostTimelineDetail({ params }) {
     });
   }
 
-  // Interview date
   if (post.interview_date) {
     events.push({
       id: `interview-${post.id}`,
@@ -104,7 +89,6 @@ export default function PostTimelineDetail({ params }) {
     });
   }
 
-  // Deadline
   if (post.application_deadline) {
     events.push({
       id: `deadline-${post.id}`,
@@ -115,22 +99,33 @@ export default function PostTimelineDetail({ params }) {
     });
   }
 
-  // Sort events by date (fallback to created order)
-  const sorted = events
-    .slice()
-    .sort((a, b) => {
-      const da = a.event_date ? new Date(a.event_date).getTime() : 0;
-      const db = b.event_date ? new Date(b.event_date).getTime() : 0;
-      return da - db;
-    });
+  // sort by date ascending; events without a date are pushed to the end
+  const sorted = events.slice().sort((a, b) => {
+    const da = a.event_date ? new Date(a.event_date).getTime() : Number.POSITIVE_INFINITY;
+    const db = b.event_date ? new Date(b.event_date).getTime() : Number.POSITIVE_INFINITY;
+    return da - db;
+  });
+
+  // map to HorizontalTimeline data shape and derive status for each event
+  const now = Date.now();
+  const items = sorted.map((ev) => {
+    let status = "pending";
+    if (ev.event_type === "deadline") status = "deadline";
+    else if (ev.event_date && new Date(ev.event_date).getTime() <= now) status = "completed";
+    else status = "pending";
+
+    return {
+      id: ev.id,
+      title: ev.title,
+      description: ev.description,
+      date: ev.event_date,
+      status,
+    };
+  });
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Button
-        startIcon={<ArrowBack />}
-        onClick={() => router.back()}
-        sx={{ color: "#8b5cf6", mb: 3 }}
-      >
+      <Button startIcon={<ArrowBack />} onClick={() => router.back()} sx={{ color: "#8b5cf6", mb: 3 }}>
         Back
       </Button>
 
@@ -144,16 +139,11 @@ export default function PostTimelineDetail({ params }) {
               {post.company_name}
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              {post.positions && post.positions[0]?.title
-                ? post.positions[0].title
-                : post.position || "Position"}
+              {post.positions && post.positions[0]?.title ? post.positions[0].title : post.position || "Position"}
             </Typography>
           </Box>
           {post.package_offered && (
-            <Chip
-              label={`₹${post.package_offered} LPA`}
-              sx={{ bgcolor: "#10b98120", color: "#10b981", fontWeight: 600 }}
-            />
+            <Chip label={`₹${post.package_offered} LPA`} sx={{ bgcolor: "#10b98120", color: "#10b981", fontWeight: 600 }} />
           )}
         </Box>
       </Card>
@@ -163,45 +153,7 @@ export default function PostTimelineDetail({ params }) {
           Post Timeline
         </Typography>
 
-        <Stepper activeStep={sorted.length - 1} orientation="vertical">
-          {sorted.map((ev) => (
-            <Step key={ev.id} active completed>
-              <StepLabel
-                StepIconComponent={() => (
-                  <Avatar sx={{ bgcolor: "#8b5cf6", width: 40, height: 40 }}>
-                    <CheckCircle sx={{ fontSize: 20 }} />
-                  </Avatar>
-                )}
-              >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Typography variant="h6">{ev.title}</Typography>
-                  <Chip
-                    label={ev.event_type}
-                    size="small"
-                    sx={{ bgcolor: "#8b5cf620", color: "text.primary" }}
-                  />
-                </Box>
-              </StepLabel>
-
-              <StepContent>
-                <Box sx={{ pl: 2, pt: 1 }}>
-                  {ev.event_date && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      <Schedule sx={{ fontSize: 16, mr: 0.5, verticalAlign: "middle" }} />
-                      {formatDate(ev.event_date)}
-                    </Typography>
-                  )}
-
-                  {ev.description && (
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                      {ev.description}
-                    </Typography>
-                  )}
-                </Box>
-              </StepContent>
-            </Step>
-          ))}
-        </Stepper>
+        <HorizontalTimeline items={items} />
       </Card>
     </Container>
   );
