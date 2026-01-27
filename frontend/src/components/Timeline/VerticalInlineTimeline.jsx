@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/dateUtils";
 
 /**
  * Animates timeline progress from first node → current node
+ * Logic unchanged, only pacing tuned
  */
 function TimelineAnimator({ events, onStep }) {
   useEffect(() => {
@@ -41,7 +42,7 @@ function TimelineAnimator({ events, onStep }) {
       timers.push(
         setTimeout(() => {
           if (!cancelled) onStep(i);
-        }, i * 200)
+        }, i * 300) // ⏳ smoother pacing
       );
     }
 
@@ -95,9 +96,9 @@ export default function VerticalInlineTimeline({ postId }) {
       if (post.interview_date) {
         evs.push({
           id: `interview-${post.id}`,
-          title: "Interview Scheduled",
+          title: "Technical Interview",
           event_date: post.interview_date,
-          event_type: "interview",
+          event_type: "completed",
         });
       }
 
@@ -138,73 +139,80 @@ export default function VerticalInlineTimeline({ postId }) {
 
   if (!events.length) return null;
 
-  const currentIndex = (() => {
-    if (!events.length) return -1;
-    const now = Date.now();
-    let idx = -1;
-
-    events.forEach((ev, i) => {
-      if (ev.event_date) {
-        if (new Date(ev.event_date).getTime() <= now) {
-          idx = i;
-        }
-      }
-    });
-
-    return idx === -1 ? 0 : idx;
-  })();
-
   return (
-    <Box sx={{ pl: 2, position: "relative" }}>
+    <Box sx={{ pl: 2 }}>
       {events.map((ev, i) => {
-        const isCompleted = i < currentIndex;
-        const isCurrent = i === currentIndex;
-        const isRevealed = i <= animatedIndex;
+        const isCompleted = i < animatedIndex;
+        const isCurrent = i === animatedIndex;
         const isLast = i === events.length - 1;
 
         return (
-          <Box key={ev.id} sx={{ display: "flex", mb: isLast ? 0 : 3 }}>
-            {/* Left rail */}
-            <Box sx={{ width: 48, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              {/* Node circle (no icon) */}
+          <Box
+            key={ev.id}
+            sx={{ display: "flex", mb: isLast ? 0 : 3 }}
+          >
+            {/* Timeline rail */}
+            <Box
+              sx={{
+                width: 36,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              {/* Node */}
               <Box
                 sx={{
-                  width: isCurrent ? 30 : 26,
-                  height: isCurrent ? 30 : 26,
+                  width: isCurrent ? 22 : 18,
+                  height: isCurrent ? 22 : 18,
                   borderRadius: "50%",
                   bgcolor: isCompleted
                     ? "#22c55e"
                     : isCurrent
                     ? "#8b5cf6"
                     : "transparent",
-                  border: isCompleted || isCurrent ? "none" : "1px solid",
-                  borderColor: "divider",
-                  transition: "all 220ms ease",
-                  animation: isCurrent ? "pulse 1.5s infinite" : "none",
-                  opacity: isRevealed ? 1 : 0.4,
+                  border: "1.5px solid",
+                  borderColor: isCompleted
+                    ? "#22c55e"
+                    : isCurrent
+                    ? "#8b5cf6"
+                    : "rgba(255,255,255,0.25)",
+                  transition:
+                    "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  animation: isCurrent
+                    ? "pulse 1.6s ease-out infinite"
+                    : "none",
                   "@keyframes pulse": {
-                    "0%": { boxShadow: "0 0 0 0 rgba(139,92,246,0.6)" },
-                    "70%": { boxShadow: "0 0 0 10px rgba(139,92,246,0)" },
-                    "100%": { boxShadow: "0 0 0 0 rgba(139,92,246,0)" },
+                    "0%": {
+                      boxShadow:
+                        "0 0 0 0 rgba(139,92,246,0.55)",
+                    },
+                    "70%": {
+                      boxShadow:
+                        "0 0 0 10px rgba(139,92,246,0)",
+                    },
+                    "100%": {
+                      boxShadow:
+                        "0 0 0 0 rgba(139,92,246,0)",
+                    },
                   },
                 }}
               />
 
-              {/* Connector line under the node - always present except for last node */}
+              {/* Connector */}
               {!isLast && (
                 <Box
                   sx={{
                     width: 2,
-                    flex: 1,
-                    bgcolor:
-                      i < currentIndex
-                        ? "#22c55e"
-                        : i === currentIndex
-                        ? "#8b5cf6"
-                        : "divider",
-                    mt: 1,
-                    transition: "background-color 220ms ease",
-                    opacity: i < animatedIndex ? 1 : 0.4,
+                    height: 32, // ✅ fixed height (prevents disappearing)
+                    mt: 0.75,
+                    bgcolor: isCompleted
+                      ? "#22c55e"
+                      : isCurrent
+                      ? "#8b5cf6"
+                      : "rgba(255,255,255,0.18)",
+                    transition:
+                      "background-color 300ms ease",
                   }}
                 />
               )}
@@ -212,24 +220,46 @@ export default function VerticalInlineTimeline({ postId }) {
 
             {/* Content */}
             <Box sx={{ pl: 2, flex: 1 }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Typography sx={{ fontWeight: 700 }}>{ev.title}</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Typography sx={{ fontWeight: 700 }}>
+                  {ev.title}
+                </Typography>
                 <Chip
                   label={ev.event_type}
                   size="small"
-                  sx={{ bgcolor: "#8b5cf620", fontSize: "0.65rem" }}
+                  sx={{
+                    bgcolor: "#8b5cf620",
+                    fontSize: "0.65rem",
+                  }}
                 />
               </Box>
 
               {ev.event_date && (
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  <Schedule sx={{ fontSize: 12, mr: 0.5 }} />
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary" }}
+                >
+                  <Schedule
+                    sx={{ fontSize: 12, mr: 0.5 }}
+                  />
                   {formatDate(ev.event_date)}
                 </Typography>
               )}
 
               {ev.description && (
-                <Typography variant="body2" sx={{ mt: 0.5, color: "text.secondary" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 0.5,
+                    color: "text.secondary",
+                  }}
+                >
                   {ev.description}
                 </Typography>
               )}
@@ -238,7 +268,11 @@ export default function VerticalInlineTimeline({ postId }) {
         );
       })}
 
-      <TimelineAnimator events={events} onStep={setAnimatedIndex} />
+      {/* Animator */}
+      <TimelineAnimator
+        events={events}
+        onStep={setAnimatedIndex}
+      />
     </Box>
   );
 }
