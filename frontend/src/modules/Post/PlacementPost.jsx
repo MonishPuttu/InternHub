@@ -392,6 +392,71 @@ export default function PlacementPosts() {
               onViewDetails={handleViewDetails}
               theme={theme}
             >
+              {/* Company Logo Header */}
+              <Box
+                sx={{
+                  height: 72,
+                  px: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  borderBottom: "1px solid",
+                  borderColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.06)"
+                      : "#e2e8f0",
+                  bgcolor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(139,92,246,0.08)"
+                      : "rgba(139,92,246,0.06)",
+                }}
+              >
+                {/* Logo */}
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 1.5,
+                    overflow: "hidden",
+                    bgcolor: "background.paper",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid rgba(139,92,246,0.25)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {app.company_logo || app.company_logo_url ? (
+                    <Box
+                      component="img"
+                      src={app.company_logo || app.company_logo_url}
+                      alt={app.company_name}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        p: 0.5,
+                      }}
+                    />
+                  ) : (
+                    <WorkIcon sx={{ color: "#8b5cf6" }} />
+                  )}
+                </Box>
+
+                {/* Company name (optional, looks good like img1) */}
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {app.company_name}
+                </Typography>
+              </Box>
+
               {/* Card Content */}
               <Box sx={{ p: 3, flexGrow: 1 }}>
                 {/* Icon and Status Badge */}
