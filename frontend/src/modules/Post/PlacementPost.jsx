@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -31,13 +31,57 @@ import {
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
 import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal";
-import Collapse from "@mui/material/Collapse";
+import Portal from "@mui/material/Portal";
 import VerticalInlineTimeline from "@/components/Timeline/VerticalInlineTimeline";
 import {
   BACKEND_URL,
   INDUSTRIES,
   STATUS_OPTIONS,
 } from "@/constants/postConstants";
+
+const PostCard = React.memo(function PostCard({
+  app,
+  activeTab,
+  expanded,
+  onToggleTimeline,
+  onViewDetails,
+  theme,
+  openTimelinePostId,
+  children,
+}) {
+  return (
+    <Box
+      onClick={() => onViewDetails(app.id)}
+      sx={{
+        breakInside: "avoid",
+        mb: 3,
+        display: "block",
+        position: "relative",
+        contain: "layout paint",
+        border: "1px solid",
+        borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+        borderRadius: 2,
+        transition: "all 0.3s ease",
+        opacity:
+          openTimelinePostId && openTimelinePostId !== app.id ? 0.85 : 1,
+        filter:
+          openTimelinePostId && openTimelinePostId !== app.id
+            ? "saturate(0.9)"
+            : "none",
+        bgcolor: "background.default",
+        overflow: "hidden",
+        cursor: "pointer",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
+          borderColor: "#8b5cf6",
+        },
+      }}
+    >
+      {children}
+    </Box>
+  );
+});
 
 export default function PlacementPosts() {
   const router = useRouter();
@@ -54,7 +98,11 @@ export default function PlacementPosts() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [expandedTimelines, setExpandedTimelines] = useState({});
+
+  // Timeline portal / anchor management (one open timeline at a time)
+  const timelineAnchorRef = useRef(null);
+  const [openTimelinePostId, setOpenTimelinePostId] = useState(null);
+  const [portalStyle, setPortalStyle] = useState(null);
 
   useEffect(() => {
     fetchAllApplications();
@@ -78,6 +126,36 @@ export default function PlacementPosts() {
       setLoading(false);
     }
   };
+
+  // compute portal position when openTimelinePostId changes
+  useLayoutEffect(() => {
+    if (!openTimelinePostId || !timelineAnchorRef.current) {
+      setPortalStyle(null);
+      return;
+    }
+
+    const rect = timelineAnchorRef.current.getBoundingClientRect();
+    setPortalStyle({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+    });
+  }, [openTimelinePostId]);
+
+  // close timeline portal on scroll/resize
+  useEffect(() => {
+    if (!openTimelinePostId) return undefined;
+
+    const close = () => setOpenTimelinePostId(null);
+
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [openTimelinePostId]);
 
   const handleModalClose = () => {
     setOpenCreateModal(false);
@@ -289,37 +367,30 @@ export default function PlacementPosts() {
       ) : (
         <Box
           sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, 1fr)",
-              md: "repeat(3, 1fr)",
-              lg: "repeat(4, 1fr)",
+            columnCount: {
+              xs: 1,
+              sm: 2,
+              md: 3,
+              lg: 4,
             },
-            gap: 3,
+            columnGap: 2,
             width: "100%",
           }}
         >
           {currentPosts.map((app) => (
-            <Box
-              key={app.id}
-              onClick={() => handleViewDetails(app.id)}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                border: "1px solid",     
-                borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",           
-                borderRadius: 2,
-                transition: "all 0.3s ease",
-                bgcolor: "background.default",
-                overflow: "hidden",
-                cursor: "pointer",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
-                  borderColor: "#8b5cf6",
-                },
+            <PostCard
+              key={`post-${app.id}`}
+              app={app}
+              activeTab={activeTab}
+              expanded={openTimelinePostId === app.id}
+              openTimelinePostId={openTimelinePostId}
+              onToggleTimeline={(e) => {
+                // attach anchor and toggle single open timeline
+                if (e && e.currentTarget) timelineAnchorRef.current = e.currentTarget;
+                setOpenTimelinePostId((prev) => (prev === app.id ? null : app.id));
               }}
+              onViewDetails={handleViewDetails}
+              theme={theme}
             >
               {/* Card Content */}
               <Box sx={{ p: 3, flexGrow: 1 }}>
@@ -655,14 +726,13 @@ export default function PlacementPosts() {
                 )}
 
                 {activeTab === 1 && (
-                  <Box sx={{ mt: 2 }}>
+                    <Box sx={{ mt: 2 }}>
                     <Box
                       onClick={(e) => {
                         e.stopPropagation();
-                        setExpandedTimelines((prev) => ({
-                          ...(prev || {}),
-                          [app.id]: !prev?.[app.id],
-                        }));
+                        // attach anchor and toggle single open timeline
+                        timelineAnchorRef.current = e.currentTarget;
+                        setOpenTimelinePostId((prev) => (prev === app.id ? null : app.id));
                       }}
                       sx={{
                         display: "flex",
@@ -671,33 +741,22 @@ export default function PlacementPosts() {
                         px: 2,
                         py: 1,
                         borderRadius: 1,
-                        bgcolor: "rgba(16,185,129,0.08)",
-                        border: "1px solid rgba(16,185,129,0.25)",
+                        bgcolor: "background.default",
+                        border: "1px solid rgba(139,92,246,0.25)",
                         cursor: "pointer",
+                        "&:hover": { bgcolor: "rgba(139,92,246,0.08)" },
                       }}
                     >
-                      <Typography sx={{ fontWeight: 600, color: "#10b981" }}>
+                      <Typography sx={{ fontWeight: 600, color: "#a78bfa" }}>
                         Timeline
                       </Typography>
                       <ExpandMoreIcon
                         sx={{
-                              transform:
-                                expandedTimelines?.[app.id]
-                                  ? "rotate(180deg)"
-                                  : "rotate(0deg)",
+                          transform: openTimelinePostId === app.id ? "rotate(180deg)" : "rotate(0deg)",
                           transition: "transform 200ms",
                         }}
                       />
                     </Box>
-
-                    <Collapse in={!!expandedTimelines?.[app.id]} unmountOnExit>
-                      <Box sx={{ mt: 2 }}>
-                        <VerticalInlineTimeline
-                          key={`timeline-${app.id}`}
-                          postId={app.id}
-                        />
-                      </Box>
-                    </Collapse>
                   </Box>
                 )}
 
@@ -731,9 +790,49 @@ export default function PlacementPosts() {
                   </Box>
                 )}
               </Box>
-            </Box>
+            </PostCard>
           ))}
         </Box>
+      )}
+
+      {/* Portaled timeline (single instance outside the masonry/grid) */}
+      {portalStyle && openTimelinePostId && (
+        <Portal>
+          <Box
+            sx={{
+              position: "absolute",
+              top: portalStyle.top,
+              left: portalStyle.left,
+              width: portalStyle.width,
+              zIndex: 1400,
+              pointerEvents: "auto",
+              backdropFilter: "blur(2px)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Paper
+              elevation={3}
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                bgcolor: "background.default",
+                border: "1px solid",
+                borderColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(139,92,246,0.25)"
+                    : "#e2e8f0",
+                boxShadow: theme.palette.mode === "dark"
+                  ? "0 10px 32px rgba(0,0,0,0.45)"
+                  : "0 10px 32px rgba(0,0,0,0.12)",
+                overflow: "visible",
+              }}
+            >
+              <Box sx={{ px: 1, pt: 0.5, animation: "fadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1)", "@keyframes fadeUp": { from: { opacity: 0, transform: "translateY(-6px)" }, to: { opacity: 1, transform: "translateY(0)" } } }}>
+                <VerticalInlineTimeline postId={openTimelinePostId} />
+              </Box>
+            </Paper>
+          </Box>
+        </Portal>
       )}
 
       {/* Action Dialog */}
