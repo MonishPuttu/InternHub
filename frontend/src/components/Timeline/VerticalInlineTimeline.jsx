@@ -205,7 +205,7 @@ export default function VerticalInlineTimeline({ postId }) {
                   sx={{
                     width: 2,
                     height: 32, // ✅ fixed height (prevents disappearing)
-                    mt: 0.75,
+                    mt: 2.5,
                     bgcolor: isCompleted
                       ? "#22c55e"
                       : isCurrent
