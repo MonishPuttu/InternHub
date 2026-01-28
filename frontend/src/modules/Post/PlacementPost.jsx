@@ -39,6 +39,27 @@ import {
   STATUS_OPTIONS,
 } from "@/constants/postConstants";
 
+// Header color palette and stable picker
+const HEADER_COLORS = [
+  "#8b5cf6",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#14b8a6",
+];
+
+const getHeaderColor = (key) => {
+  if (!key) return HEADER_COLORS[0];
+  const str = key.toString();
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return HEADER_COLORS[Math.abs(hash) % HEADER_COLORS.length];
+};
+
 const PostCard = React.memo(function PostCard({
   app,
   activeTab,
@@ -377,7 +398,9 @@ export default function PlacementPosts() {
             width: "100%",
           }}
         >
-          {currentPosts.map((app) => (
+          {currentPosts.map((app) => {
+            const headerColor = getHeaderColor(app.id || app.company_name);
+            return (
             <PostCard
               key={`post-${app.id}`}
               app={app}
@@ -400,15 +423,8 @@ export default function PlacementPosts() {
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
-                  borderBottom: "1px solid",
-                  borderColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.06)"
-                      : "#e2e8f0",
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(139,92,246,0.08)"
-                      : "rgba(139,92,246,0.06)",
+                  borderBottom: "1px solid rgba(0,0,0,0.12)",
+                  backgroundColor: headerColor,
                 }}
               >
                 {/* Logo */}
@@ -418,12 +434,14 @@ export default function PlacementPosts() {
                     height: 48,
                     borderRadius: 1.5,
                     overflow: "hidden",
-                    bgcolor: "background.paper",
+                    backgroundColor: headerColor,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     border: "1px solid rgba(139,92,246,0.25)",
                     flexShrink: 0,
+                    border: "1px solid rgba(255,255,255,0.4)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                   }}
                 >
                   {app.company_logo || app.company_logo_url ? (
@@ -436,10 +454,11 @@ export default function PlacementPosts() {
                         height: "100%",
                         objectFit: "contain",
                         p: 0.5,
+                      bgcolor: "background.paper",
                       }}
                     />
                   ) : (
-                    <WorkIcon sx={{ color: "#8b5cf6" }} />
+                    <WorkIcon sx={{ color: "white", fontSize: 26 }} />
                   )}
                 </Box>
 
@@ -448,6 +467,8 @@ export default function PlacementPosts() {
                   sx={{
                     fontWeight: 700,
                     fontSize: "0.95rem",
+                    color: "white",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.4)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -459,33 +480,16 @@ export default function PlacementPosts() {
 
               {/* Card Content */}
               <Box sx={{ p: 3, flexGrow: 1 }}>
-                {/* Icon and Status Badge */}
+                {/* Status Badge + Posted Time */}
                 <Box
                   sx={{
                     mb: 2,
                     display: "flex",
-                    alignItems: "flex-start",
+                    alignItems: "center",
                     gap: 1.5,
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 2,
-                      bgcolor:"#8b5cf6",                  
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <CalendarIcon sx={{ fontSize: 32, color: "white" }} />
-                  </Box>
-
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
-                  >
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                     {/* Status Badge */}
                     {activeTab === 0 && (
                       <Chip
@@ -767,28 +771,7 @@ export default function PlacementPosts() {
                   </>
                 )}
 
-                {/* Approved Posts - NO BUTTONS, just a message */}
-                {activeTab === 1 && (
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: "rgba(16, 185, 129, 0.08)",
-                      borderRadius: 1,
-                      border: "1px solid rgba(16, 185, 129, 0.2)",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#10b981",
-                        fontWeight: 600,
-                      }}
-                    >
-                      ✓ Post is approved and live
-                    </Typography>
-                  </Box>
-                )}
+                {/* Approved message removed (kept timeline below) */}
 
                 {activeTab === 1 && (
                     <Box sx={{ mt: 2 }}>
@@ -856,7 +839,8 @@ export default function PlacementPosts() {
                 )}
               </Box>
             </PostCard>
-          ))}
+          );
+          })}
         </Box>
       )}
 
