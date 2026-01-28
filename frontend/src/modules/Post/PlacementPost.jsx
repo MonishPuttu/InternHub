@@ -60,6 +60,8 @@ const getHeaderColor = (key) => {
   return HEADER_COLORS[Math.abs(hash) % HEADER_COLORS.length];
 };
 
+const isLight = (theme) => theme.palette.mode === "light";
+
 const PostCard = React.memo(function PostCard({
   app,
   activeTab,
@@ -357,9 +359,9 @@ export default function PlacementPosts() {
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
-          sx={{
+            sx={{
             "& .MuiTab-root": {
-              color: "text.secondary",
+              color: isLight(theme) ? "#475569" : "text.secondary",
               textTransform: "none",
               fontSize: "1rem",
               fontWeight: 500,
@@ -399,7 +401,10 @@ export default function PlacementPosts() {
           }}
         >
           {currentPosts.map((app) => {
-            const headerColor = getHeaderColor(app.id || app.company_name);
+            const headerColor =
+              theme.palette.mode === "light"
+                ? getHeaderColor(app.id || app.company_name)
+                : "rgba(139,92,246,0.12)";
             return (
             <PostCard
               key={`post-${app.id}`}
@@ -467,8 +472,8 @@ export default function PlacementPosts() {
                   sx={{
                     fontWeight: 700,
                     fontSize: "0.95rem",
-                    color: "white",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                    color: isLight(theme) ? "#0f172a" : "white",
+                    textShadow: isLight(theme) ? "none" : "0 1px 2px rgba(0,0,0,0.4)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -537,7 +542,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
+                        color: isLight(theme) ? "#475569" : "text.secondary",
                         fontSize: "0.7rem",
                       }}
                     >
@@ -572,7 +577,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
+                        color: isLight(theme) ? "#475569" : "text.secondary",
                         fontWeight: 600,
                         fontSize: "0.75rem",
                       }}
@@ -588,25 +593,25 @@ export default function PlacementPosts() {
                     app.positions.length > 0 ? (
                       app.positions.map((pos, index) => (
                         <Chip
-                          key={index}
-                          label={pos.title || pos.position || pos}
-                          size="small"
-                          sx={{
-                            bgcolor: "transparent",
-                            color: "white",
-                            fontWeight: 600,
-                            fontSize: "0.75rem",
-                            border: "1px solid rgba(139, 92, 246, 0.3)",
-                          }}
-                        />
+                            key={index}
+                            label={pos.title || pos.position || pos}
+                            size="small"
+                            sx={{
+                              bgcolor: isLight(theme) ? "rgba(139,92,246,0.12)" : "transparent",
+                              color: isLight(theme) ? "#334155" : "white",
+                              fontWeight: 600,
+                              fontSize: "0.75rem",
+                              border: "1px solid rgba(139, 92, 246, 0.3)",
+                            }}
+                          />
                       ))
                     ) : app.position ? (
                       <Chip
                         label={app.position}
                         size="small"
                         sx={{
-                          bgcolor: "rgba(139, 92, 246, 0.15)",
-                          color: "#8b5cf6",
+                          bgcolor: isLight(theme) ? "rgba(139,92,246,0.12)" : "rgba(139, 92, 246, 0.15)",
+                          color: isLight(theme) ? "#334155" : "#8b5cf6",
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           border: "1px solid rgba(139, 92, 246, 0.3)",
@@ -615,9 +620,9 @@ export default function PlacementPosts() {
                     ) : (
                       <Typography
                         variant="body2"
-                        sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                        sx={{ color: isLight(theme) ? "#475569" : "text.secondary", fontSize: "0.85rem" }}
                       >
-                        No roles specified
+                          No roles specified
                       </Typography>
                     )}
                   </Box>
@@ -660,8 +665,8 @@ export default function PlacementPosts() {
                   label={app.industry}
                   size="small"
                   sx={{
-                    bgcolor: "rgba(59, 130, 246, 0.15)",
-                    color: "#3b82f6",
+                    bgcolor: isLight(theme) ? "rgba(59,130,246,0.2)" : "rgba(59, 130, 246, 0.15)",
+                    color: isLight(theme) ? "#1e40af" : "#3b82f6",
                     fontWeight: 500,
                     borderRadius: 1,
                     mb: 3,
@@ -683,7 +688,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
+                        color: isLight(theme) ? "#475569" : "text.secondary",
                         display: "block",
                       }}
                     >
@@ -831,7 +836,7 @@ export default function PlacementPosts() {
                     </Typography>
                     <Typography
                       variant="body2"
-                      sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                      sx={{ color: isLight(theme) ? "#475569" : "text.secondary", fontSize: "0.85rem" }}
                     >
                       {app.rejection_reason}
                     </Typography>
@@ -911,7 +916,7 @@ export default function PlacementPosts() {
           }}
         >
           <Box sx={{ minWidth: 400 }}>
-            <Typography sx={{ color: "text.secondary", mb: 2 }}>
+            <Typography sx={{ color: isLight(theme) ? "#475569" : "text.secondary", mb: 2 }}>
               {actionType === "approve"
                 ? `Are you sure you want to approve this post from ${selectedApp?.company_name}?`
                 : `Are you sure you want to disapprove this post from ${selectedApp?.company_name}?`}
@@ -937,7 +942,7 @@ export default function PlacementPosts() {
                     "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
                   "& .MuiInputLabel-root": {
-                    color: "text.secondary",
+                    color: isLight(theme) ? "#475569" : "text.secondary",
                     "&.Mui-focused": { color: "#8b5cf6" },
                   },
                 }}
@@ -954,7 +959,7 @@ export default function PlacementPosts() {
         >
           <Button
             onClick={() => setActionDialogOpen(false)}
-            sx={{ color: "text.secondary" }}
+            sx={{ color: isLight(theme) ? "#475569" : "text.secondary" }}
           >
             Cancel
           </Button>
@@ -1028,7 +1033,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1053,7 +1058,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1083,7 +1088,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1110,7 +1115,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1126,7 +1131,7 @@ export default function PlacementPosts() {
         >
           <Button
             onClick={() => setEditDialogOpen(false)}
-            sx={{ color: "text.secondary" }}
+            sx={{ color: isLight(theme) ? "#475569" : "text.secondary" }}
           >
             Cancel
           </Button>
