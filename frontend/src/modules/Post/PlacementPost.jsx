@@ -1,11 +1,10 @@
 "use client";
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { usePostsUI } from "@/modules/Post/PostsUIContext";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
-  Tabs,
-  Tab,
   Snackbar,
   Alert,
   Button,
@@ -38,6 +37,29 @@ import {
   INDUSTRIES,
   STATUS_OPTIONS,
 } from "@/constants/postConstants";
+
+// Header color palette and stable picker
+const HEADER_COLORS = [
+  "#8b5cf6",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#14b8a6",
+];
+
+const getHeaderColor = (key) => {
+  if (!key) return HEADER_COLORS[0];
+  const str = key.toString();
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return HEADER_COLORS[Math.abs(hash) % HEADER_COLORS.length];
+};
+
+const isLight = (theme) => theme.palette.mode === "light";
 
 const PostCard = React.memo(function PostCard({
   app,
@@ -86,7 +108,14 @@ const PostCard = React.memo(function PostCard({
 export default function PlacementPosts() {
   const router = useRouter();
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState(0);
+  // require PostsUIContext for Post UI state
+  const postsUI = usePostsUI();
+  if (!postsUI) {
+    console.error("PlacementPosts must be rendered inside PostsUIProvider (Post layout)");
+    return null;
+  }
+
+  const { activeTab, setActiveTab, industry, search } = postsUI;
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState(null);
@@ -118,6 +147,18 @@ export default function PlacementPosts() {
       );
       if (response.data.ok) {
         setApplications(response.data.applications);
+        // compute counts and push to PostsUIContext
+        try {
+          const apps = response.data.applications || [];
+          const pending = apps.filter((a) => a.approval_status === "pending").length;
+          const approved = apps.filter((a) => a.approval_status === "approved").length;
+          const disapproved = apps.filter((a) => a.approval_status === "disapproved").length;
+          if (postsUI && postsUI.setCounts) {
+            postsUI.setCounts({ pending, approved, disapproved });
+          }
+        } catch (e) {
+          // ignore
+        }
       }
     } catch (error) {
       console.error("Error fetching applications:", error);
@@ -275,12 +316,29 @@ export default function PlacementPosts() {
     (app) => app.approval_status === "disapproved"
   );
 
-  const currentPosts =
-    activeTab === 0
-      ? pendingPosts
-      : activeTab === 1
-      ? approvedPosts
-      : disapprovedPosts;
+  // apply tab selection first, then apply sidebar filters (industry + search)
+  let basePosts =
+    activeTab === 0 ? pendingPosts : activeTab === 1 ? approvedPosts : disapprovedPosts;
+
+  const matchesIndustry = (app) => {
+    if (!industry) return true;
+    return (app.industry || "") === industry;
+  };
+
+  const matchesSearch = (app) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const company = (app.company_name || "").toLowerCase();
+    const position = (app.position || "").toLowerCase();
+    const positionsArr = Array.isArray(app.positions) ? app.positions.map((p) => (p.title || p.position || p).toString().toLowerCase()) : [];
+    return (
+      company.includes(q) ||
+      position.includes(q) ||
+      positionsArr.some((p) => p.includes(q))
+    );
+  };
+
+  const currentPosts = basePosts.filter((app) => matchesIndustry(app) && matchesSearch(app));
 
   if (loading) {
     return (
@@ -322,35 +380,6 @@ export default function PlacementPosts() {
           </Button>
         </Box>
 
-        
-      </Box>
-
-      {/* Tabs */}
-      <Box
-        sx={{
-          borderBottom: 1,
-          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-          mb: 3,
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          sx={{
-            "& .MuiTab-root": {
-              color: "text.secondary",
-              textTransform: "none",
-              fontSize: "1rem",
-              fontWeight: 500,
-              "&.Mui-selected": { color: "#8b5cf6" },
-            },
-            "& .MuiTabs-indicator": { backgroundColor: "#8b5cf6" },
-          }}
-        >
-          <Tab label={`Pending Review (${pendingPosts.length})`} />
-          <Tab label={`Approved Posts (${approvedPosts.length})`} />
-          <Tab label={`Disapproved (${disapprovedPosts.length})`} />
-        </Tabs>
       </Box>
 
       {/* Posts Grid */}
@@ -377,7 +406,12 @@ export default function PlacementPosts() {
             width: "100%",
           }}
         >
-          {currentPosts.map((app) => (
+          {currentPosts.map((app) => {
+            const headerColor =
+              theme.palette.mode === "light"
+                ? getHeaderColor(app.id || app.company_name)
+                : "rgba(139,92,246,0.12)";
+            return (
             <PostCard
               key={`post-${app.id}`}
               app={app}
@@ -392,35 +426,81 @@ export default function PlacementPosts() {
               onViewDetails={handleViewDetails}
               theme={theme}
             >
+              {/* Company Logo Header */}
+              <Box
+                sx={{
+                  height: 72,
+                  px: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  borderBottom: "1px solid rgba(0,0,0,0.12)",
+                  backgroundColor: headerColor,
+                }}
+              >
+                {/* Logo */}
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 1.5,
+                    overflow: "hidden",
+                    backgroundColor: headerColor,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid rgba(139,92,246,0.25)",
+                    flexShrink: 0,
+                    border: "1px solid rgba(255,255,255,0.4)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                  }}
+                >
+                  {app.company_logo || app.company_logo_url ? (
+                    <Box
+                      component="img"
+                      src={app.company_logo || app.company_logo_url}
+                      alt={app.company_name}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        p: 0.5,
+                      bgcolor: "background.paper",
+                      }}
+                    />
+                  ) : (
+                    <WorkIcon sx={{ color: "white", fontSize: 26 }} />
+                  )}
+                </Box>
+
+                {/* Company name (optional, looks good like img1) */}
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    color: isLight(theme) ? "#0f172a" : "white",
+                    textShadow: isLight(theme) ? "none" : "0 1px 2px rgba(0,0,0,0.4)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {app.company_name}
+                </Typography>
+              </Box>
+
               {/* Card Content */}
               <Box sx={{ p: 3, flexGrow: 1 }}>
-                {/* Icon and Status Badge */}
+                {/* Status Badge + Posted Time */}
                 <Box
                   sx={{
                     mb: 2,
                     display: "flex",
-                    alignItems: "flex-start",
+                    alignItems: "center",
                     gap: 1.5,
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 2,
-                      bgcolor:"#8b5cf6",                  
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <CalendarIcon sx={{ fontSize: 32, color: "white" }} />
-                  </Box>
-
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
-                  >
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                     {/* Status Badge */}
                     {activeTab === 0 && (
                       <Chip
@@ -468,7 +548,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
+                        color: isLight(theme) ? "#475569" : "text.secondary",
                         fontSize: "0.7rem",
                       }}
                     >
@@ -503,7 +583,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
+                        color: isLight(theme) ? "#475569" : "text.secondary",
                         fontWeight: 600,
                         fontSize: "0.75rem",
                       }}
@@ -519,25 +599,25 @@ export default function PlacementPosts() {
                     app.positions.length > 0 ? (
                       app.positions.map((pos, index) => (
                         <Chip
-                          key={index}
-                          label={pos.title || pos.position || pos}
-                          size="small"
-                          sx={{
-                            bgcolor: "transparent",
-                            color: "white",
-                            fontWeight: 600,
-                            fontSize: "0.75rem",
-                            border: "1px solid rgba(139, 92, 246, 0.3)",
-                          }}
-                        />
+                            key={index}
+                            label={pos.title || pos.position || pos}
+                            size="small"
+                            sx={{
+                              bgcolor: isLight(theme) ? "rgba(139,92,246,0.12)" : "transparent",
+                              color: isLight(theme) ? "#334155" : "white",
+                              fontWeight: 600,
+                              fontSize: "0.75rem",
+                              border: "1px solid rgba(139, 92, 246, 0.3)",
+                            }}
+                          />
                       ))
                     ) : app.position ? (
                       <Chip
                         label={app.position}
                         size="small"
                         sx={{
-                          bgcolor: "rgba(139, 92, 246, 0.15)",
-                          color: "#8b5cf6",
+                          bgcolor: isLight(theme) ? "rgba(139,92,246,0.12)" : "rgba(139, 92, 246, 0.15)",
+                          color: isLight(theme) ? "#334155" : "#8b5cf6",
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           border: "1px solid rgba(139, 92, 246, 0.3)",
@@ -546,9 +626,9 @@ export default function PlacementPosts() {
                     ) : (
                       <Typography
                         variant="body2"
-                        sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                        sx={{ color: isLight(theme) ? "#475569" : "text.secondary", fontSize: "0.85rem" }}
                       >
-                        No roles specified
+                          No roles specified
                       </Typography>
                     )}
                   </Box>
@@ -591,8 +671,8 @@ export default function PlacementPosts() {
                   label={app.industry}
                   size="small"
                   sx={{
-                    bgcolor: "rgba(59, 130, 246, 0.15)",
-                    color: "#3b82f6",
+                    bgcolor: isLight(theme) ? "rgba(59,130,246,0.2)" : "rgba(59, 130, 246, 0.15)",
+                    color: isLight(theme) ? "#1e40af" : "#3b82f6",
                     fontWeight: 500,
                     borderRadius: 1,
                     mb: 3,
@@ -614,7 +694,7 @@ export default function PlacementPosts() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
+                        color: isLight(theme) ? "#475569" : "text.secondary",
                         display: "block",
                       }}
                     >
@@ -702,28 +782,7 @@ export default function PlacementPosts() {
                   </>
                 )}
 
-                {/* Approved Posts - NO BUTTONS, just a message */}
-                {activeTab === 1 && (
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: "rgba(16, 185, 129, 0.08)",
-                      borderRadius: 1,
-                      border: "1px solid rgba(16, 185, 129, 0.2)",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#10b981",
-                        fontWeight: 600,
-                      }}
-                    >
-                      ✓ Post is approved and live
-                    </Typography>
-                  </Box>
-                )}
+                {/* Approved message removed (kept timeline below) */}
 
                 {activeTab === 1 && (
                     <Box sx={{ mt: 2 }}>
@@ -783,7 +842,7 @@ export default function PlacementPosts() {
                     </Typography>
                     <Typography
                       variant="body2"
-                      sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                      sx={{ color: isLight(theme) ? "#475569" : "text.secondary", fontSize: "0.85rem" }}
                     >
                       {app.rejection_reason}
                     </Typography>
@@ -791,7 +850,8 @@ export default function PlacementPosts() {
                 )}
               </Box>
             </PostCard>
-          ))}
+          );
+          })}
         </Box>
       )}
 
@@ -862,7 +922,7 @@ export default function PlacementPosts() {
           }}
         >
           <Box sx={{ minWidth: 400 }}>
-            <Typography sx={{ color: "text.secondary", mb: 2 }}>
+            <Typography sx={{ color: isLight(theme) ? "#475569" : "text.secondary", mb: 2 }}>
               {actionType === "approve"
                 ? `Are you sure you want to approve this post from ${selectedApp?.company_name}?`
                 : `Are you sure you want to disapprove this post from ${selectedApp?.company_name}?`}
@@ -888,7 +948,7 @@ export default function PlacementPosts() {
                     "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                   },
                   "& .MuiInputLabel-root": {
-                    color: "text.secondary",
+                    color: isLight(theme) ? "#475569" : "text.secondary",
                     "&.Mui-focused": { color: "#8b5cf6" },
                   },
                 }}
@@ -905,7 +965,7 @@ export default function PlacementPosts() {
         >
           <Button
             onClick={() => setActionDialogOpen(false)}
-            sx={{ color: "text.secondary" }}
+            sx={{ color: isLight(theme) ? "#475569" : "text.secondary" }}
           >
             Cancel
           </Button>
@@ -979,7 +1039,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1004,7 +1064,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1034,7 +1094,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1061,7 +1121,7 @@ export default function PlacementPosts() {
                   "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
                 },
                 "& .MuiInputLabel-root": {
-                  color: "text.secondary",
+                  color: isLight(theme) ? "#475569" : "text.secondary",
                   "&.Mui-focused": { color: "#8b5cf6" },
                 },
               }}
@@ -1077,7 +1137,7 @@ export default function PlacementPosts() {
         >
           <Button
             onClick={() => setEditDialogOpen(false)}
-            sx={{ color: "text.secondary" }}
+            sx={{ color: isLight(theme) ? "#475569" : "text.secondary" }}
           >
             Cancel
           </Button>
