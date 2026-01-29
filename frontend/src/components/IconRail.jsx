@@ -14,7 +14,7 @@ export default function IconRail({
     <Box
       sx={{
         position: "fixed",
-        top: `calc(${topOffset}px + (100vh - ${topOffset}px) / 2)`,
+        top: `calc(${topOffset}px + (100vh - ${topOffset}px) * 0.4)`,
         transform: "translateY(-50%)",
         left: 20,
         zIndex: 1400,

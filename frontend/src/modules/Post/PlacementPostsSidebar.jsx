@@ -86,37 +86,17 @@ export default function PlacementPostsSidebar() {
           fullWidth
           size="small"
           SelectProps={{
-            MenuProps: {
-              disablePortal: true,
-              disableScrollLock: true,
-              anchorOrigin: {
-                vertical: "bottom",
-                horizontal: "left",
-              },
-              transformOrigin: {
-                vertical: "top",
-                horizontal: "left",
-              },
-              PaperProps: {
-                sx: {
-                  mt: 0.5,
-                  borderRadius: 1.5,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                },
-              },
-              MenuListProps: {
-                sx: {
-                  py: 0.5,
-                },
-              },
-            },
+            native: true,
+          }}
+          InputLabelProps={{
+            shrink: true,
           }}
         >
-          <MenuItem value="">All industries</MenuItem>
+          <option value="">All industries</option>
           {INDUSTRIES.map((ind) => (
-            <MenuItem key={ind} value={ind}>
+            <option key={ind} value={ind}>
               {ind}
-            </MenuItem>
+            </option>
           ))}
         </TextField>
 
