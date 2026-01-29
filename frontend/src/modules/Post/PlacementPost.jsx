@@ -1,11 +1,10 @@
 "use client";
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { usePostsUI } from "@/modules/Post/PostsUIContext";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
-  Tabs,
-  Tab,
   Snackbar,
   Alert,
   Button,
@@ -109,7 +108,14 @@ const PostCard = React.memo(function PostCard({
 export default function PlacementPosts() {
   const router = useRouter();
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState(0);
+  // require PostsUIContext for Post UI state
+  const postsUI = usePostsUI();
+  if (!postsUI) {
+    console.error("PlacementPosts must be rendered inside PostsUIProvider (Post layout)");
+    return null;
+  }
+
+  const { activeTab, setActiveTab, industry, search } = postsUI;
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState(null);
@@ -141,6 +147,18 @@ export default function PlacementPosts() {
       );
       if (response.data.ok) {
         setApplications(response.data.applications);
+        // compute counts and push to PostsUIContext
+        try {
+          const apps = response.data.applications || [];
+          const pending = apps.filter((a) => a.approval_status === "pending").length;
+          const approved = apps.filter((a) => a.approval_status === "approved").length;
+          const disapproved = apps.filter((a) => a.approval_status === "disapproved").length;
+          if (postsUI && postsUI.setCounts) {
+            postsUI.setCounts({ pending, approved, disapproved });
+          }
+        } catch (e) {
+          // ignore
+        }
       }
     } catch (error) {
       console.error("Error fetching applications:", error);
@@ -298,12 +316,29 @@ export default function PlacementPosts() {
     (app) => app.approval_status === "disapproved"
   );
 
-  const currentPosts =
-    activeTab === 0
-      ? pendingPosts
-      : activeTab === 1
-      ? approvedPosts
-      : disapprovedPosts;
+  // apply tab selection first, then apply sidebar filters (industry + search)
+  let basePosts =
+    activeTab === 0 ? pendingPosts : activeTab === 1 ? approvedPosts : disapprovedPosts;
+
+  const matchesIndustry = (app) => {
+    if (!industry) return true;
+    return (app.industry || "") === industry;
+  };
+
+  const matchesSearch = (app) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const company = (app.company_name || "").toLowerCase();
+    const position = (app.position || "").toLowerCase();
+    const positionsArr = Array.isArray(app.positions) ? app.positions.map((p) => (p.title || p.position || p).toString().toLowerCase()) : [];
+    return (
+      company.includes(q) ||
+      position.includes(q) ||
+      positionsArr.some((p) => p.includes(q))
+    );
+  };
+
+  const currentPosts = basePosts.filter((app) => matchesIndustry(app) && matchesSearch(app));
 
   if (loading) {
     return (
@@ -345,35 +380,6 @@ export default function PlacementPosts() {
           </Button>
         </Box>
 
-        
-      </Box>
-
-      {/* Tabs */}
-      <Box
-        sx={{
-          borderBottom: 1,
-          borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
-          mb: 3,
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-            sx={{
-            "& .MuiTab-root": {
-              color: isLight(theme) ? "#475569" : "text.secondary",
-              textTransform: "none",
-              fontSize: "1rem",
-              fontWeight: 500,
-              "&.Mui-selected": { color: "#8b5cf6" },
-            },
-            "& .MuiTabs-indicator": { backgroundColor: "#8b5cf6" },
-          }}
-        >
-          <Tab label={`Pending Review (${pendingPosts.length})`} />
-          <Tab label={`Approved Posts (${approvedPosts.length})`} />
-          <Tab label={`Disapproved (${disapprovedPosts.length})`} />
-        </Tabs>
       </Box>
 
       {/* Posts Grid */}
