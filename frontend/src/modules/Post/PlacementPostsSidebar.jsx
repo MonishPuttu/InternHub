@@ -1,13 +1,15 @@
 "use client";
+
 import { useState } from "react";
 import {
   IconButton,
-  Drawer,
   TextField,
   MenuItem,
   Button,
   InputAdornment,
+  Box,
 } from "@mui/material";
+import ClickAwayListener from "@mui/material/ClickAwayListener";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -21,7 +23,8 @@ import { INDUSTRIES } from "@/constants/postConstants";
 
 export default function PlacementPostsSidebar() {
   const postsUI = usePostsUI();
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+
   if (!postsUI) return null;
 
   const {
@@ -37,21 +40,21 @@ export default function PlacementPostsSidebar() {
 
   const railItems = [
     {
-      key: 0,
+      key: "pending",
       icon: <HourglassEmptyIcon />,
       label: `Pending (${counts.pending})`,
       active: activeTab === 0,
       onClick: () => setActiveTab(0),
     },
     {
-      key: 1,
+      key: "approved",
       icon: <CheckCircleIcon />,
       label: `Approved (${counts.approved})`,
       active: activeTab === 1,
       onClick: () => setActiveTab(1),
     },
     {
-      key: 2,
+      key: "disapproved",
       icon: <CancelIcon />,
       label: `Disapproved (${counts.disapproved})`,
       active: activeTab === 2,
@@ -59,26 +62,21 @@ export default function PlacementPostsSidebar() {
     },
   ];
 
-  return (
-    <>
-      <IconRail
-        items={railItems}
-        footer={
-          <IconButton
-            aria-label="Open filters"
-            aria-haspopup="dialog"
-            onClick={() => setFiltersOpen(true)}
-          >
-            <TuneIcon />
-          </IconButton>
-        }
-      />
-
-      <Drawer
-        anchor="right"
-        open={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-        PaperProps={{ sx: { width: 300, p: 2 } }}
+  const panel = (
+    <ClickAwayListener 
+      onClickAway={() => setOpen(false)}
+      mouseEvent="onMouseUp"
+      touchEvent="onTouchEnd"
+    >
+      <Box
+        sx={{
+          position: "relative",
+          p: 2,
+          width: 300,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
       >
         <TextField
           select
@@ -87,7 +85,32 @@ export default function PlacementPostsSidebar() {
           onChange={(e) => setIndustry(e.target.value)}
           fullWidth
           size="small"
-          sx={{ mb: 2 }}
+          SelectProps={{
+            MenuProps: {
+              disablePortal: true,
+              disableScrollLock: true,
+              anchorOrigin: {
+                vertical: "bottom",
+                horizontal: "left",
+              },
+              transformOrigin: {
+                vertical: "top",
+                horizontal: "left",
+              },
+              PaperProps: {
+                sx: {
+                  mt: 0.5,
+                  borderRadius: 1.5,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                },
+              },
+              MenuListProps: {
+                sx: {
+                  py: 0.5,
+                },
+              },
+            },
+          }}
         >
           <MenuItem value="">All industries</MenuItem>
           {INDUSTRIES.map((ind) => (
@@ -103,7 +126,6 @@ export default function PlacementPostsSidebar() {
           placeholder="Search company or position"
           size="small"
           fullWidth
-          sx={{ mb: 2 }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -122,14 +144,30 @@ export default function PlacementPostsSidebar() {
 
         <Button
           variant="outlined"
-          fullWidth
           size="small"
           startIcon={<ClearIcon />}
-          onClick={resetFilters}
+          onClick={() => {
+            resetFilters();
+            setOpen(false);
+          }}
         >
           Clear filters
         </Button>
-      </Drawer>
-    </>
+      </Box>
+    </ClickAwayListener>
+  );
+
+  return (
+    <IconRail
+      items={railItems}
+      footer={
+        <IconButton onClick={() => setOpen((v) => !v)}>
+          <TuneIcon />
+        </IconButton>
+      }
+      panel={panel}
+      panelOpen={open}
+      panelWidth={320}
+    />
   );
 }

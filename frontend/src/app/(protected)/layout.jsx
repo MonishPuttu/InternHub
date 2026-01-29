@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Box } from "@mui/material";
 import TopBar from "@/modules/topbar";
-import GlobalSidebar from "../../modules/GlobalSidebar";
-import { PostsUIProvider } from "@/modules/Post/PostsUIContext";
+import GlobalSidebar from "@/modules/GlobalSidebar";
 import UserMenu from "@/components/auth/userMenu";
 import ProtectedRoute from "@/components/auth/ProtectedRoutes";
 import { isAuthenticated, startSessionChecker } from "@/lib/session";
 
 export default function ProtectedLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -39,15 +39,8 @@ export default function ProtectedLayout({ children }) {
         <UserMenu />
       </TopBar>
 
-      {/* GLOBAL FLOATING SIDEBAR + Route-scoped UI provider */}
-      <PostsUIProvider>
-        <GlobalSidebar />
-
-        {/* PAGE CONTENT */}
-        <Box sx={{ p: 3 }}>
-          <ProtectedRoute>{children}</ProtectedRoute>
-        </Box>
-      </PostsUIProvider>
+      {/* GLOBAL SIDEBAR + CONTENT */}
+      <GlobalSidebar>{children}</GlobalSidebar>
     </Box>
   );
 }
