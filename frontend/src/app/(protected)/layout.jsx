@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
 import TopBar from "@/modules/topbar";
-import GlobalSidebar from "./GlobalSidebar";
+import GlobalSidebar from "../../modules/GlobalSidebar";
 import { PostsUIProvider } from "@/modules/Post/PostsUIContext";
 import UserMenu from "@/components/auth/userMenu";
 import ProtectedRoute from "@/components/auth/ProtectedRoutes";
