@@ -139,7 +139,7 @@ export default function TopBar({ children }) {
           borderBottom: "none",
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", px: 2, gap: 2 }}>
+        <Toolbar sx={{ justifyContent: "space-between", px: 3, py: 1.5, gap: 2 }}>
           {/* Logo - Left Capsule */}
           <Box
             sx={{
@@ -147,11 +147,12 @@ export default function TopBar({ children }) {
               alignItems: "center",
               bgcolor: (t) =>
                 t.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(15,23,42,0.04)",
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(15,23,42,0.06)",
               borderRadius: 999,
-              px: 2,
-              py: 0.75,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+              px: 2.5,
+              py: 1,
             }}
           >
             <Typography
@@ -159,7 +160,8 @@ export default function TopBar({ children }) {
               sx={{
                 color: "text.primary",
                 fontWeight: 700,
-                fontSize: 18,
+                fontSize: 16,
+                letterSpacing: "-0.01em",
                 cursor: "pointer",
               }}
               onClick={() => handleNavigation("/dashboard")}
@@ -173,14 +175,17 @@ export default function TopBar({ children }) {
             <Box
               sx={{
                 display: "flex",
-                gap: 0,
+                gap: 0.5,
                 justifyContent: "center",
+                alignItems: "center",
                 bgcolor: (t) =>
                   t.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.06)"
-                    : "rgba(15,23,42,0.04)",
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(15,23,42,0.06)",
                 borderRadius: 999,
-                p: 0.625,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+                px: 1.25,
+                py: 1,
               }}
             >
               {filteredItems.map((item) => {
@@ -193,37 +198,29 @@ export default function TopBar({ children }) {
                     sx={{
                       color: active
                         ? "#fff"
-                        : theme.palette.mode === "dark"
-                          ? "#cbd5e1"
-                          : "#64748b",
+                        : "#cbd5f5",
                       backgroundColor: active
                         ? "primary.main"
                         : "transparent",
                       fontWeight: active ? 600 : 500,
-                      fontSize: "0.875rem",
+                      fontSize: "0.8125rem",
                       textTransform: "none",
-                      px: 2.25,
-                      py: 1,
+                      px: 2,
+                      py: 0.75,
                       borderRadius: 999,
                       whiteSpace: 'nowrap',
                       minWidth: "auto",
-                      transition: "all 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+                      transition: "all 160ms ease",
                       "&:hover": {
                         backgroundColor: active
                           ? "primary.main"
-                          : (t) =>
-                              t.palette.mode === "dark"
-                                ? "rgba(139, 92, 246, 0.15)"
-                                : "rgba(139, 92, 246, 0.08)",
+                          : "rgba(139,92,246,0.18)",
                       },
                       "& .MuiButton-startIcon": {
                         marginRight: 0.75,
-                        color: active
-                          ? "#fff"
-                          : theme.palette.mode === "dark"
-                            ? "#94a3b8"
-                            : "#64748b",
-                        "& svg": { fontSize: 18 },
+                        "& svg": { 
+                          fontSize: 20,
+                        },
                       },
                     }}
                   >
@@ -242,11 +239,12 @@ export default function TopBar({ children }) {
               justifyContent: "flex-end",
               bgcolor: (t) =>
                 t.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(15,23,42,0.04)",
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(15,23,42,0.06)",
               borderRadius: 999,
-              px: 1,
-              py: 0.5,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+              px: 1.25,
+              py: 0.75,
             }}
           >
             {!isMobile && children}
