@@ -196,9 +196,12 @@ export default function TopBar({ children }) {
                     onClick={() => handleNavigation(item.path)}
                     startIcon={item.icon}
                     sx={{
-                      color: active
-                        ? "#fff"
-                        : "#cbd5f5",
+                      color: (t) =>
+                        active
+                          ? "#fff"
+                          : t.palette.mode === "dark"
+                            ? "#cbd5f5"
+                            : "#475569",
                       backgroundColor: active
                         ? "primary.main"
                         : "transparent",
@@ -215,6 +218,7 @@ export default function TopBar({ children }) {
                         backgroundColor: active
                           ? "primary.main"
                           : "rgba(139,92,246,0.18)",
+                        color: active ? "#fff" : "#8b5cf6",
                       },
                       "& .MuiButton-startIcon": {
                         marginRight: 0.75,

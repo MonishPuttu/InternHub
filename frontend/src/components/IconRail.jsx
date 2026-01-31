@@ -51,12 +51,21 @@ export default function IconRail({
                 width: 42,
                 height: 42,
                 bgcolor: item.active ? "primary.main" : "transparent",
-                color: item.active ? "#fff" : "#cbd5f5",
+                color: (t) =>
+                  item.active
+                    ? "#fff"
+                    : t.palette.mode === "dark"
+                      ? "#cbd5f5"
+                      : "#475569",
                 "& svg": { fontSize: 20 },
                 "&:hover": {
                   bgcolor: item.active
                     ? "primary.main"
                     : "rgba(139,92,246,0.18)",
+                  color: (t) =>
+                    item.active
+                      ? "#fff"
+                      : "#8b5cf6",
                 },
                 transition: "all 160ms ease",
               }}
