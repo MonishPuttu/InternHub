@@ -8,6 +8,8 @@ import PlacementSidebar from "@/modules/Dashboard/PlacementSidebar";
 import { PlacementUIProvider } from "@/modules/Dashboard/PlacementUIContext";
 import PlacementTrainingSidebar from "@/modules/training/PlacementTrainingSidebar";
 import { PlacementTrainingUIProvider } from "@/modules/training/PlacementTrainingUIContext";
+import CalendarSidebar from "@/modules/calendar/CalendarSidebar";
+import { CalendarUIProvider } from "@/modules/calendar/CalendarUIContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoutes";
 
 export default function GlobalSidebar({ children }) {
@@ -15,6 +17,7 @@ export default function GlobalSidebar({ children }) {
   const isPostRoute = pathname.startsWith("/Post");
   const isPlacementDashboard = pathname.startsWith("/dashboard/placement");
   const isTrainingPlacement = pathname.startsWith("/training/placement");
+  const isCalendar = pathname.startsWith("/calendar");
 
   // POSTS: sidebar + page share PostsUIProvider
   if (isPostRoute) {
@@ -47,6 +50,17 @@ export default function GlobalSidebar({ children }) {
           <ProtectedRoute>{children}</ProtectedRoute>
         </Box>
       </PlacementTrainingUIProvider>
+    );
+  }
+
+  if (isCalendar) {
+    return (
+      <CalendarUIProvider>
+        <CalendarSidebar />
+        <Box sx={{ ml: 11, p: 3 }}>
+          <ProtectedRoute>{children}</ProtectedRoute>
+        </Box>
+      </CalendarUIProvider>
     );
   }
 

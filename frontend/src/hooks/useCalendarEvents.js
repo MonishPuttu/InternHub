@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCalendarUI } from "@/modules/calendar/CalendarUIContext";
 import { dateInputToUTC, isToday, isTomorrow } from "@/lib/dateUtils";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -8,7 +9,10 @@ const APPROVED_POSTS_API = `${BACKEND_URL}/api/posts/approved-posts`;
 export const useCalendarEvents = () => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterType, setFilterType] = useState("all");
+    const calendarUI = useCalendarUI && useCalendarUI();
+    const [internalFilterType, setInternalFilterType] = useState("all");
+    const filterType = calendarUI?.filterType ?? internalFilterType;
+    const setFilterType = calendarUI?.setFilterType ?? setInternalFilterType;
     const [currentDate, setCurrentDate] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
