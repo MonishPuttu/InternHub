@@ -135,17 +135,25 @@ export default function TopBar({ children }) {
         position="sticky"
         elevation={0}
         sx={{
-          backgroundColor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor:
-            theme.palette.mode === "dark"
-              ? "rgba(255, 255, 255, 0.04)"
-              : "rgba(0, 0, 0, 0.08)",
+          backgroundColor: "background.default",
+          borderBottom: "none",
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
-          {/* Logo - Left */}
-          <Box sx={{ flex: 1 }}>
+        <Toolbar sx={{ justifyContent: "space-between", px: 2, gap: 2 }}>
+          {/* Logo - Left Capsule */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              bgcolor: (t) =>
+                t.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.06)"
+                  : "rgba(15,23,42,0.04)",
+              borderRadius: 999,
+              px: 2,
+              py: 0.75,
+            }}
+          >
             <Typography
               variant="h6"
               sx={{
@@ -160,14 +168,19 @@ export default function TopBar({ children }) {
             </Typography>
           </Box>
 
-          {/* Desktop Navigation - Center */}
+          {/* Desktop Navigation - Center Capsule */}
           {!isMobile && (
             <Box
               sx={{
                 display: "flex",
-                gap: 1,
+                gap: 0,
                 justifyContent: "center",
-                flex: 2,
+                bgcolor: (t) =>
+                  t.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.06)"
+                    : "rgba(15,23,42,0.04)",
+                borderRadius: 999,
+                p: 0.625,
               }}
             >
               {filteredItems.map((item) => {
@@ -179,31 +192,38 @@ export default function TopBar({ children }) {
                     startIcon={item.icon}
                     sx={{
                       color: active
-                        ? "#a78bfa"
+                        ? "#fff"
                         : theme.palette.mode === "dark"
-                          ? "#94a3b8"
+                          ? "#cbd5e1"
                           : "#64748b",
                       backgroundColor: active
-                        ? alpha("#8b5cf6", 0.12)
+                        ? "primary.main"
                         : "transparent",
-                      fontWeight: active ? 600 : 400,
+                      fontWeight: active ? 600 : 500,
                       fontSize: "0.875rem",
                       textTransform: "none",
-                      px: 2,
+                      px: 2.25,
                       py: 1,
-                      borderRadius: 1,
+                      borderRadius: 999,
                       whiteSpace: 'nowrap',
+                      minWidth: "auto",
+                      transition: "all 200ms cubic-bezier(0.22, 1, 0.36, 1)",
                       "&:hover": {
                         backgroundColor: active
-                          ? alpha("#8b5cf6", 0.18)
-                          : alpha("#8b5cf6", 0.04),
+                          ? "primary.main"
+                          : (t) =>
+                              t.palette.mode === "dark"
+                                ? "rgba(139, 92, 246, 0.15)"
+                                : "rgba(139, 92, 246, 0.08)",
                       },
                       "& .MuiButton-startIcon": {
+                        marginRight: 0.75,
                         color: active
-                          ? "#a78bfa"
+                          ? "#fff"
                           : theme.palette.mode === "dark"
-                            ? "#64748b"
-                            : "#94a3b8",
+                            ? "#94a3b8"
+                            : "#64748b",
+                        "& svg": { fontSize: 18 },
                       },
                     }}
                   >
@@ -214,8 +234,21 @@ export default function TopBar({ children }) {
             </Box>
           )}
 
-          {/* User Menu - Right */}
-          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+          {/* User Menu - Right Capsule */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              bgcolor: (t) =>
+                t.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.06)"
+                  : "rgba(15,23,42,0.04)",
+              borderRadius: 999,
+              px: 1,
+              py: 0.5,
+            }}
+          >
             {!isMobile && children}
           </Box>
 
