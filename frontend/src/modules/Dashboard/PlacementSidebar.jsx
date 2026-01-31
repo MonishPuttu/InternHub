@@ -9,11 +9,12 @@ import { usePlacementUI } from "@/modules/Dashboard/PlacementUIContext";
 
 export default function PlacementSidebar() {
   const placementUI = usePlacementUI();
+  const router = useRouter();
+  const pathname = usePathname();
+
   if (!placementUI) return null;
 
   const { tab, setTab } = placementUI;
-  const router = useRouter();
-  const pathname = usePathname();
 
   const makeHandler = (t) => () => {
     setTab(t);

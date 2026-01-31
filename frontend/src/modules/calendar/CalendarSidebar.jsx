@@ -8,10 +8,11 @@ import { useState } from "react";
 
 export default function CalendarSidebar() {
   const ui = useCalendarUI();
+  const [open, setOpen] = useState(false);
+
   if (!ui) return null;
 
   const { filterType, setFilterType } = ui;
-  const [open, setOpen] = useState(false);
 
   const items = [
     {

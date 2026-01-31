@@ -10,10 +10,11 @@ import { useState } from "react";
 
 export default function RecruiterCalendarSidebar() {
   const ui = useRecruiterCalendarUI();
+  const [open, setOpen] = useState(false);
+
   if (!ui) return null;
 
   const { filterType, setFilterType } = ui;
-  const [open, setOpen] = useState(false);
 
   const items = [
     {

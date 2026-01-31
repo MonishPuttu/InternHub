@@ -29,9 +29,20 @@ export default function UserMenu() {
       .slice(0, 2);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleProfile();
+    }
+  };
+
   return (
     <Box
+      role="button"
+      tabIndex={0}
       onClick={handleProfile}
+      onKeyDown={handleKeyDown}
+      aria-label={`View profile for ${user?.name || "User"}`}
       sx={{
         display: "flex",
         alignItems: "center",
@@ -41,11 +52,15 @@ export default function UserMenu() {
         py: 0.75,
         borderRadius: 2,
         transition: "background-color 0.2s",
-        "&:hover": {
+        "&:hover, &:focus-visible": {
           bgcolor: (t) =>
             t.palette.mode === "dark"
               ? "rgba(255,255,255,0.08)"
               : "rgba(0,0,0,0.04)",
+          outline: "none",
+        },
+        "&:focus-visible": {
+          boxShadow: "0 0 0 2px #8b5cf6",
         },
       }}
     >

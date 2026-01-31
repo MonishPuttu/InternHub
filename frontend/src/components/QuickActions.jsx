@@ -18,8 +18,13 @@ export default function QuickActions() {
   };
 
   const handleLogout = async () => {
-    await logout();
-    router.push("/signin");
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      router.push("/signin");
+    }
   };
 
   return (

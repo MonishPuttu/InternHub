@@ -10,11 +10,12 @@ import { usePlacementTrainingUI } from "@/modules/training/PlacementTrainingUICo
 
 export default function PlacementTrainingSidebar() {
   const ui = usePlacementTrainingUI();
+  const router = useRouter();
+  const pathname = usePathname();
+
   if (!ui) return null;
 
   const { tab, setTab } = ui;
-  const router = useRouter();
-  const pathname = usePathname();
   const makeHandler = (t) => () => {
     setTab(t);
     try {

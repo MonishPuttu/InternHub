@@ -9,7 +9,7 @@ const APPROVED_POSTS_API = `${BACKEND_URL}/api/posts/approved-posts`;
 export const useCalendarEvents = () => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const calendarUI = useCalendarUI && useCalendarUI();
+    const calendarUI = useCalendarUI();
     const [internalFilterType, setInternalFilterType] = useState("all");
     const filterType = calendarUI?.filterType ?? internalFilterType;
     const setFilterType = calendarUI?.setFilterType ?? setInternalFilterType;

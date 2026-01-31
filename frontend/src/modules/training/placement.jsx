@@ -471,8 +471,7 @@ export default function PlacementTraining() {
           setContextTab(t);
           // also update URL
           try {
-            const base = router.pathname || "/training/placement";
-            router.push(`${base}?tab=${t}`);
+            router.push(`/training/placement?tab=${t}`);
           } catch (e) {}
         }}
         sx={{

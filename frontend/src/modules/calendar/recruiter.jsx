@@ -39,7 +39,7 @@ export default function IntegratedRecruiterCalendar() {
     if (calendarUI?.filterType && calendarUI.filterType !== hookFilterType) {
       hookSetFilterType(calendarUI.filterType);
     }
-  }, [calendarUI?.filterType]);
+  }, [calendarUI?.filterType, hookFilterType, hookSetFilterType]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
