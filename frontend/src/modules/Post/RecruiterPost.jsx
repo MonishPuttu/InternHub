@@ -29,11 +29,13 @@ import axios from "axios";
 import { useTheme } from "@mui/material/styles";
 import { CreateApplicationModal } from "@/components/Post/CreateApplicationModal";
 import { BACKEND_URL } from "@/constants/postConstants";
+import { useRecruiterPostsUI } from "@/modules/Post/RecruiterPostsUIContext";
 
 export default function RecruiterPost() {
   const router = useRouter();
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState(0);
+  const postsUI = useRecruiterPostsUI();
+  
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -43,6 +45,11 @@ export default function RecruiterPost() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+
+  // Use context values if available, otherwise fallback to local state
+  const activeTab = postsUI?.activeTab ?? 0;
+  const setActiveTab = postsUI?.setActiveTab ?? (() => {});
+  const setCounts = postsUI?.setCounts ?? (() => {});
 
   useEffect(() => {
     fetchApplications();
@@ -153,6 +160,15 @@ export default function RecruiterPost() {
   const disapprovedPosts = applications.filter(
     (app) => app.approval_status === "disapproved"
   );
+
+  // Update counts in context for sidebar
+  useEffect(() => {
+    setCounts({
+      pending: pendingPosts.length,
+      approved: approvedPosts.length,
+      disapproved: disapprovedPosts.length,
+    });
+  }, [applications, setCounts]);
 
   const currentPosts =
     activeTab === 0
