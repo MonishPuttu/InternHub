@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Snackbar, Alert } from "@mui/material";
 import { useRecruiterCalendarEvents } from "@/hooks/useRecruiterCalendarEvents";
 import CalendarHeader from "@/components/Calendar/CalendarHeader";
@@ -8,13 +8,16 @@ import EventList from "@/components/Calendar/EventList";
 import CreateEventModal from "@/components/Calendar/CreateEventModal";
 import EditEventModal from "@/components/Calendar/EditEventModal";
 import DeleteConfirmModal from "@/components/Calendar/DeleteConfirmModal";
+import { useRecruiterCalendarUI } from "@/modules/calendar/RecruiterCalendarUIContext";
 
 export default function IntegratedRecruiterCalendar() {
+  const calendarUI = useRecruiterCalendarUI();
+  
   const {
     events,
     loading,
-    filterType,
-    setFilterType,
+    filterType: hookFilterType,
+    setFilterType: hookSetFilterType,
     currentDate,
     errorMsg,
     setErrorMsg,
@@ -26,6 +29,17 @@ export default function IntegratedRecruiterCalendar() {
     handlePrevMonth,
     handleNextMonth,
   } = useRecruiterCalendarEvents();
+
+  // Use context values if available, otherwise fallback to hook state
+  const filterType = calendarUI?.filterType ?? hookFilterType;
+  const setFilterType = calendarUI?.setFilterType ?? hookSetFilterType;
+
+  // Sync context filterType with hook
+  useEffect(() => {
+    if (calendarUI?.filterType && calendarUI.filterType !== hookFilterType) {
+      hookSetFilterType(calendarUI.filterType);
+    }
+  }, [calendarUI?.filterType, hookFilterType, hookSetFilterType]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);

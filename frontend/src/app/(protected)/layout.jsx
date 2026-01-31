@@ -6,6 +6,7 @@ import { Box } from "@mui/material";
 import TopBar from "@/modules/topbar";
 import GlobalSidebar from "@/modules/GlobalSidebar";
 import UserMenu from "@/components/auth/userMenu";
+import QuickActions from "@/components/QuickActions";
 import ProtectedRoute from "@/components/auth/ProtectedRoutes";
 import { isAuthenticated, startSessionChecker } from "@/lib/session";
 
@@ -38,6 +39,9 @@ export default function ProtectedLayout({ children }) {
       <TopBar>
         <UserMenu />
       </TopBar>
+
+      {/* QUICK ACTIONS - Bottom Left */}
+      <QuickActions />
 
       {/* GLOBAL SIDEBAR + CONTENT */}
       <GlobalSidebar>{children}</GlobalSidebar>

@@ -30,6 +30,7 @@ import {
 import axios from "axios";
 import { getToken } from "@/lib/session";
 import { useTheme } from "@mui/material/styles";
+import { usePlacementUI } from "@/modules/Dashboard/PlacementUIContext";
 import ApprovedPostsSection from "@/components/dashboard/ApprovedPostsSection";
 
 const BACKEND_URL =
@@ -62,13 +63,23 @@ export default function PlacementDashboard() {
   const [editNotes, setEditNotes] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 
-  // New filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterPostedDate, setFilterPostedDate] = useState("");
-  const [filterIndustry, setFilterIndustry] = useState("");
+  // placement UI context (fallback to local state when provider absent)
+  const placementUI = usePlacementUI();
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [localFilterPostedDate, setLocalFilterPostedDate] = useState("");
+  const [localFilterIndustry, setLocalFilterIndustry] = useState("");
+  const [localFilterStatus, setLocalFilterStatus] = useState("all");
+
+  const filterStatus = placementUI?.filterStatus ?? localFilterStatus;
+  const setFilterStatus = placementUI?.setFilterStatus ?? setLocalFilterStatus;
+  const searchQuery = placementUI?.searchQuery ?? localSearchQuery;
+  const setSearchQuery = placementUI?.setSearchQuery ?? setLocalSearchQuery;
+  const filterPostedDate = placementUI?.filterPostedDate ?? localFilterPostedDate;
+  const setFilterPostedDate = placementUI?.setFilterPostedDate ?? setLocalFilterPostedDate;
+  const filterIndustry = placementUI?.filterIndustry ?? localFilterIndustry;
+  const setFilterIndustry = placementUI?.setFilterIndustry ?? setLocalFilterIndustry;
 
   const handleMenuOpen = (event, app) => {
     setAnchorEl(event.currentTarget);

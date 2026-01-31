@@ -29,10 +29,13 @@ import axios from "axios";
 import { BACKEND_URL, INDUSTRIES } from "@/constants/postConstants";
 import { useTheme } from "@mui/material/styles";
 import ApplyDialog from "@/components/Post/ApplyDialog";
+import { useStudentPostsUI } from "@/modules/Post/StudentPostsUIContext";
 
 export default function StudentPosts() {
   const router = useRouter();
   const theme = useTheme();
+  const postsUI = useStudentPostsUI();
+  
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState("");
@@ -40,14 +43,23 @@ export default function StudentPosts() {
   const [savedPosts, setSavedPosts] = useState([]);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [filterIndustry, setFilterIndustry] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [appliedPosts, setAppliedPosts] = useState([]);
-  const [showAppliedOnly, setShowAppliedOnly] = useState(false);
-  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 12;
+
+  // Use context values if available, otherwise fallback to local state
+  const activeTab = postsUI?.activeTab ?? "available";
+  const setActiveTab = postsUI?.setActiveTab ?? (() => {});
+  const filterIndustry = postsUI?.industry ?? "all";
+  const setFilterIndustry = postsUI?.setIndustry ?? (() => {});
+  const searchQuery = postsUI?.search ?? "";
+  const setSearchQuery = postsUI?.setSearch ?? (() => {});
+  const showSavedOnly = postsUI?.showSavedOnly ?? false;
+  const setShowSavedOnly = postsUI?.setShowSavedOnly ?? (() => {});
+  const setCounts = postsUI?.setCounts ?? (() => {});
+
+  // Derive showAppliedOnly from activeTab
+  const showAppliedOnly = activeTab === "applied";
 
   useEffect(() => {
     fetchApprovedPosts();
@@ -61,8 +73,7 @@ export default function StudentPosts() {
     filterIndustry,
     searchQuery,
     showSavedOnly,
-    showAppliedOnly,
-    showHistoryOnly,
+    activeTab,
   ]);
 
   useEffect(() => {
@@ -70,6 +81,13 @@ export default function StudentPosts() {
       fetchAppliedPostsFromBackend();
     }
   }, [posts]);
+
+  // Update counts in context for sidebar
+  useEffect(() => {
+    const availableCount = posts.filter((post) => !appliedPosts.includes(post.id)).length;
+    const appliedCount = appliedPosts.filter((id) => posts.find((p) => p.id === id)).length;
+    setCounts({ available: availableCount, applied: appliedCount, history: 0 });
+  }, [posts, appliedPosts, setCounts]);
 
   const fetchApprovedPosts = async () => {
     try {
@@ -207,14 +225,10 @@ export default function StudentPosts() {
   const getFilteredPosts = () => {
     let filtered = posts;
     if (showAppliedOnly) {
-      filtered = filtered.filter(
-        (post) => appliedPosts.includes(post.id) && !isExpired(post)
-      );
-    } else if (showHistoryOnly) {
-      filtered = filtered.filter(
-        (post) => appliedPosts.includes(post.id) && isExpired(post)
-      );
+      // Show all applied posts
+      filtered = filtered.filter((post) => appliedPosts.includes(post.id));
     } else {
+      // Show available posts (not applied)
       filtered = filtered.filter((post) => !appliedPosts.includes(post.id));
     }
     if (showSavedOnly) {
@@ -222,7 +236,7 @@ export default function StudentPosts() {
     }
     return filtered.filter((post) => {
       const matchesIndustry =
-        filterIndustry === "all" || post.industry === filterIndustry;
+        filterIndustry === "all" || filterIndustry === "" || post.industry === filterIndustry;
 
       const matchesSearch =
         (Array.isArray(post.positions) &&
@@ -271,15 +285,11 @@ export default function StudentPosts() {
         >
           {showAppliedOnly
             ? "Applied Posts"
-            : showHistoryOnly
-            ? "Application History"
             : "Available Opportunities"}
         </Typography>
         <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
           {showAppliedOnly
             ? "View and track your applied internship and job opportunities"
-            : showHistoryOnly
-            ? "View your past applications that have expired or closed"
             : "Explore and apply to approved internship and job opportunities"}
         </Typography>
 
@@ -303,21 +313,20 @@ export default function StudentPosts() {
         pb: 1.5,
         borderBottom: "3px solid",
         borderColor:
-          !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+          activeTab === "available" && !showSavedOnly
             ? "#a855f7"
             : "transparent",
         transition: "all 0.3s ease",
       }}
       onClick={() => {
-        setShowAppliedOnly(false);
+        setActiveTab("available");
         setShowSavedOnly(false);
-        setShowHistoryOnly(false);
       }}
     >
       <Typography
         sx={{
           color:
-            !showAppliedOnly && !showSavedOnly && !showHistoryOnly
+            activeTab === "available" && !showSavedOnly
               ? "#a855f7"
               : "text.secondary",
           fontSize: "0.95rem",
@@ -333,58 +342,22 @@ export default function StudentPosts() {
         cursor: "pointer",
         pb: 1.5,
         borderBottom: "3px solid",
-        borderColor: showAppliedOnly ? "#a855f7" : "transparent",
+        borderColor: activeTab === "applied" && !showSavedOnly ? "#a855f7" : "transparent",
         transition: "all 0.3s ease",
       }}
       onClick={() => {
-        setShowAppliedOnly(true);
-        setShowHistoryOnly(false);
+        setActiveTab("applied");
+        setShowSavedOnly(false);
       }}
     >
       <Typography
         sx={{
-          color: showAppliedOnly ? "#a855f7" : "text.secondary",
+          color: activeTab === "applied" && !showSavedOnly ? "#a855f7" : "text.secondary",
           fontSize: "0.95rem",
           fontWeight: 500,
         }}
       >
-        Applied Posts (
-        {
-          appliedPosts.filter((id) => {
-            const post = posts.find((p) => p.id === id);
-            return post && !isExpired(post);
-          }).length
-        })
-      </Typography>
-    </Box>
-
-    <Box
-      sx={{
-        cursor: "pointer",
-        pb: 1.5,
-        borderBottom: "3px solid",
-        borderColor: showHistoryOnly ? "#a855f7" : "transparent",
-        transition: "all 0.3s ease",
-      }}
-      onClick={() => {
-        setShowHistoryOnly(true);
-        setShowAppliedOnly(false);
-      }}
-    >
-      <Typography
-        sx={{
-          color: showHistoryOnly ? "#a855f7" : "text.secondary",
-          fontSize: "0.95rem",
-          fontWeight: 500,
-        }}
-      >
-        Application History (
-        {
-          appliedPosts.filter((id) => {
-            const post = posts.find((p) => p.id === id);
-            return post && isExpired(post);
-          }).length
-        })
+        Applied Posts ({appliedPosts.filter((id) => posts.find((p) => p.id === id)).length})
       </Typography>
     </Box>
   </Box>
@@ -467,12 +440,11 @@ export default function StudentPosts() {
           >
             Saved ({savedPosts.length})
           </Button>
-          {(showAppliedOnly || showHistoryOnly) && (
+          {activeTab === "applied" && (
             <Button
               variant="outlined"
               onClick={() => {
-                setShowAppliedOnly(false);
-                setShowHistoryOnly(false);
+                setActiveTab("available");
               }}
               sx={{
                 color: "text.primary",
@@ -507,19 +479,15 @@ export default function StudentPosts() {
           <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
             {showSavedOnly
               ? "No saved posts yet"
-              : showAppliedOnly
+              : activeTab === "applied"
               ? "No applied posts yet"
-              : showHistoryOnly
-              ? "No application history yet"
               : "No opportunities found"}
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
             {showSavedOnly
               ? "Save posts to view them here"
-              : showAppliedOnly
+              : activeTab === "applied"
               ? "Apply to posts to view them here"
-              : showHistoryOnly
-              ? "Expired or closed applications will appear here"
               : "Try adjusting your filters or search query"}
           </Typography>
         </Paper>
