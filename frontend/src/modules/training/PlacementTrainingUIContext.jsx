@@ -1,10 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
 
-const PlacementUIContext = createContext(null);
+const PlacementTrainingUIContext = createContext(null);
 
-export function PlacementUIProvider({ children }) {
-  const STORAGE_KEY = "placement_ui_state";
+export function PlacementTrainingUIProvider({ children }) {
+  const STORAGE_KEY = "placement_training_ui_state";
 
   const readInitial = () => {
     try {
@@ -18,7 +18,6 @@ export function PlacementUIProvider({ children }) {
 
   const initial = typeof window !== "undefined" ? readInitial() : {};
 
-  const [filterStatus, setFilterStatus] = useState(initial.filterStatus ?? "all");
   const [searchQuery, setSearchQuery] = useState(initial.searchQuery ?? "");
   const [filterPostedDate, setFilterPostedDate] = useState(initial.filterPostedDate ?? "");
   const [filterIndustry, setFilterIndustry] = useState(initial.filterIndustry ?? "");
@@ -26,23 +25,20 @@ export function PlacementUIProvider({ children }) {
 
   React.useEffect(() => {
     try {
-      const toStore = JSON.stringify({ filterStatus, searchQuery, filterPostedDate, filterIndustry, tab });
+      const toStore = JSON.stringify({ searchQuery, filterPostedDate, filterIndustry, tab });
       sessionStorage.setItem(STORAGE_KEY, toStore);
     } catch (e) {
       // ignore
     }
-  }, [filterStatus, searchQuery, filterPostedDate, filterIndustry, tab]);
+  }, [searchQuery, filterPostedDate, filterIndustry, tab]);
 
   const resetFilters = () => {
-    setFilterStatus("all");
     setSearchQuery("");
     setFilterPostedDate("");
     setFilterIndustry("");
   };
 
   const value = {
-    filterStatus,
-    setFilterStatus,
     searchQuery,
     setSearchQuery,
     filterPostedDate,
@@ -55,14 +51,12 @@ export function PlacementUIProvider({ children }) {
   };
 
   return (
-    <PlacementUIContext.Provider value={value}>
-      {children}
-    </PlacementUIContext.Provider>
+    <PlacementTrainingUIContext.Provider value={value}>{children}</PlacementTrainingUIContext.Provider>
   );
 }
 
-export function usePlacementUI() {
-  return useContext(PlacementUIContext);
+export function usePlacementTrainingUI() {
+  return useContext(PlacementTrainingUIContext);
 }
 
-export default PlacementUIContext;
+export default PlacementTrainingUIContext;

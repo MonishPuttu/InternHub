@@ -1,20 +1,20 @@
 "use client";
+
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useRouter, usePathname } from "next/navigation";
 
 import IconRail from "@/components/IconRail";
-import { usePlacementUI } from "@/modules/Dashboard/PlacementUIContext";
+import { usePlacementTrainingUI } from "@/modules/training/PlacementTrainingUIContext";
 
-export default function PlacementSidebar() {
-  const placementUI = usePlacementUI();
-  if (!placementUI) return null;
+export default function PlacementTrainingSidebar() {
+  const ui = usePlacementTrainingUI();
+  if (!ui) return null;
 
-  const { tab, setTab } = placementUI;
+  const { tab, setTab } = ui;
   const router = useRouter();
   const pathname = usePathname();
-
   const makeHandler = (t) => () => {
     setTab(t);
     try {
