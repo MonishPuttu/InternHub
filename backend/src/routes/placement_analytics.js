@@ -324,6 +324,16 @@ router.get("/top-hiring-companies", requireAuth, async (req, res) => {
     }
 
     const limit = parseInt(req.query.limit) || 3;
+    const department = req.query.department;
+
+    // Build the base where condition - applies department filter to student_applications.branch
+    const baseWhere =
+      department && department !== "All Dept"
+        ? and(
+            eq(posts.approval_status, "approved"),
+            eq(student_applications.branch, department)
+          )
+        : eq(posts.approval_status, "approved");
 
     // METHOD 1: Try using offer_letters table (most reliable)
     try {
@@ -338,7 +348,7 @@ router.get("/top-hiring-companies", requireAuth, async (req, res) => {
           eq(offer_letters.application_id, student_applications.id)
         )
         .innerJoin(posts, eq(student_applications.post_id, posts.id))
-        .where(eq(posts.approval_status, "approved"));
+        .where(baseWhere);
 
       // Group by company and count unique students
       const companyHires = {};
@@ -376,7 +386,7 @@ router.get("/top-hiring-companies", requireAuth, async (req, res) => {
       })
       .from(student_applications)
       .innerJoin(posts, eq(student_applications.post_id, posts.id))
-      .where(eq(posts.approval_status, "approved"));
+      .where(baseWhere);
 
     // Filter for offer statuses (case-insensitive)
     const offerStatuses = ["offer", "OFFER", "offered", "OFFERED", "placed", "PLACED"];

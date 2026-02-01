@@ -208,8 +208,14 @@ export default function PlacementAnalytics() {
     try {
       const token = localStorage.getItem("token");
       
+      // Add department parameter to the request
+      const departmentParam =
+        selectedDepartment === "All Dept"
+          ? ""
+          : `?department=${encodeURIComponent(selectedDepartment)}`;
+      
       const res = await axios.get(
-        `${BACKEND_URL}/api/placement-analytics/top-hiring-companies?limit=3`,
+        `${BACKEND_URL}/api/placement-analytics/top-hiring-companies?limit=3${departmentParam ? `&${departmentParam.slice(1)}` : ""}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -242,14 +248,17 @@ export default function PlacementAnalytics() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = appliedData.slice(startIndex, endIndex);
 
-  // ===== FIXED CALCULATION =====
+  // ===== FIXED CALCULATION - Mutually Exclusive Categories =====
   // Calculate statistics for the donut chart
   const careerStats = statistics?.career_path_stats || {};
   const placementCount = careerStats.placement || 0;
   const higherEdCount = careerStats.higher_education || 0;
   
-  // Total students is the sum of all career paths
-  const totalStudents = placementCount + higherEdCount + totalApplied;
+  // Calculate applied-only count (students who applied but are not placed or in higher ed)
+  const appliedOnlyCount = Math.max(0, totalApplied - placementCount - higherEdCount);
+  
+  // Total students is the sum of mutually exclusive categories
+  const totalStudents = placementCount + higherEdCount + appliedOnlyCount;
   
   // Calculate percentages based on totalStudents
   const placementPercentage =
@@ -257,9 +266,9 @@ export default function PlacementAnalytics() {
   const higherEdPercentage =
     totalStudents > 0 ? Math.round((higherEdCount / totalStudents) * 100) : 0;
   const appliedPercentage =
-    totalStudents > 0 ? Math.round((totalApplied / totalStudents) * 100) : 0;
+    totalStudents > 0 ? Math.round((appliedOnlyCount / totalStudents) * 100) : 0;
   
-  // Other is calculated as the remainder (should be 0 if everyone has a career path set)
+  // Other is calculated as the remainder
   const otherPercentage = Math.max(0, 100 - placementPercentage - higherEdPercentage - appliedPercentage);
   const otherCount = Math.round((otherPercentage / 100) * totalStudents);
   // ===== END FIXED CALCULATION =====
@@ -343,16 +352,31 @@ export default function PlacementAnalytics() {
                 Application Statistics
               </Typography>
 
-              {/* Toggle Switches with purple palette */}
+              {/* Toggle Switches with accessibility support */}
               <Stack direction="row" spacing={1.5}>
                 {/* Applied Toggle */}
                 <Box
+                  role="switch"
+                  tabIndex={0}
+                  aria-checked={statusFilters.applied}
+                  aria-label="Toggle Applied status filter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleStatusToggle("applied");
+                    }
+                  }}
                   onClick={() => handleStatusToggle("applied")}
                   sx={{
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                     cursor: "pointer",
+                    "&:focus": {
+                      outline: `2px solid ${COLOR_PALETTE.applied}`,
+                      outlineOffset: "2px",
+                      borderRadius: "4px",
+                    },
                   }}
                 >
                   <Typography
@@ -398,12 +422,27 @@ export default function PlacementAnalytics() {
 
                 {/* Interviewed Toggle */}
                 <Box
+                  role="switch"
+                  tabIndex={0}
+                  aria-checked={statusFilters.interviewed}
+                  aria-label="Toggle Interviewed status filter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleStatusToggle("interviewed");
+                    }
+                  }}
                   onClick={() => handleStatusToggle("interviewed")}
                   sx={{
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                     cursor: "pointer",
+                    "&:focus": {
+                      outline: `2px solid ${COLOR_PALETTE.interviewed}`,
+                      outlineOffset: "2px",
+                      borderRadius: "4px",
+                    },
                   }}
                 >
                   <Typography
@@ -446,12 +485,27 @@ export default function PlacementAnalytics() {
 
                 {/* Offer Toggle */}
                 <Box
+                  role="switch"
+                  tabIndex={0}
+                  aria-checked={statusFilters.offer}
+                  aria-label="Toggle Offer status filter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleStatusToggle("offer");
+                    }
+                  }}
                   onClick={() => handleStatusToggle("offer")}
                   sx={{
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                     cursor: "pointer",
+                    "&:focus": {
+                      outline: `2px solid ${theme.palette.mode === 'dark' ? COLOR_PALETTE.offer : COLOR_PALETTE.offerLight}`,
+                      outlineOffset: "2px",
+                      borderRadius: "4px",
+                    },
                   }}
                 >
                   <Typography
@@ -494,12 +548,27 @@ export default function PlacementAnalytics() {
 
                 {/* Rejected Toggle */}
                 <Box
+                  role="switch"
+                  tabIndex={0}
+                  aria-checked={statusFilters.rejected}
+                  aria-label="Toggle Rejected status filter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleStatusToggle("rejected");
+                    }
+                  }}
                   onClick={() => handleStatusToggle("rejected")}
                   sx={{
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                     cursor: "pointer",
+                    "&:focus": {
+                      outline: `2px solid ${COLOR_PALETTE.rejected}`,
+                      outlineOffset: "2px",
+                      borderRadius: "4px",
+                    },
                   }}
                 >
                   <Typography
@@ -545,15 +614,19 @@ export default function PlacementAnalytics() {
             {/* Application Statistics List */}
             <Stack spacing={2.5}>
               {paginatedData.map((item, index) => {
+                // Include interview_scheduled in the interviewed count
+                const interviewedTotal = (item.interviewed || 0) + (item.interview_scheduled || 0);
+                
                 const total =
                   item.applied +
-                  item.interviewed +
+                  interviewedTotal +
                   item.offer +
                   item.rejected;
+                
                 const appliedPercent =
                   total > 0 ? (item.applied / total) * 100 : 0;
                 const interviewedPercent =
-                  total > 0 ? (item.interviewed / total) * 100 : 0;
+                  total > 0 ? (interviewedTotal / total) * 100 : 0;
                 const offerPercent = total > 0 ? (item.offer / total) * 100 : 0;
                 const rejectedPercent =
                   total > 0 ? (item.rejected / total) * 100 : 0;
@@ -576,7 +649,7 @@ export default function PlacementAnalytics() {
                     percent: interviewedPercent,
                     color: COLOR_PALETTE.interviewed,
                     offset: cumulativePercent,
-                    count: item.interviewed,
+                    count: interviewedTotal,
                   });
                   cumulativePercent += interviewedPercent;
                 }
@@ -870,7 +943,7 @@ export default function PlacementAnalytics() {
                     strokeWidth="12"
                   />
 
-                  {/* Placement (Deep Purple) */}
+                  {/* Placement (Cyan/Turquoise) */}
                   <circle
                     cx="130"
                     cy="130"
@@ -886,7 +959,7 @@ export default function PlacementAnalytics() {
                     strokeLinecap="round"
                   />
 
-                  {/* Higher Education (Pink) */}
+                  {/* Higher Education (Gold) */}
                   <circle
                     cx="130"
                     cy="130"
@@ -1109,7 +1182,7 @@ export default function PlacementAnalytics() {
                   variant="caption"
                   sx={{ color: "text.secondary", fontSize: 11 }}
                 >
-                  ({totalApplied} students)
+                  ({appliedOnlyCount} students)
                 </Typography>
               </Box>
 
