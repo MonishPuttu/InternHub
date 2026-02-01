@@ -18,6 +18,7 @@ import {
   Alert,
   Tabs,
   Tab,
+  Paper,
 } from "@mui/material";
 import {
   Assignment,
@@ -33,6 +34,7 @@ import {
   Assessment as AssessmentIcon,
 } from "@mui/icons-material";
 import { apiRequest } from "@/lib/api";
+import { useStudentTrainingUI } from "@/modules/training/StudentTrainingUIContext";
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -67,19 +69,33 @@ const formatDateUTC = (dateStr) => {
 };
 
 export default function StudentTraining() {
+  const trainingUI = useStudentTrainingUI();
+  
   const [assessments, setAssessments] = useState({
     new: [],
     ongoing: [],
     completed: [],
   });
+  const [reportCards, setReportCards] = useState([]);
+  const [reportCardsLoading, setReportCardsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [tabValue, setTabValue] = useState(0);
   const [expandedCard, setExpandedCard] = useState(null);
   const router = useRouter();
+
+  // Use context values if available, otherwise fallback to local state
+  const contextTab = trainingUI?.tab ?? "new";
+  const setContextTab = trainingUI?.setTab ?? (() => {});
+  const setCounts = trainingUI?.setCounts ?? (() => {});
+
+  // Map tab name to index for Tabs component
+  const tabNameToIndex = { new: 0, ongoing: 1, completed: 2, additional: 3, reportcard: 4 };
+  const indexToTabName = ["new", "ongoing", "completed", "additional", "reportcard"];
+  const tabValue = tabNameToIndex[contextTab] ?? 0;
+  const setTabValue = (index) => setContextTab(indexToTabName[index]);
 
   useEffect(() => {
     fetchAssessments();
@@ -117,6 +133,14 @@ export default function StudentTraining() {
           ongoing: ongoingAssessments,
           completed: completedAssessments,
         });
+        
+        // Update counts in context for sidebar
+        setCounts({
+          new: newAssessments.length,
+          ongoing: ongoingAssessments.length,
+          completed: completedAssessments.length,
+        });
+        
         setError("");
       } else {
         setError(response.error || "Failed to fetch assessments");
@@ -128,6 +152,27 @@ export default function StudentTraining() {
       setLoading(false);
     }
   };
+
+  const fetchReportCards = async () => {
+    try {
+      setReportCardsLoading(true);
+      const response = await apiRequest("/api/training/student/report-cards");
+      if (response.ok && response.data) {
+        setReportCards(response.data);
+      }
+    } catch (err) {
+      console.error("Error fetching report cards:", err);
+    } finally {
+      setReportCardsLoading(false);
+    }
+  };
+
+  // Fetch report cards when tab changes to reportcard
+  useEffect(() => {
+    if (contextTab === "reportcard" && reportCards.length === 0) {
+      fetchReportCards();
+    }
+  }, [contextTab]);
 
   const handleStartAssessment = (assessment) => {
     if (assessment.hasInProgress && assessment.inProgressAttemptId) {
@@ -276,14 +321,9 @@ export default function StudentTraining() {
     setExpandedCard(expandedCard === cardId ? null : cardId);
   };
 
-  // ✅ Handle tab change with navigation for Report Card
+  // ✅ Handle tab change - all tabs are inline now
   const handleTabChange = (event, newValue) => {
-    if (newValue === 4) {
-      // Report Card tab index
-      router.push("/training/student/report-card");
-    } else {
-      setTabValue(newValue);
-    }
+    setTabValue(newValue);
   };
 
   const AssessmentCard = ({ assessment }) => (
@@ -682,6 +722,110 @@ export default function StudentTraining() {
             );
           })}
         </Box>
+      </TabPanel>
+
+      {/* Report Card Tab */}
+      <TabPanel value={tabValue} index={4}>
+        {reportCardsLoading ? (
+          <Box sx={{ width: "100%", mt: 2 }}>
+            <LinearProgress />
+          </Box>
+        ) : reportCards.length === 0 ? (
+          <Paper
+            sx={{
+              textAlign: "center",
+              py: 8,
+              px: 4,
+              bgcolor: "background.paper",
+              borderRadius: 2,
+              border: "1px solid #334155",
+            }}
+          >
+            <AssessmentIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+            <Typography variant="h6" sx={{ color: "text.primary", mb: 1 }}>
+              No Report Cards Yet
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Complete assessments to view your report cards here
+            </Typography>
+          </Paper>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {reportCards.map((card) => (
+              <Card
+                key={card.id}
+                sx={{
+                  bgcolor: "background.paper",
+                  border: "1px solid #334155",
+                  borderRadius: 2,
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    borderColor: "#8b5cf6",
+                    boxShadow: "0 0 20px rgba(139, 92, 246, 0.2)",
+                  },
+                }}
+                onClick={() => router.push(`/training/student/report-card/${card.attemptId}`)}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" alignItems="center" justifyContent="space-between">
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 48,
+                          height: 48,
+                          borderRadius: 2,
+                          bgcolor: card.grade === "A" || card.grade === "A+"
+                            ? "rgba(34, 197, 94, 0.2)"
+                            : card.grade === "B" || card.grade === "B+"
+                            ? "rgba(59, 130, 246, 0.2)"
+                            : card.grade === "C" || card.grade === "C+"
+                            ? "rgba(245, 158, 11, 0.2)"
+                            : "rgba(239, 68, 68, 0.2)",
+                        }}
+                      >
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: "bold",
+                            color: card.grade === "A" || card.grade === "A+"
+                              ? "#22c55e"
+                              : card.grade === "B" || card.grade === "B+"
+                              ? "#3b82f6"
+                              : card.grade === "C" || card.grade === "C+"
+                              ? "#f59e0b"
+                              : "#ef4444",
+                          }}
+                        >
+                          {card.grade}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" sx={{ color: "text.primary", fontWeight: "bold" }}>
+                          {card.assessmentTitle}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                          {card.assessmentType} • {new Date(card.generatedAt).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box textAlign="right">
+                      <Typography variant="h5" sx={{ color: "#8b5cf6", fontWeight: "bold" }}>
+                        {card.percentageScore}%
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                        Score: {card.overallScore}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
       </TabPanel>
 
       <Dialog
