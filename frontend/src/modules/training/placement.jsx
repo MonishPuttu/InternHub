@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { usePlacementTrainingUI } from "@/modules/training/PlacementTrainingUIContext";
 import {
   Container,
   Box,
@@ -49,6 +50,9 @@ function TabPanel(props) {
 
 export default function PlacementTraining() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { tab: contextTab, setTab: setContextTab } = usePlacementTrainingUI();
+
   const [assessments, setAssessments] = useState({
     recentlyCreated: [],
     ongoing: [],
@@ -56,7 +60,6 @@ export default function PlacementTraining() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tabValue, setTabValue] = useState(0);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [createAssessmentDialogOpen, setCreateAssessmentDialogOpen] =
     useState(false);
@@ -76,6 +79,14 @@ export default function PlacementTraining() {
     fetchAssessments();
   }, []);
 
+  // sync URL ?tab= value into context on mount / when search params change
+  useEffect(() => {
+    const param = searchParams?.get("tab");
+    if (param && ["recent", "ongoing", "completed"].includes(param)) {
+      setContextTab(param);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -86,6 +97,9 @@ export default function PlacementTraining() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // derive numeric tab value for Tabs/TabPanel from context string
+  const tabValue = contextTab === "recent" ? 0 : contextTab === "ongoing" ? 1 : 2;
 
   const fetchAssessments = async () => {
     try {
@@ -450,8 +464,16 @@ export default function PlacementTraining() {
       )}
 
       <Tabs
-        value={tabValue}
-        onChange={(e, newValue) => setTabValue(newValue)}
+        value={contextTab === "recent" ? 0 : contextTab === "ongoing" ? 1 : 2}
+        onChange={(e, newValue) => {
+          const mapping = ["recent", "ongoing", "completed"]; 
+          const t = mapping[newValue] || "recent";
+          setContextTab(t);
+          // also update URL
+          try {
+            router.push(`/training/placement?tab=${t}`);
+          } catch (e) {}
+        }}
         sx={{
           bgcolor: "transparent",
           borderBottom: "1px solid #334155",

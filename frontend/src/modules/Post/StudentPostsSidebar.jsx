@@ -1,0 +1,160 @@
+"use client";
+
+import { useState } from "react";
+import {
+  IconButton,
+  TextField,
+  Button,
+  InputAdornment,
+  Box,
+} from "@mui/material";
+import ClickAwayListener from "@mui/material/ClickAwayListener";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import TuneIcon from "@mui/icons-material/Tune";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
+
+import IconRail from "@/components/IconRail";
+import { useStudentPostsUI } from "@/modules/Post/StudentPostsUIContext";
+import { INDUSTRIES } from "@/constants/postConstants";
+
+export default function StudentPostsSidebar() {
+  const postsUI = useStudentPostsUI();
+  const [open, setOpen] = useState(false);
+
+  if (!postsUI) return null;
+
+  const {
+    activeTab,
+    setActiveTab,
+    industry,
+    setIndustry,
+    search,
+    setSearch,
+    showSavedOnly,
+    setShowSavedOnly,
+    resetFilters,
+    counts,
+  } = postsUI;
+
+  const railItems = [
+    {
+      key: "available",
+      icon: <WorkOutlineIcon />,
+      label: `Opportunities (${counts.available})`,
+      active: activeTab === "available" && !showSavedOnly,
+      onClick: () => {
+        setActiveTab("available");
+        setShowSavedOnly(false);
+      },
+    },
+    {
+      key: "applied",
+      icon: <CheckCircleIcon />,
+      label: `Applied (${counts.applied})`,
+      active: activeTab === "applied" && !showSavedOnly,
+      onClick: () => {
+        setActiveTab("applied");
+        setShowSavedOnly(false);
+      },
+    },
+    {
+      key: "saved",
+      icon: <BookmarkIcon />,
+      label: "Saved Posts",
+      active: showSavedOnly,
+      onClick: () => setShowSavedOnly(!showSavedOnly),
+    },
+  ];
+
+  const panel = (
+    <ClickAwayListener 
+      onClickAway={() => setOpen(false)}
+      mouseEvent="onMouseUp"
+      touchEvent="onTouchEnd"
+    >
+      <Box
+        sx={{
+          position: "relative",
+          p: 2,
+          width: 300,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        <TextField
+          select
+          label="Industry"
+          value={industry}
+          onChange={(e) => setIndustry(e.target.value)}
+          fullWidth
+          size="small"
+          SelectProps={{
+            native: true,
+          }}
+          InputLabelProps={{
+            shrink: true,
+          }}
+        >
+          <option value="">All industries</option>
+          {INDUSTRIES.map((ind) => (
+            <option key={ind} value={ind}>
+              {ind}
+            </option>
+          ))}
+        </TextField>
+
+        <TextField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search company or position"
+          size="small"
+          fullWidth
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: search ? (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setSearch("")}>
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
+          }}
+        />
+
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<ClearIcon />}
+          onClick={() => {
+            resetFilters();
+            setOpen(false);
+          }}
+        >
+          Clear filters
+        </Button>
+      </Box>
+    </ClickAwayListener>
+  );
+
+  return (
+    <IconRail
+      items={railItems}
+      footer={
+        <IconButton onClick={() => setOpen((v) => !v)}>
+          <TuneIcon />
+        </IconButton>
+      }
+      panel={panel}
+      panelOpen={open}
+      panelWidth={320}
+    />
+  );
+}

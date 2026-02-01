@@ -135,23 +135,33 @@ export default function TopBar({ children }) {
         position="sticky"
         elevation={0}
         sx={{
-          backgroundColor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor:
-            theme.palette.mode === "dark"
-              ? "rgba(255, 255, 255, 0.04)"
-              : "rgba(0, 0, 0, 0.08)",
+          backgroundColor: "background.default",
+          borderBottom: "none",
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
-          {/* Logo - Left */}
-          <Box sx={{ flex: 1 }}>
+        <Toolbar sx={{ justifyContent: "space-between", px: 3, py: 1.5, gap: 2 }}>
+          {/* Logo - Left Capsule */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              bgcolor: (t) =>
+                t.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(15,23,42,0.06)",
+              borderRadius: 999,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+              px: 2.5,
+              py: 1,
+            }}
+          >
             <Typography
               variant="h6"
               sx={{
                 color: "text.primary",
                 fontWeight: 700,
-                fontSize: 18,
+                fontSize: 16,
+                letterSpacing: "-0.01em",
                 cursor: "pointer",
               }}
               onClick={() => handleNavigation("/dashboard")}
@@ -160,14 +170,22 @@ export default function TopBar({ children }) {
             </Typography>
           </Box>
 
-          {/* Desktop Navigation - Center */}
+          {/* Desktop Navigation - Center Capsule */}
           {!isMobile && (
             <Box
               sx={{
                 display: "flex",
-                gap: 1,
+                gap: 0.5,
                 justifyContent: "center",
-                flex: 2,
+                alignItems: "center",
+                bgcolor: (t) =>
+                  t.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(15,23,42,0.06)",
+                borderRadius: 999,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+                px: 1.25,
+                py: 1,
               }}
             >
               {filteredItems.map((item) => {
@@ -178,32 +196,35 @@ export default function TopBar({ children }) {
                     onClick={() => handleNavigation(item.path)}
                     startIcon={item.icon}
                     sx={{
-                      color: active
-                        ? "#a78bfa"
-                        : theme.palette.mode === "dark"
-                          ? "#94a3b8"
-                          : "#64748b",
+                      color: (t) =>
+                        active
+                          ? "#fff"
+                          : t.palette.mode === "dark"
+                            ? "#cbd5f5"
+                            : "#475569",
                       backgroundColor: active
-                        ? alpha("#8b5cf6", 0.12)
+                        ? "primary.main"
                         : "transparent",
-                      fontWeight: active ? 600 : 400,
-                      fontSize: "0.875rem",
+                      fontWeight: active ? 600 : 500,
+                      fontSize: "0.8125rem",
                       textTransform: "none",
                       px: 2,
-                      py: 1,
-                      borderRadius: 1,
+                      py: 0.75,
+                      borderRadius: 999,
                       whiteSpace: 'nowrap',
+                      minWidth: "auto",
+                      transition: "all 160ms ease",
                       "&:hover": {
                         backgroundColor: active
-                          ? alpha("#8b5cf6", 0.18)
-                          : alpha("#8b5cf6", 0.04),
+                          ? "primary.main"
+                          : "rgba(139,92,246,0.18)",
+                        color: active ? "#fff" : "#8b5cf6",
                       },
                       "& .MuiButton-startIcon": {
-                        color: active
-                          ? "#a78bfa"
-                          : theme.palette.mode === "dark"
-                            ? "#64748b"
-                            : "#94a3b8",
+                        marginRight: 0.75,
+                        "& svg": { 
+                          fontSize: 20,
+                        },
                       },
                     }}
                   >
@@ -214,8 +235,22 @@ export default function TopBar({ children }) {
             </Box>
           )}
 
-          {/* User Menu - Right */}
-          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+          {/* User Menu - Right Capsule */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              bgcolor: (t) =>
+                t.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(15,23,42,0.06)",
+              borderRadius: 999,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+              px: 1.25,
+              py: 0.75,
+            }}
+          >
             {!isMobile && children}
           </Box>
 
