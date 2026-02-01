@@ -33,9 +33,9 @@ The platform eliminates the fragmentation of traditional placement processes by 
 - **Notifications**: Receive updates on application status and new opportunities
 
 <div align="center">
-  <img src="frontend/public/S1.png" alt="Student Profile" width="30%" />
-  <img src="frontend/public/S2.png" alt="Job Search" width="30%" />
-  <img src="frontend/public/S3.png" alt="Application Tracking" width="30%" />
+  <img src="frontend/public/S1.png" alt="Student Profile" width="70%" />
+  <img src="frontend/public/S2.png" alt="Job Search" width="70%" />
+  <img src="frontend/public/S3.png" alt="Application Tracking" width="70%" />
 </div>
 
 ---
@@ -48,9 +48,9 @@ The platform eliminates the fragmentation of traditional placement processes by 
 - **Analytics**: Track job posting performance and recruitment metrics
 
 <div align="center">
-  <img src="frontend/public/R1.png" alt="Job Posting" width="30%" />
-  <img src="frontend/public/R2.png" alt="Candidate Search" width="30%" />
-  <img src="frontend/public/R3.png" alt="Application Management" width="30%" />
+  <img src="frontend/public/R1.png" alt="Job Posting" width="70%" />
+  <img src="frontend/public/R2.png" alt="Candidate Search" width="70%" />
+  <img src="frontend/public/R3.png" alt="Application Management" width="70%" />
 </div>
 
 ---
@@ -63,9 +63,9 @@ The platform eliminates the fragmentation of traditional placement processes by 
 - **Verification**: Verify student credentials and maintain data integrity
 
 <div align="center">
-  <img src="frontend/public/P1.png" alt="Placement Dashboard" width="30%" />
-  <img src="frontend/public/P2.png" alt="Placement Management" width="30%" />
-  <img src="frontend/public/P3.png" alt="Placement Analytics" width="30%" />
+  <img src="frontend/public/P1.png" alt="Placement Dashboard" width="70%" />
+  <img src="frontend/public/P2.png" alt="Placement Management" width="70%" />
+  <img src="frontend/public/P3.png" alt="Placement Analytics" width="70%" />
 </div>
 
 ---
@@ -152,28 +152,6 @@ The placement cell oversees the entire platform, manages user accounts, verifies
 - MongoDB injection prevention
 
 ---
-
-## 🌐 Live Demo
-
-Experience InternHub in action: [**1intern-hub.vercel.app**](https://1intern-hub.vercel.app)
-
----
-
-## 👥 Contributors
-
-This project exists thanks to all the amazing people who contribute:
-
-<div align="center">
-
-<a href="https://github.com/MonishPuttu/InternHub/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=MonishPuttu/InternHub" />
-</a>
-
-</div>
-
----
-
-<div align="center">
 
 **Made by the InternHub Team**
 
