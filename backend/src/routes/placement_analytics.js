@@ -63,8 +63,7 @@ router.get("/statistics", requireAuth, async (req, res) => {
       .from(posts)
       .where(eq(posts.approval_status, "approved"));
 
-    // Highest and average package (NEW LOGIC on positions array!)
-    // Fetch all positions from approved posts
+    // Highest and average package (from positions array)
     const postsWithPositions = await db
       .select({ positions: posts.positions })
       .from(posts)
@@ -141,6 +140,40 @@ router.get("/statistics", requireAuth, async (req, res) => {
   }
 });
 
+// NEW ENDPOINT: Get total students count (for Career Path Distribution denominator)
+router.get("/total-students", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+    
+    const department = req.query.department;
+    
+    let query = db
+      .select({ count: count() })
+      .from(student_profile)
+      .innerJoin(user, eq(student_profile.user_id, user.id))
+      .where(eq(user.role, "student"));
+    
+    if (department && department !== "All Dept") {
+      query = query.where(eq(student_profile.branch, department));
+    }
+    
+    const result = await query;
+    
+    res.json({
+      ok: true,
+      total_students: parseInt(result[0]?.count || 0),
+    });
+  } catch (error) {
+    console.error("Error fetching total students:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to fetch total students count",
+    });
+  }
+});
+
 // Get applied students data for stacked horizontal bar chart
 router.get("/applied-students", requireAuth, async (req, res) => {
   try {
@@ -169,7 +202,7 @@ router.get("/applied-students", requireAuth, async (req, res) => {
     applicationsWithPosts.forEach((item) => {
       if (!item.post) return;
       const postId = item.post.id;
-      // Get all position titles (NEW LOGIC!)
+      // Get all position titles
       const post_name =
         item.post && Array.isArray(item.post.positions)
           ? `${item.post.company_name} - ${item.post.positions
@@ -189,7 +222,7 @@ router.get("/applied-students", requireAuth, async (req, res) => {
       }
 
       // Filter by department if specified
-      if (department && department !== "All Departments") {
+      if (department && department !== "All Dept") {
         if (item.application.branch === department) {
           postGroups[postId].items.push(item);
         }
@@ -264,7 +297,7 @@ router.get("/total-applied", requireAuth, async (req, res) => {
       .innerJoin(posts, eq(student_applications.post_id, posts.id))
       .where(eq(posts.approval_status, "approved"));
 
-    if (department && department !== "All Departments") {
+    if (department && department !== "All Dept") {
       query = query.where(eq(student_applications.branch, department));
     }
 
@@ -272,13 +305,113 @@ router.get("/total-applied", requireAuth, async (req, res) => {
 
     res.json({
       ok: true,
-      total_applied: totalApplied[0].count,
+      total_applied: parseInt(totalApplied[0]?.count || 0),
     });
   } catch (error) {
     console.error("Error fetching total applied:", error);
     res.status(500).json({
       ok: false,
       error: "Failed to fetch total applied count",
+    });
+  }
+});
+
+// Get top hiring companies based on offer letters issued
+router.get("/top-hiring-companies", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "placement") {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
+    const limit = parseInt(req.query.limit) || 3;
+
+    // METHOD 1: Try using offer_letters table (most reliable)
+    try {
+      const companiesWithOffers = await db
+        .select({
+          company_name: posts.company_name,
+          student_id: student_applications.student_id,
+        })
+        .from(offer_letters)
+        .innerJoin(
+          student_applications,
+          eq(offer_letters.application_id, student_applications.id)
+        )
+        .innerJoin(posts, eq(student_applications.post_id, posts.id))
+        .where(eq(posts.approval_status, "approved"));
+
+      // Group by company and count unique students
+      const companyHires = {};
+      companiesWithOffers.forEach((item) => {
+        const company = item.company_name;
+        if (!companyHires[company]) {
+          companyHires[company] = new Set();
+        }
+        companyHires[company].add(item.student_id);
+      });
+
+      // Convert to array and sort by hire count
+      const topCompanies = Object.entries(companyHires)
+        .map(([name, studentSet]) => ({
+          name,
+          hire_count: studentSet.size,
+        }))
+        .sort((a, b) => b.hire_count - a.hire_count)
+        .slice(0, limit);
+
+      return res.json({
+        ok: true,
+        data: topCompanies,
+      });
+    } catch (offerTableError) {
+      console.log("Offer letters table approach failed, trying application status...");
+    }
+
+    // METHOD 2: Fallback to application_status (if offer_letters table doesn't work)
+    const allApplications = await db
+      .select({
+        company_name: posts.company_name,
+        student_id: student_applications.student_id,
+        application_status: student_applications.application_status,
+      })
+      .from(student_applications)
+      .innerJoin(posts, eq(student_applications.post_id, posts.id))
+      .where(eq(posts.approval_status, "approved"));
+
+    // Filter for offer statuses (case-insensitive)
+    const offerStatuses = ["offer", "OFFER", "offered", "OFFERED", "placed", "PLACED"];
+    const applicationsWithOffers = allApplications.filter(app => 
+      offerStatuses.includes(app.application_status)
+    );
+
+    // Group by company and count unique students
+    const companyHires = {};
+    applicationsWithOffers.forEach((item) => {
+      const company = item.company_name;
+      if (!companyHires[company]) {
+        companyHires[company] = new Set();
+      }
+      companyHires[company].add(item.student_id);
+    });
+
+    // Convert to array and sort by hire count
+    const topCompanies = Object.entries(companyHires)
+      .map(([name, studentSet]) => ({
+        name,
+        hire_count: studentSet.size,
+      }))
+      .sort((a, b) => b.hire_count - a.hire_count)
+      .slice(0, limit);
+
+    res.json({
+      ok: true,
+      data: topCompanies,
+    });
+  } catch (error) {
+    console.error("Error fetching top hiring companies:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to fetch top hiring companies",
     });
   }
 });
