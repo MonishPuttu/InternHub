@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
     Box,
@@ -65,6 +65,11 @@ export default function StudentData() {
     });
     const [updating, setUpdating] = useState(false);
     const fileInputRef = useRef(null);
+
+    // Compute unique companies from posts
+    const uniqueCompanies = useMemo(() => {
+        return [...new Set(posts.map(post => post.company_name).filter(Boolean))];
+    }, [posts]);
 
     // Fetch posts for the company filter
     const fetchPosts = async () => {
@@ -267,7 +272,7 @@ export default function StudentData() {
             setAllStudents([]);
             setLoading(false);
         }
-    }, [searchValue, department, year]);
+    }, [searchValue, department, year, selectedPost]);
 
     return (
         <Box sx={{ p: 3 }}>
