@@ -13,9 +13,13 @@ import {
   Link,
   Stack,
   Divider,
+  Chip,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import SchoolIcon from "@mui/icons-material/School";
+import BusinessIcon from "@mui/icons-material/Business";
+import WorkIcon from "@mui/icons-material/Work";
 import {
   StyledTextField,
   StyledSelect,
@@ -29,6 +33,37 @@ import { signupSchema, studentProfileSchema } from "@/lib/validationUtils";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+// Demo accounts for testing
+const DEMO_ACCOUNTS = [
+  {
+    email: "student@gmail.com",
+    password: "1234567890",
+    role: "student",
+    label: "Student",
+    icon: SchoolIcon,
+    color: "#8b5cf6",
+    description: "Explore student features",
+  },
+  {
+    email: "placementcell@gmail.com",
+    password: "1234567890",
+    role: "placement",
+    label: "Placement Cell",
+    icon: WorkIcon,
+    color: "#ec4899",
+    description: "Manage placements",
+  },
+  {
+    email: "recruiter@gmail.com",
+    password: "1234567890",
+    role: "recruiter",
+    label: "Recruiter",
+    icon: BusinessIcon,
+    color: "#06b6d4",
+    description: "Find talent",
+  },
+];
 
 export default function SignUp() {
   const router = useRouter();
@@ -47,8 +82,47 @@ export default function SignUp() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(null); // Track which demo account is loading
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Demo login handler
+  const handleDemoLogin = async (account) => {
+    setError("");
+    setDemoLoading(account.email);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: account.email,
+          password: account.password,
+          role: account.role,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setError(data.error || "Demo login failed. Please try again.");
+        setDemoLoading(null);
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.expiresAt) {
+        localStorage.setItem("sessionExpires", data.expiresAt);
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Demo login error:", err);
+      setError("Network error. Please check your connection.");
+      setDemoLoading(null);
+    }
+  };
 
   // Auto-scroll to error when it appears
   useEffect(() => {
@@ -729,6 +803,122 @@ export default function SignUp() {
                     Sign In
                   </Link>
                 </Typography>
+              </Box>
+
+              {/* Demo Login Section */}
+              <Box sx={{ mt: 4 }}>
+                <Divider sx={{ mb: 3 }}>
+                  <Chip
+                    label="Try Demo Accounts"
+                    size="small"
+                    sx={{
+                      bgcolor: (t) =>
+                        t.palette.mode === "dark"
+                          ? "rgba(139, 92, 246, 0.15)"
+                          : "rgba(139, 92, 246, 0.1)",
+                      color: "#8b5cf6",
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                    }}
+                  />
+                </Divider>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    textAlign: "center",
+                    mb: 2,
+                    fontSize: "0.813rem",
+                  }}
+                >
+                  Quick login with test accounts to explore the platform
+                </Typography>
+
+                <Stack spacing={1.5}>
+                  {DEMO_ACCOUNTS.map((account) => {
+                    const IconComp = account.icon;
+                    const isLoading = demoLoading === account.email;
+                    return (
+                      <Button
+                        key={account.email}
+                        onClick={() => handleDemoLogin(account)}
+                        disabled={demoLoading !== null}
+                        fullWidth
+                        variant="outlined"
+                        sx={{
+                          py: 1.25,
+                          px: 2,
+                          borderRadius: 2,
+                          borderColor: (t) =>
+                            t.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                          justifyContent: "flex-start",
+                          textTransform: "none",
+                          gap: 1.5,
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            borderColor: account.color,
+                            bgcolor: `${account.color}10`,
+                          },
+                          "&:disabled": {
+                            opacity: isLoading ? 1 : 0.5,
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 1.5,
+                            bgcolor: `${account.color}15`,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {isLoading ? (
+                            <CircularProgress size={18} sx={{ color: account.color }} />
+                          ) : (
+                            <IconComp sx={{ fontSize: 20, color: account.color }} />
+                          )}
+                        </Box>
+                        <Box sx={{ textAlign: "left", flex: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: "text.primary",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            {account.label}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "text.secondary",
+                              fontSize: "0.7rem",
+                            }}
+                          >
+                            {account.description}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label="Demo"
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            bgcolor: `${account.color}15`,
+                            color: account.color,
+                          }}
+                        />
+                      </Button>
+                    );
+                  })}
+                </Stack>
               </Box>
             </Box>
           </Box>
