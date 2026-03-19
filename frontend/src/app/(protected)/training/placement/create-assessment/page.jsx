@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Container,
@@ -53,6 +53,7 @@ export default function CreateAssessment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [currentDateTimeMin, setCurrentDateTimeMin] = useState("");
 
   const [assessment, setAssessment] = useState({
     title: "",
@@ -83,6 +84,10 @@ export default function CreateAssessment() {
 
   const currentYear = new Date().getFullYear();
   const maxYear = currentYear + 1;
+
+  useEffect(() => {
+    setCurrentDateTimeMin(getCurrentISTDateTimeForInput());
+  }, []);
 
   const handleAssessmentChange = (field, value) => {
     setAssessment((prev) => {
@@ -174,7 +179,7 @@ export default function CreateAssessment() {
 
     const updatedQuestions = [...questions];
     const option = updatedQuestions[qIndex].options.find(
-      (o) => o.id === optionId
+      (o) => o.id === optionId,
     );
     if (option) option.text = text;
     setQuestions(updatedQuestions);
@@ -199,7 +204,7 @@ export default function CreateAssessment() {
   const removeOption = (qIndex, optionId) => {
     const updatedQuestions = [...questions];
     updatedQuestions[qIndex].options = updatedQuestions[qIndex].options.filter(
-      (o) => o.id !== optionId
+      (o) => o.id !== optionId,
     );
     setQuestions(updatedQuestions);
   };
@@ -272,7 +277,7 @@ export default function CreateAssessment() {
           throw new Error(`Question ${i + 1}: Question text is required`);
         if (q.questionText.length > 500)
           throw new Error(
-            `Question ${i + 1}: Question text exceeds 500 characters`
+            `Question ${i + 1}: Question text exceeds 500 characters`,
           );
         if (q.marks > 999)
           throw new Error(`Question ${i + 1}: Marks cannot exceed 999`);
@@ -286,7 +291,7 @@ export default function CreateAssessment() {
         const longOptions = q.options.filter((opt) => opt.text.length > 100);
         if (longOptions.length > 0)
           throw new Error(
-            `Question ${i + 1}: Option text cannot exceed 100 characters`
+            `Question ${i + 1}: Option text cannot exceed 100 characters`,
           );
 
         if (!q.correctAnswer || q.correctAnswer.length === 0)
@@ -510,7 +515,7 @@ export default function CreateAssessment() {
               onChange={(e) =>
                 handleAssessmentChange(
                   "duration",
-                  Math.min(180, Math.max(1, parseInt(e.target.value) || 0))
+                  Math.min(180, Math.max(1, parseInt(e.target.value) || 0)),
                 )
               }
               inputProps={{ min: 1, max: 180 }}
@@ -548,7 +553,7 @@ export default function CreateAssessment() {
               onChange={(e) =>
                 handleAssessmentChange(
                   "passingMarks",
-                  Math.max(0, parseInt(e.target.value) || 0)
+                  Math.max(0, parseInt(e.target.value) || 0),
                 )
               }
               inputProps={{ min: 0, max: assessment.totalMarks }}
@@ -574,7 +579,7 @@ export default function CreateAssessment() {
               }
               InputLabelProps={{ shrink: true }}
               inputProps={{
-                min: getCurrentISTDateTimeForInput(),
+                min: currentDateTimeMin || undefined,
                 max: `${maxYear}-12-31T23:59`,
               }}
               helperText={`Year cannot exceed ${maxYear}`}
@@ -610,8 +615,7 @@ export default function CreateAssessment() {
               }
               InputLabelProps={{ shrink: true }}
               inputProps={{
-                min:
-                  assessment.startDate || new Date().toISOString().slice(0, 16),
+                min: assessment.startDate || currentDateTimeMin || undefined,
                 max: `${maxYear}-12-31T23:59`,
               }}
               helperText={`Year cannot exceed ${maxYear}`}
@@ -735,7 +739,7 @@ export default function CreateAssessment() {
                         handleQuestionChange(
                           qIndex,
                           "questionType",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       sx={{
@@ -762,8 +766,8 @@ export default function CreateAssessment() {
                         "marks",
                         Math.min(
                           999,
-                          Math.max(1, parseInt(e.target.value) || 1)
-                        )
+                          Math.max(1, parseInt(e.target.value) || 1),
+                        ),
                       )
                     }
                     inputProps={{ min: 1, max: 999 }}
@@ -790,7 +794,7 @@ export default function CreateAssessment() {
                         handleQuestionChange(
                           qIndex,
                           "difficulty",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       sx={{
@@ -856,7 +860,7 @@ export default function CreateAssessment() {
                             handleOptionChange(
                               qIndex,
                               option.id,
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           inputProps={{ maxLength: 100 }}
@@ -946,19 +950,19 @@ export default function CreateAssessment() {
                           control={
                             <Checkbox
                               checked={question.correctAnswer.includes(
-                                option.id.toString()
+                                option.id.toString(),
                               )}
                               onChange={(e) => {
                                 const current = question.correctAnswer || [];
                                 const newValue = e.target.checked
                                   ? [...current, option.id.toString()]
                                   : current.filter(
-                                      (id) => id !== option.id.toString()
+                                      (id) => id !== option.id.toString(),
                                     );
                                 handleQuestionChange(
                                   qIndex,
                                   "correctAnswer",
-                                  newValue
+                                  newValue,
                                 );
                               }}
                               sx={{
@@ -975,7 +979,7 @@ export default function CreateAssessment() {
                             borderRadius: 1,
                             border: "1px solid #334155",
                             bgcolor: question.correctAnswer.includes(
-                              option.id.toString()
+                              option.id.toString(),
                             )
                               ? "#8b5cf620"
                               : "transparent",

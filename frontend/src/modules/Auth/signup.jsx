@@ -69,7 +69,8 @@ export default function SignUp() {
   const router = useRouter();
   const errorRef = useRef(null);
   const formTopRef = useRef(null);
-  
+  const [maxDobDate, setMaxDobDate] = useState("");
+
   const [role, setRole] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -127,12 +128,16 @@ export default function SignUp() {
   // Auto-scroll to error when it appears
   useEffect(() => {
     if (error && errorRef.current) {
-      errorRef.current.scrollIntoView({ 
-        behavior: "smooth", 
-        block: "center" 
+      errorRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
       });
     }
   }, [error]);
+
+  useEffect(() => {
+    setMaxDobDate(new Date().toISOString().split("T")[0]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -156,9 +161,9 @@ export default function SignUp() {
       setError(firstError.message);
       // Scroll to top where error is displayed
       if (formTopRef.current) {
-        formTopRef.current.scrollIntoView({ 
-          behavior: "smooth", 
-          block: "start" 
+        formTopRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
         });
       }
       return;
@@ -172,14 +177,14 @@ export default function SignUp() {
         const firstError = profileValidation.error.issues[0];
         console.error(
           "Profile validation errors:",
-          profileValidation.error.issues
+          profileValidation.error.issues,
         );
         setError(`${firstError.path.join(".")}: ${firstError.message}`);
         // Scroll to top where error is displayed
         if (formTopRef.current) {
-          formTopRef.current.scrollIntoView({ 
-            behavior: "smooth", 
-            block: "start" 
+          formTopRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
           });
         }
         return;
@@ -206,9 +211,9 @@ export default function SignUp() {
         setError(data.error || "Sign up failed");
         // Scroll to error
         if (formTopRef.current) {
-          formTopRef.current.scrollIntoView({ 
-            behavior: "smooth", 
-            block: "start" 
+          formTopRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
           });
         }
         setLoading(false);
@@ -224,9 +229,9 @@ export default function SignUp() {
       setError("Network error. Please try again.");
       // Scroll to error
       if (formTopRef.current) {
-        formTopRef.current.scrollIntoView({ 
-          behavior: "smooth", 
-          block: "start" 
+        formTopRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
         });
       }
       setLoading(false);
@@ -301,7 +306,7 @@ export default function SignUp() {
           value={profileData.date_of_birth || ""}
           onChange={(e) => updateProfileData("date_of_birth", e.target.value)}
           InputLabelProps={{ shrink: true }}
-          inputProps={{ max: new Date().toISOString().split("T")[0] }}
+          inputProps={{ max: maxDobDate || undefined }}
         />
       </Stack>
 
@@ -597,17 +602,17 @@ export default function SignUp() {
             pt: { xs: 3, md: 5 },
           }}
         >
-          <Box 
-            sx={{ 
-              maxWidth: 480, 
-              mx: "auto", 
+          <Box
+            sx={{
+              maxWidth: 480,
+              mx: "auto",
               width: "100%",
               py: { xs: 2, md: 0 },
             }}
           >
             {/* Reference point for scrolling to top */}
             <div ref={formTopRef} style={{ position: "absolute", top: 0 }} />
-            
+
             <Typography
               variant="h4"
               sx={{
@@ -631,16 +636,18 @@ export default function SignUp() {
             </Typography>
 
             {error && (
-              <Alert 
+              <Alert
                 ref={errorRef}
-                severity="error" 
-                sx={{ 
+                severity="error"
+                sx={{
                   mb: 2,
                   fontSize: { xs: "0.813rem", sm: "0.875rem" },
                   animation: "shake 0.5s",
                   "@keyframes shake": {
                     "0%, 100%": { transform: "translateX(0)" },
-                    "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-5px)" },
+                    "10%, 30%, 50%, 70%, 90%": {
+                      transform: "translateX(-5px)",
+                    },
                     "20%, 40%, 60%, 80%": { transform: "translateX(5px)" },
                   },
                 }}
@@ -716,7 +723,10 @@ export default function SignUp() {
                   type={showConfirm ? "text" : "password"}
                   value={formData.confirmPassword}
                   onChange={(e) =>
-                    setFormData({ ...formData, confirmPassword: e.target.value })
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
                   }
                   required
                   InputProps={{
@@ -878,9 +888,14 @@ export default function SignUp() {
                           }}
                         >
                           {isLoading ? (
-                            <CircularProgress size={18} sx={{ color: account.color }} />
+                            <CircularProgress
+                              size={18}
+                              sx={{ color: account.color }}
+                            />
                           ) : (
-                            <IconComp sx={{ fontSize: 20, color: account.color }} />
+                            <IconComp
+                              sx={{ fontSize: 20, color: account.color }}
+                            />
                           )}
                         </Box>
                         <Box sx={{ textAlign: "left", flex: 1 }}>
