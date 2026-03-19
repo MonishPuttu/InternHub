@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🚀 InternHub
+# InternHub
 
 ### Campus Placements & Internship Management Platform
 
-*A comprehensive platform to streamline internship and placement processes for students, recruiters, and institutions*
+_A comprehensive platform to streamline internship and placement processes for students, recruiters, and institutions_
 
 [![Live Demo](https://img.shields.io/badge/demo-online-green.svg)](https://1intern-hub.vercel.app)
 
@@ -25,6 +25,7 @@ The platform eliminates the fragmentation of traditional placement processes by 
 ## ✨ Key Features
 
 ### For Students
+
 - **Digital Profiles**: Create comprehensive profiles showcasing education, skills, projects, and experience
 - **Job Discovery**: Browse and search through available internship and placement opportunities
 - **Easy Applications**: Apply to multiple positions with a single click
@@ -41,6 +42,7 @@ The platform eliminates the fragmentation of traditional placement processes by 
 ---
 
 ### For Recruiters
+
 - **Job Posting**: Create and manage multiple job listings with detailed requirements
 - **Candidate Discovery**: Search and filter through student profiles based on specific criteria
 - **Application Management**: Review, shortlist, and manage incoming applications efficiently
@@ -56,6 +58,7 @@ The platform eliminates the fragmentation of traditional placement processes by 
 ---
 
 ### For Placement Cell
+
 - **Centralized Management**: Oversee all placement activities from a single dashboard
 - **Student Tracking**: Monitor student participation and placement outcomes
 - **Company Relations**: Manage relationships with recruiting organizations
@@ -90,18 +93,21 @@ The platform eliminates the fragmentation of traditional placement processes by 
 ## 🎯 Core Functionality
 
 ### User Authentication
+
 - Secure registration and login system
 - Role-based access control (Student, Recruiter, Admin)
 - JWT-based authentication
 - Password encryption and security
 
 ### Profile Management
+
 - Comprehensive student profiles with education, skills, and experience
 - Resume and document uploads
 - Profile visibility controls
 - Portfolio and project showcases
 
 ### Job & Application System
+
 - Job posting creation with detailed descriptions
 - Advanced search and filtering capabilities
 - One-click application process
@@ -109,18 +115,21 @@ The platform eliminates the fragmentation of traditional placement processes by 
 - Automated notifications for status updates
 
 ### Search & Discovery
+
 - Filter jobs by type, location, company, and skills
 - Sort by relevance, date, and other parameters
 - Save and bookmark favorite opportunities
 - Personalized job recommendations
 
 ### Communication
+
 - In-platform messaging between students and recruiters
 - Interview scheduling capabilities
 - Email notifications for important updates
 - Application status change alerts
 
 ### Analytics & Reporting
+
 - Student application success metrics
 - Recruiter job posting performance
 - Institution-wide placement statistics
@@ -131,12 +140,15 @@ The platform eliminates the fragmentation of traditional placement processes by 
 ## 📱 User Roles
 
 ### Students
+
 Students can create profiles, search for opportunities, submit applications, track their progress, and communicate with recruiters.
 
 ### Recruiters
+
 Recruiters can post job openings, search for candidates, review applications, manage the hiring pipeline, and communicate with applicants.
 
 ### Placement Cell
+
 The placement cell oversees the entire platform, manages user accounts, verifies credentials, generates reports, and maintains system settings.
 
 ---
