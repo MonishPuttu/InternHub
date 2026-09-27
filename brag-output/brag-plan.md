@@ -26,3 +26,15 @@
 
 ## Sound
 E major, 96 bpm, restrained pad and pluck; status-step pops rising in pitch, chime on "Offer Approved", impact on the reveal, clicks + soft chimes on each action.
+
+## Voice-over version (42s)
+The final `brag.mp4` is the extended cut with narration. Voice: Kokoro TTS (`af_heart`), generated locally. Each scene's timeline was stretched to fit its line (entrances and transitions keep their original speed; only the hold in the middle of each scene slows down), the soundtrack was re-timed to match, and the music ducks under the voice. Some spellings below are written for the voice, e.g. "Ani-Talk", "R-x Check".
+
+| # | Time | Narration |
+|---|------|-----------|
+| 1 | 0.0–3.3s | From apply, to offer. |
+| 2 | 3.3–10.7s | Intern Hub brings campus placements into one platform, for students, recruiters, and the college placement cell. |
+| 3 | 10.7–19.3s | Students browse approved opportunities, save the ones they like, apply in a single click, and track the status of every application. |
+| 4 | 19.3–28.2s | Recruiters review applicants with their branch and CGPA, manage the shortlist, and send offer letters, without a single spreadsheet. |
+| 5 | 28.2–35.5s | And the placement cell approves job posts, tracks every student, and sees placement analytics in one dashboard. |
+| 6 | 35.5–41.6s | Intern Hub. Every placement, one hub. Try the live demo today. |
