@@ -12,6 +12,15 @@ _A comprehensive platform to streamline internship and placement processes for s
 
 </div>
 
+<!-- brag:start -->
+<p align="center">
+  <a href="brag-output/brag.mp4"><img src="brag-output/brag.gif" alt="InternHub launch video" width="100%"></a>
+  <br>
+  <sub>▶ <a href="brag-output/brag.mp4"><b>Watch the full launch video with voice-over</b></a> (41s, sound on)</sub>
+</p>
+<!-- brag:end -->
+
+
 ---
 
 ## 📖 About The Project
